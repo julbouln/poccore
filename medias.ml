@@ -308,6 +308,26 @@ end;;
 
 class graphic_object_from_file file w h=
 object(self)
+(*
+OCAML :
+ [
+  [("fun",`String "with_alpha");
+   ("color", `Color (255,255,255))];
+  [("fun",`String "load_multiple");
+   ("file",`String file);
+   ("size",`Size (w,h)]
+ ]
+XML :
+ <val_list>
+  <val_string name="fun" value="with_alpha"/>
+  <val_color name="color" r="255" g="255" b="255"/>
+ </val_list> 
+ <val_list>
+  <val_string name="fun" value="load_multiple"/>
+  <val_string name="file" value="file"/>
+  <val_size name="size" w="0" h="0"/>
+ </val_list>
+*)
   inherit graphic_from_drawing_fun file 
 	[
 	  DrawValString "with_alpha";

@@ -41,13 +41,16 @@ exception Drawing_not_found of string;;
 
 type color=(int*int*int);;
 
+(* use oval *)
 type ('t) val_drawing=
     [
       val_ext
     | `DrawingSizeFloat of (float*float) 
     | `DrawingRectangle of rectangle
+
     | `DrawingT of 't
     | `DrawingTArray of 't array
+
     | `DrawingList of ('t) val_drawing list
     ];;
 
@@ -61,12 +64,9 @@ type ('t) draw_op_val=
   | DrawValRectangle of rectangle
   | DrawValColor of color
 
-  | DrawValT of 't
-  | DrawValTArray of 't array
-
-  | DrawValList of ('t) draw_op_val list
+  | DrawValList of ('t) draw_op_val list 
   | DrawValNil;;
-
+(*
 let draw_op_val_to_string v=
   match v with
     | DrawValPosition (x,y)->("DrawValPosition ("^string_of_int x^","^string_of_int y^")")
@@ -76,11 +76,10 @@ let draw_op_val_to_string v=
     | DrawValString s->("DrawValString "^s);
     | DrawValInt s->("DrawValInt "^string_of_int s);
     | DrawValList l->("DrawValList");
-    | DrawValT t->("DrawValT");
-    | DrawValTArray t->("DrawValTArray");
     | DrawValNil ->("DrawValNil")
     | DrawValRectangle r->("DrawValRectangle")
     | _ -> "DrawOther";;
+*)
 let get_draw_op_val (ovl:('t) draw_op_val list) (n:int)=
   List.nth ovl n;;
 
@@ -105,12 +104,6 @@ let get_draw_op_rect ovl n=match (get_draw_op_val ovl n) with
 let get_draw_op_color ovl n=match (get_draw_op_val ovl n) with
   | DrawValColor x->x
   | _ -> raise Bad_draw_op_val;;
-let get_draw_op_t ovl n=match (get_draw_op_val ovl n) with
-  | DrawValT x->x
-  | _ -> raise Bad_draw_op_val;;
-let get_draw_op_t_array ovl n=match (get_draw_op_val ovl n) with
-  | DrawValTArray x->x
-  | _ -> raise Bad_draw_op_val;;
 let get_draw_op_list ovl n=match (get_draw_op_val ovl n) with
   | DrawValList x->x
   | _ -> raise Bad_draw_op_val;;
@@ -121,17 +114,26 @@ type draw_op_t=
   | DrawTypeRead
   | DrawTypeCopy;;
 
-type ('t,'dt) draw_op_result=
+type ('t) draw_op_result=
   | DrawResultUnit of unit
-  | DrawResultDrawing of 'dt array
+  | DrawResultT of 't
+  | DrawResultTArray of 't array
+(*  | DrawResultDrawing of 'dt array *)
   | DrawResultVal of ('t) draw_op_val;;
 
 let get_draw_op_result_unit ores=match ores with
   | DrawResultUnit x->x
   | _ -> raise Bad_draw_op_result;;
-let get_draw_op_result_drawing ores=match ores with
+(*let get_draw_op_result_drawing ores=match ores with
   | DrawResultDrawing x->x
   | _ -> raise Bad_draw_op_result;;
+*)
+let get_draw_op_result_t ores=match ores with
+  | DrawResultT x->x
+  | _ -> raise Bad_draw_op_val;;
+let get_draw_op_result_t_array ores=match ores with
+  | DrawResultTArray x->x
+  | _ -> raise Bad_draw_op_val;;
 let get_draw_op_result_val ores=match ores with
   | DrawResultVal x->x
   | _ -> raise Bad_draw_op_result;;
@@ -142,7 +144,7 @@ class ['t] draw_ops=
 object(self)
   val mutable ops=Hashtbl.create 2
 
-  method add_op (n:string) (o_t:draw_op_t) (o:(('t) draw_op_val list->('t) draw_op_val))=Hashtbl.add ops n (o_t,o)
+  method add_op (n:string) (o_t:draw_op_t) (o:(('t) draw_op_val list->('t) draw_op_result))=Hashtbl.add ops n (o_t,o)
   method get_op n=
     (try
        Hashtbl.find ops n
@@ -168,10 +170,11 @@ object(self)
     let r=op args in
     let nr=
      (match op_t with
-	| DrawTypeCreate -> self#set_t (get_draw_op_t [r] 0) ;DrawResultUnit()
-	| DrawTypeWrite ->DrawResultUnit()
-	| DrawTypeRead ->DrawResultVal r
-	| DrawTypeCopy->DrawResultDrawing(
+	| DrawTypeCreate -> self#set_t (get_draw_op_result_t r) ;DrawResultUnit()
+	| DrawTypeWrite ->r
+	| DrawTypeRead ->r
+	| DrawTypeCopy->r
+(*
 	    let cr=(match r with
 	      | DrawValT ct ->[|self#new_t ct|];
 	      | DrawValTArray cta->
@@ -181,8 +184,10 @@ object(self)
 		  ) cta
 	      | _ -> raise Draw_op_error) in
 	      cr
-     )) in
-      (nr:('t,('t) drawing_object) draw_op_result)
+)
+*)
+     ) in
+      (nr:('t) draw_op_result)
 
   method exec_op_create n args=
     get_draw_op_result_unit (self#exec_op n args)
@@ -191,8 +196,17 @@ object(self)
   method exec_op_read n args=
     get_draw_op_result_val (self#exec_op n args)
   method exec_op_copy n args=
-    get_draw_op_result_drawing (self#exec_op n args)
-
+    let cr=(match (self#exec_op n args) with
+	      | DrawResultT ct ->[|self#new_t ct|];
+	      | DrawResultTArray cta->
+		  Array.map (
+		    fun nt->
+		      self#new_t nt
+		  ) cta
+	      | _ -> raise Draw_op_error) in
+      cr
+(*    get_draw_op_result_drawing (self#exec_op n args)
+*)
   method virtual get_t: 't
   method virtual set_t: 't->unit
 
@@ -254,11 +268,12 @@ object(self)
       drf (List.tl args)
     
   method exec_drawing_fun (n:string) (args:('t) draw_op_val list)=
-    print_string ("DRAWING_HANDLER: exec "^n);print_newline();
+(*    print_string ("DRAWING_HANDLER: exec "^n);print_newline();
     List.iter (
       fun a->
 	print_string (" -"^draw_op_val_to_string a);print_newline();
     )args;
+*)
     let drf=self#get_drawing_fun n in
       drf args
 

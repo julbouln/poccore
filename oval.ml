@@ -2,7 +2,7 @@ open Generic;;
 open Xml;;
 open Olua;;
 
-(** Val conversion between OCaml, XML and Lua *)
+(** Val system with conversion between OCaml, XML and Lua *)
 
 exception Bad_val_type;;
 exception Val_not_found of string;;
@@ -88,18 +88,18 @@ type val_ext=
     | `Position of (int*int)
     | `Size of (int*int)
     | `Color of (int*int*int)
-(*    | `List of val_ext list *)
+    | `List of val_ext list 
     ]
 ;;
 
-let xml_of_val_ext=function
+let rec xml_of_val_ext=function
   | #val_generic as v->xml_of_val v
   | `Position (x,y)->Xml.Element("val_position",[("x",string_of_int x);("y",string_of_int y)],[])
   | `Size (w,h)->Xml.Element("val_size",[("w",string_of_int w);("h",string_of_int h)],[])
-  | `Color (r,g,b)->Xml.Element("val_color",[("r",string_of_int r);("g",string_of_int g);("b",string_of_int b)],[]);;
-(*  | `List vl->Xml.Element("val_list",[],List.map (fun v->xml_of_val_ext v) vl);; *)
+  | `Color (r,g,b)->Xml.Element("val_color",[("r",string_of_int r);("g",string_of_int g);("b",string_of_int b)],[])
+  | `List vl->Xml.Element("val_list",[],List.map (fun v->xml_of_val_ext v) vl);; 
 
-let val_ext_of_xml=function
+let rec val_ext_of_xml=function
   | Element("val_position",_,_) as x-> 
       `Position (
 	(int_of_string (Xml.attrib x "x")),
@@ -116,6 +116,7 @@ let val_ext_of_xml=function
 	(int_of_string (Xml.attrib x "g")),
 	(int_of_string (Xml.attrib x "b"))
       )
+  | Element("val_list",_,childs) as x->`List (List.map (fun c->val_ext_of_xml c) childs)
   | Element(_,_,_) as x->val_of_xml x
   | _ -> `Nil
 ;;
@@ -126,6 +127,17 @@ let lua_table_of_list l=
       fun (k,v) ->
 	Luahash.replace tbl ~key:(OLuaVal.String k) ~data:(v)
     ) l;
+    tbl;;
+
+let lua_list_of_list valfrom l=
+  let tbl=Luahash.create (fun a b->a=b) 2 in
+  let i=ref 0 in
+    List.iter (
+      fun v ->
+	Luahash.replace tbl ~key:(OLuaVal.Number (float_of_int !i)) ~data:(valfrom v);
+	  i:= !i+1;
+    ) l;
+
     tbl;;
 
 let hash_of_lua_table tbl=
@@ -142,7 +154,17 @@ let hash_of_lua_table tbl=
     ) tbl;
     a
 
-let lua_of_val_ext=function
+let list_of_lua_list valto tbl=
+  let a=DynArray.create() in
+    Luahash.iter (
+      fun k v ->
+	match k with
+	  | OLuaVal.Number i->DynArray.set a (int_of_float i) (valto v)
+	  | _ ->()
+    ) tbl;
+    DynArray.to_list a
+
+let rec lua_of_val_ext=function
   | #val_generic as v->lua_of_val v
   | `Position (x,y)->
       OLuaVal.Table (lua_table_of_list [
@@ -160,9 +182,10 @@ let lua_of_val_ext=function
 	("g",OLuaVal.Number (float g));
 	("b",OLuaVal.Number (float b));
       ])
+  | `List l->OLuaVal.Table (lua_list_of_list lua_of_val_ext l);
 ;; 
 
-let val_ext_of_lua=function
+let rec val_ext_of_lua=function
   | OLuaVal.Table tbl->
       let r=ref `Nil in
       let h=hash_of_lua_table tbl in
@@ -177,8 +200,14 @@ let val_ext_of_lua=function
 	
 	if is_v "r" && is_v "g" && is_v "b" then
 	  r:=`Color (get_v "r",get_v "g",get_v "b");
+	
+	if !r=(`Nil) then (
+	  let l=list_of_lua_list val_ext_of_lua tbl in	  
+	    if List.length l>0 then
+	      r:=`List l
+	);
 	!r
-
+  
   | _ as x->val_of_lua x
 ;;
 
@@ -230,9 +259,9 @@ object(self)
 	let nm=
 	  (try
 	     (`String (Xml.attrib c "name")) 
-	   with Xml.No_attribute v-> `Int !i) in
+	   with Xml.No_attribute v-> i:= !i+1;`Int (!i-1)) in
 	  self#set_val (nm) v;
-	  i:= !i+1;
+
 
     ) childs;
 
@@ -242,18 +271,34 @@ object(self)
  
   method to_xml=
     let a=DynArray.create() in
-    Hashtbl.iter (
-      fun k v->
-	let xr=xmlfrom v in
-	  DynArray.add a
+      Hashtbl.iter (
+	fun k v->
+	  let xr=xmlfrom v in
+	  let xv=
 	    (match xr with
-	       | Element (t,args,childs)->Element (t,List.append [("name",string_of_val k)] args,childs)
-	       | x -> x);
+	       | Element (t,args,childs)->
+		   Element (t,
+			    (match k with
+			      | `String s->List.append [("name",s)] args
+			      | _ -> args),
 
+			    childs)
+	       | x -> x) in
+		(*  DynArray.add a xv *)
+	    (match k with
+	      | `String s->	      
+		  DynArray.add a xv
+	      | `Int i->
+		  print_int i;print_newline();
+(*		  print_string (string_of_val v);print_newline(); *)
+(*		  DynArray.set a i xv *)
+		  DynArray.add a xv
+	      | _ -> ())
+	  
     ) vals;
 
       Element(id,[],
-	      List.rev (DynArray.to_list a)
+	      (DynArray.to_list a)
 	     );
 
 (** Lua part *)
