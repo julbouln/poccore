@@ -1,6 +1,6 @@
 (*
     Battle For Rashitoul - The ultimate strategy/arcade game
-    Copyright (C) 2003 POC 
+    Copyright (C) 2003,2004 POC 
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,12 +19,14 @@
 
 open Low;;
 
-class audio f c=
+class audio=
 object
-  val mutable freq=f
-  val mutable chans=c
+  val mutable freq=0
+  val mutable chans=0
 		      		      
-  method init()=
+  method init f c=
+    freq<-f;
+    chans<-c;
     audio_init freq chans;
 
   method initialized=
@@ -38,3 +40,4 @@ object
 
 end;;
 
+let audio=new audio;;
