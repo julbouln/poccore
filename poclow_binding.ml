@@ -116,14 +116,29 @@ object(self)
     self#add_op_from_list "create_text" DrawTypeCreate (
       fun ovl->
 	let fnt_n=string_of_val (List.nth ovl 0)  and
-	    txt=string_of_val (List.nth ovl 1)  and
-	    color=color_of_val (List.nth ovl 2)  in
-	let fnt=(font_vault#get_cache_simple fnt_n) in
+	    fnt_s=int_of_val (List.nth ovl 1)  and
+	    txt=string_of_val (List.nth ovl 2)  and
+	    color=color_of_val (List.nth ovl 3)  in
+
+(*	  print_string fnt_n;print_newline(); *)
+	  font_vault#add_cache (fnt_n^string_of_int fnt_s) (
+	    fun()->
+	      let fnt=font_vault#new_font() in
+		(match fnt_n with 
+		  | "font_embed" -> fnt#load FontEmbed
+		  | _ -> fnt#load (FontTTF (fnt_n,fnt_s))
+		);
+		[|fnt|]
+	  );
+	let fnt=(font_vault#get_cache_simple (fnt_n^string_of_int fnt_s)) in
 
 	  DrawResultT
 	    (match fnt#get_font_type with
 	       | FontTTF f->
-		   tile_text fnt#get_f txt color
+		   let t=tile_text fnt#get_f txt color in
+		   let t2=tile_box (tile_get_w t) (tile_get_h t) (255,255,255) in
+		     tile_put_to t t2 0 0; 
+		     t2
 	       | FontEmbed ->
 		   let tmp=tile_box (String.length txt*8) 8 (255,255,255) in
 		     tile_set_alpha tmp 255 255 255;

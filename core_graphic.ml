@@ -205,8 +205,8 @@ let string_of_color c=
 
 let string_of_fnt_t f=
   match f with
-    | FontTTF(f,s)->(f^"_"^string_of_int s)
-    | FontEmbed -> "embed";;
+    | FontTTF(f,s)->(f^string_of_int s)
+    | FontEmbed -> "font_embed8";;
 
 
 class graphic_object_text fnt_t (txt:string list) color=
@@ -215,14 +215,16 @@ object
 ("text_"^string_of_fnt_t fnt_t^"_"^string_of_color color^"_"^digest_of_string_list txt)
 (*((random_string "text_" 10)^digest_of_string_list txt)*)
     (fun()->
-
+(*
 	 let fnt_n=get_font_id fnt_t in
 	   font_vault#add_cache (fnt_n) (
 	     fun()->
 	       let fnt=font_vault#new_font() in
 		 fnt#load fnt_t;
 		 [|fnt|]
-	   );
+	   ); *)
+	 let fnt_n=get_font_id fnt_t and
+	     fnt_s=get_font_size fnt_t in
 	   Array.map
 	     (
 	       fun tx->
@@ -230,9 +232,12 @@ object
 		   dr#exec_op_create_from_list "create_text" 
 		     [
 		       `String fnt_n;
+		       `Int fnt_s;
 		       `String tx;
 		       `Color color
 		     ];
+		   dr#exec_op_write_from_list "set_alpha" [`Color (255,255,255)];
+		   
 		   dr
 	     ) (Array.of_list txt)
     )
@@ -248,7 +253,7 @@ object(self)
     self#set_drawing_id did
 
   val mutable graphic=new graphic_object_text fnt_t ([did]) col;
-  val mutable fnt=(font_vault#get_cache_simple (get_font_id fnt_t))
+  val mutable fnt=(font_vault#get_cache_simple ((get_font_id fnt_t)^string_of_int (get_font_size fnt_t)))
  
   val mutable color=col
   method get_color=color

@@ -231,8 +231,14 @@ end;;
 
 let get_font_id fnt_t=
   (match fnt_t with 
-     | FontTTF (f,s)->(f^"_"^string_of_int s)
+(*     | FontTTF (f,s)->(f^"_"^string_of_int s) *)
+     | FontTTF (f,s)->f
      | FontEmbed->"font_embed");;
+
+let get_font_size fnt_t=
+  (match fnt_t with 
+     | FontTTF (f,s)->s
+     | FontEmbed->8);;
 
 
 class font_ttf f s=
