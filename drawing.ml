@@ -16,7 +16,7 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
-
+open Rect;;
 open Generic;;
 open Olua;;
 open Oxml;;
@@ -44,6 +44,7 @@ type ('t) draw_op_val=
   | DrawValPosition of (int*int)
   | DrawValSize of (int*int)
   | DrawValSizeFloat of (float*float)
+  | DrawValRectangle of rectangle
   | DrawValColor of color
   | DrawValString of string
   | DrawValT of 't
@@ -59,8 +60,8 @@ let draw_op_val_to_string v=
     | DrawValString s->("DrawValString "^s);
     | DrawValT t->("DrawValT");
     | DrawValTArray t->("DrawValTArray");
-    | DrawValNil ->("DrawValNil");;
-
+    | DrawValNil ->("DrawValNil")
+    | _ -> "DrawOther";;
 let get_draw_op_val (ovl:('t) draw_op_val list) (n:int)=
   List.nth ovl n;;
 
@@ -72,6 +73,9 @@ let get_draw_op_size ovl n=match (get_draw_op_val ovl n) with
   | _ -> raise Bad_draw_op_val;;
 let get_draw_op_size_float ovl n=match (get_draw_op_val ovl n) with
   | DrawValSizeFloat x->x
+  | _ -> raise Bad_draw_op_val;;
+let get_draw_op_rect ovl n=match (get_draw_op_val ovl n) with
+  | DrawValRectangle x->x
   | _ -> raise Bad_draw_op_val;;
 let get_draw_op_color ovl n=match (get_draw_op_val ovl n) with
   | DrawValColor x->x
