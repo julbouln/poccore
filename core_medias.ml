@@ -330,7 +330,7 @@ end;;
 
 
 let v_color_from_xml f=
-  print_string ("XML: load "^f);print_newline();
+(*  print_string ("XML: load "^f);print_newline(); *)
   let colfile=new xml_node (Xml.parse_file f) in
   let colparser=new xml_v_colors_parser in    
     colparser#parse colfile;

@@ -1,4 +1,6 @@
 
+open Core_timer;;
+
 open Core_video;;
 open Core_stage;;
 
@@ -91,7 +93,9 @@ object(self)
   method set_fs f=fullscreen:=f
   method set_scr_w w=scr_w<-w
   method set_scr_h h=scr_h<-h
+
   method set_fps f=fps<-f
+  method get_fps=fps
 
   val mutable def_w=640
   val mutable def_h=480
@@ -154,6 +158,8 @@ object(self)
   method medias_init()=
     if !windowed=true then fullscreen:=false;
     
+    Global.set default_fps fps;
+
     video#init (scr_w) (scr_h) (depth) (!fullscreen);
     
 (*    audio#init 44100 2 ; *)

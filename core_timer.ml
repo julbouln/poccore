@@ -9,6 +9,9 @@
  f = f
 *)
 
+let default_fps=Global.empty ("fps");;
+Global.set default_fps 30;;
+
 type time=
 {
   h:int;
@@ -20,6 +23,7 @@ type time=
 
 class timer=
 object(self)
+
   val mutable timers=Hashtbl.create 2
   method add_timer (t:time) (f:unit->unit)=
     Hashtbl.add timers (self#from_time t) f
@@ -36,9 +40,9 @@ object(self)
 
   method del_task (t:time)=
     Hashtbl.remove tasks (self#from_time t)
-      
-  (* default max time to 1m = 1800 frm *)
-  val mutable frm=1800
+
+  val fps=(Global.get default_fps)      
+  val mutable frm=((Global.get default_fps)*60)
     
   val mutable cfrm=0
  
@@ -75,10 +79,10 @@ object(self)
     )
 
   method to_time fr=
-    let h=fr/108000 and
-	m=(fr mod 108000)/1800 and
-	s=((fr mod 108000) mod 1800)/30 and
-	f=(((fr mod 108000) mod 1800) mod 30) in
+    let h=fr/(fps*60*60) and
+	m=(fr mod (fps*60*60))/(fps*60) and
+	s=((fr mod (fps*60*60)) mod (fps*60))/fps and
+	f=(((fr mod (fps*60*60)) mod (fps*60)) mod fps) in
       {
 	h=h;
 	m=m;
@@ -87,10 +91,10 @@ object(self)
       }
 	
   method from_time t=    
-    (t.h*108000)+ (t.m * 1800) + (t.s*30) + t.f
+    (t.h*fps*60*60)+ (t.m * fps * 60 ) + (t.s*fps) + t.f
 
   method add_timer_from_now (t:time) (f:unit->unit)=
-    print_string "GAME_TIME: add timer ";
+(*    print_string "GAME_TIME: add timer "; *)
     let ft=self#from_time t in
     let nt=self#to_time (ft+cfrm) in
       print_int cfrm;

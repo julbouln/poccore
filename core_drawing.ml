@@ -230,6 +230,25 @@ object(self)
   val mutable lua=new lua_obj
   method get_lua=lua
 
+  initializer
+    self#add_op_from_list "put_pixel" DrawTypeWrite (
+      fun ovl->
+	let (x,y)=position_of_val (List.nth ovl 0) and
+	    col=color_of_val (List.nth ovl 1) in
+	  (*	print_string ("DRAWING_OBJECT: load "^f);print_newline(); *)
+	  self#put_pixel x y col;
+	  DrawResultUnit();
+    );
+
+    self#add_op_from_list "get_pixel" DrawTypeRead (
+      fun ovl->
+	let (x,y)=position_of_val (List.nth ovl 0) in
+	  (*	print_string ("DRAWING_OBJECT: load "^f);print_newline(); *)
+	let col=self#get_pixel x y in
+	  DrawResultVal(`Color(col))
+    );
+
+
 end;;
 
 
@@ -255,7 +274,7 @@ object(self)
   method virtual new_drawing_screen : unit -> ('t) drawing_screen
 
   method add_drawing_fun (n:string) (o:val_ext_handler->('t) drawing_object array)=
-    print_string ("DRAWING_HANDLER: add drawing fun "^n);print_newline();
+(*    print_string ("DRAWING_HANDLER: add drawing fun "^n);print_newline(); *)
     Hashtbl.add drs n o
 
   method add_drawing_fun_from_list (n:string) (o:val_ext list->('t) drawing_object array)=

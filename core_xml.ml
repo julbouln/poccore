@@ -1,9 +1,15 @@
 open Oxml;;
+open Olua;;
 open Oval;;
 
 open Core_action;;
 open Core_graphic;;
+open Core_medias;;
 open Core_stage;;
+
+
+
+open Binding;;
 
 (** Core xml interface *)
 
@@ -224,6 +230,158 @@ object(self)
 
 end;;
 
+
+exception Drawing_script_error;;
+
+class drawing_script=
+object(self)
+  inherit lua_object as super
+
+  val mutable drv=Hashtbl.create 2
+  method add_dr n dr=Hashtbl.add drv n dr
+  method get_dr n=Hashtbl.find drv n
+
+  method dr_size n=
+    let dr=(self#get_dr n) in
+      Array.length dr
+
+  method op_create name args=
+    let did=(random_string "drscr" 20) in
+    let dr=drawing_vault#new_drawing() in
+      dr#exec_op_create_from_format name (ValLua args);
+      self#add_dr did [|dr|];
+      did
+	
+  method op_copy did nd name args=
+    let dr=(self#get_dr did).(nd) in
+    let ndid=(random_string "drscr" 20) in
+    let ndr=dr#exec_op_copy_from_format name (ValLua args) in
+      self#add_dr ndid ndr;
+      ndid
+
+  method op_write did nd name args=
+    let dr=(self#get_dr did).(nd) in
+      dr#exec_op_write_from_format name (ValLua args)
+
+  method op_read did nd name args=
+    let dr=(self#get_dr did).(nd) in
+      dr#exec_op_read_from_format name (ValLua args)
+
+  method register ds=
+    let did=List.nth (lua#parse ds) 0 in
+      match did with
+	| OLuaVal.String n->
+	    (fun()->
+	       self#get_dr n
+	    );	    
+	| _ -> raise Drawing_script_error
+
+  method lua_init()=
+    lua#set_val (OLuaVal.String "create") 
+      (OLuaVal.efunc (OLuaVal.string **-> OLuaVal.table **->> OLuaVal.string) 
+	 (fun n a->
+	    self#op_create n 
+	      (let lo=new lua_obj in
+		 lo#from_table a;
+		 lo
+	      )
+	 )
+      );
+
+    lua#set_val (OLuaVal.String "copy") 
+      (OLuaVal.efunc (OLuaVal.string **->OLuaVal.int **-> OLuaVal.string **-> OLuaVal.table **->> OLuaVal.string) 
+	 (fun did nd n a->
+	    self#op_copy did nd n 
+	      (let lo=new lua_obj in
+		 lo#from_table a;
+		 lo
+	      )
+	 )
+      );
+
+    lua#set_val (OLuaVal.String "write") 
+      (OLuaVal.efunc (OLuaVal.string **->OLuaVal.int **-> OLuaVal.string **-> OLuaVal.table **->> OLuaVal.unit) 
+	 (fun did nd n a->
+	    self#op_write did nd n 
+	      (let lo=new lua_obj in
+		 lo#from_table a;
+		 lo
+	      )
+	 )
+      );
+
+    lua#set_val (OLuaVal.String "read") 
+      (OLuaVal.efunc (OLuaVal.string **->OLuaVal.int **-> OLuaVal.string **-> OLuaVal.table **->> OLuaVal.value) 
+	 (fun did nd n a->
+	    let v=
+	    self#op_read did nd n 
+	      (let lo=new lua_obj in
+		 lo#from_table a;
+		 lo
+	      ) in
+	      lua_of_val_ext v
+	 )
+      );
+
+    lua#set_val (OLuaVal.String "size") 
+      (OLuaVal.efunc (OLuaVal.string **->> OLuaVal.int) (self#dr_size));
+
+
+
+    super#lua_init();
+    
+
+end;;
+
+class xml_graphic_from_drawing_script_parser=
+object(self)
+  inherit xml_graphic_object_parser
+
+  val mutable drs=new drawing_script
+
+  method get_val=
+    let ofun()=
+      let o=
+	let args=args_parser#get_val in
+	let ds=text_of_val(args#get_val (`String "drawing_script")) in
+	  drs#lua_init();
+	  new graphic_from_drawing (random_string "dscr" 15)
+		(drs#register ds)
+
+      in
+	self#init_object o;
+	o	  
+    in      
+      (id,ofun)
+
+end;;
+
+class xml_graphic_from_drawing_create_parser=
+object(self)
+  inherit xml_graphic_object_parser
+
+  method get_val=
+    let ofun()=
+      let o=
+	let args=args_parser#get_val in
+	let opname=string_of_val(args#get_val (`String "operation")) and
+	    opargs=list_of_val (args#get_val (`String "args")) in	  
+	new graphic_from_drawing (random_string "create_op" 15)
+	  (
+	    fun()->
+	      let dr=drawing_vault#new_drawing() in
+		dr#exec_op_create_from_list opname opargs;
+		[|dr|]
+	  );
+      in
+	self#init_object o;
+	o	  
+    in      
+      (id,ofun)
+
+
+end;;
+
 class xml_graphics_parser=
 object(self)
   inherit [xml_graphic_object_parser,graphic_object] xml_parser_container "graphic_object" (fun()->new xml_graphic_object_parser)
@@ -238,6 +396,8 @@ let xml_factory_graphics_parser()=
   let p=new xml_graphics_parser in
     p#parser_add "graphic_from_file" (fun()->new xml_graphic_from_file_parser);
     p#parser_add "graphic_from_drawing_fun" (fun()->new xml_graphic_from_drawing_fun_parser);
+    p#parser_add "graphic_from_drawing_create" (fun()->new xml_graphic_from_drawing_create_parser);
+    p#parser_add "graphic_from_drawing_script" (fun()->new xml_graphic_from_drawing_script_parser);
     p;;
 
 

@@ -1,9 +1,11 @@
-open Rect;;
+open Core_rect;;
+open Core_cache;;
+open Core_event;;
+open Core_font;;
+open Core_drawing;;
+
 open Oval;;
-open Cache;;
-open Event;;
-open Font;;
-open Drawing;;
+
 
 (** poclow binding *)
 
@@ -92,7 +94,7 @@ object(self)
     self#add_op_from_list "load" DrawTypeCreate (
       fun ovl->
 	let f=string_of_val (List.nth ovl 0) in
-	print_string ("DRAWING_OBJECT: load "^f);print_newline();
+(*	print_string ("DRAWING_OBJECT: load "^f);print_newline(); *)
 	DrawResultT (tile_load f);
     );
 
@@ -203,7 +205,7 @@ object(self)
 
   method init w h bpp fs=
     all_init();
-    print_string "BINDING(poclow): init screen";print_newline();
+(*    print_string "BINDING(poclow): init screen";print_newline(); *)
     self#set_t (video_init w h bpp fs)
 
   method refresh()=
@@ -278,7 +280,7 @@ let parse_unicode k=
   KeyUnicode (UChar.chr k);;
 
 let parse_key k=
-  print_string "poclow_key : ";print_int k;print_newline();
+(*  print_string "poclow_key : ";print_int k;print_newline(); *)
   match k with 
     | 8 -> KeyBackspace
     | 9 -> KeyTab

@@ -85,7 +85,7 @@ object(self)
 
   method add_cache n o_f=
     if self#is_cache_fun n=false then (
-    print_string ("CACHE: add "^n^"");print_newline();
+(*    print_string ("CACHE: add "^n^"");print_newline(); *)
     
     let ff=self#first_free() in
       self#add_cache_fun n o_f;
@@ -95,7 +95,7 @@ object(self)
       let t2=Unix.gettimeofday() in
 (*	(self#simple_of o)#set_id n; *)
 	Weak.set cache ff (Some (n,o));
-	print_string ("CACHE: time "^string_of_float (t2-.t1));print_newline();
+(*	print_string ("CACHE: time "^string_of_float (t2-.t1));print_newline();*)
 	if (t2-.t1>mt) then (
 	  self#cache_file_save n o;
 	  self#replace_cache_fun n (fun()->self#cache_file_load n);
@@ -104,13 +104,13 @@ object(self)
     );
 
   method replace_cache n o=
-    print_string ("CACHE: replace "^n^"");print_newline();
+(*    print_string ("CACHE: replace "^n^"");print_newline(); *)
     let ff=self#get_corres n in
       self#replace_cache_fun n o;
       Weak.set cache ff (Some (n,o()));
 
   method reload_cache n=
-    print_string ("CACHE: reload "^n);print_newline();
+(*    print_string ("CACHE: reload "^n);print_newline(); *)
     let o=(self#get_cache_fun n)() in
     let ff=self#first_free() in
       self#set_corres n ff;

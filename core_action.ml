@@ -194,7 +194,7 @@ object(self)
   inherit lua_object as lo
 
   method add_action n act=
-    print_string ("STATE_OBJECT : add action "^n);print_newline();
+(*    print_string ("STATE_OBJECT : add action "^n);print_newline(); *)
     ignore(self#add_object (Some n) act);
     self#lua_parent_of n (act:>lua_object)
 
@@ -238,7 +238,7 @@ object(self)
   method get_state=current
 
   method add_state n st=
-    print_string ("STATE_ACTIONS : add state "^n);print_newline();
+(*    print_string ("STATE_ACTIONS : add state "^n);print_newline(); *)
     ignore(self#add_object (Some n) st);
     self#lua_parent_of n (st:>lua_object)
 
