@@ -46,9 +46,12 @@ object(self)
 
 class font_vault s=
 object(self)
-  inherit [poclow_font_object] medias_cache s
+  inherit [poclow_font_object] medias_cache s (1.)
 
   method new_font()=new poclow_font_object
+
+  method cache_file_save f dl=()
+  method cache_file_load f=[||]
 end;;
 
 
@@ -152,6 +155,12 @@ object(self)
 	  DrawResultUnit();
     );
 
+    self#add_op "unset_alpha" DrawTypeWrite (
+      fun ovl->
+	(tile_unset_alpha self#get_t);
+	DrawResultUnit();
+    );
+
     self#add_op "line" DrawTypeWrite (
       fun ovl->
 	let p1=get_draw_op_position ovl 0 and
@@ -213,16 +222,44 @@ object(self)
 
 end;;
 
-class poclow_drawing_vault s=
+let digest_of_string txt=
+  (Digest.to_hex(Digest.string txt));;
+
+class poclow_drawing_vault s mt=
 object(self)
-  inherit [tile] drawing_vault s
+  inherit [tile] drawing_vault s mt
   method new_drawing()=new poclow_drawing_object
   method new_drawing_screen()=new poclow_drawing_screen
 
+  method cache_file_save f dl=
+    Array.iteri (
+      fun i d->
+	let fn=(digest_of_string f^"_"^string_of_int i^".bmp") in
+	  d#exec_op_write "unset_alpha" [];
+	  tile_save_bmp (d#get_t) ("cache/"^fn);
+	  d#exec_op_write "set_alpha" [DrawValColor (255,255,255)];
+    ) dl;
+
+  method cache_file_load f=
+    let a=DynArray.create() in
+    let i=ref 0 in
+      while Sys.file_exists ("cache/"^(digest_of_string f^"_"^string_of_int !i^".bmp")) do
+	let fn=(digest_of_string f^"_"^string_of_int !i^".bmp") in
+	  DynArray.add a (
+	    let nd=self#new_drawing() in	      
+	      nd#set_t (tile_load_bmp ("cache/"^fn));
+	      nd#exec_op_write "set_alpha" [DrawValColor (255,255,255)];
+	      nd
+	  );
+	i:= !i+1;
+      done;
+      DynArray.to_array a
+
+    
 end;;
 
 (* the drawing vault *)
-let drawing_vault=new poclow_drawing_vault 10000;;
+let drawing_vault=new poclow_drawing_vault 10000 (1./.25.);;
 
 
 (* poclow event *)
