@@ -221,7 +221,7 @@ class sound_object soundfiles=
 (** {2 Graphic part} *)
 
 (** Graphic object class parent *)
-class g_object id=
+class graphic_generic_object id=
   object (self)
     val mutable tiles=id
     val mutable rect=new rectangle 0 0 0 0
@@ -281,7 +281,7 @@ class g_object id=
 (** Dyn graphic object class *)
 class graphic_dyn_object n s f=
   object (self)
-    inherit g_object n as super 
+    inherit graphic_generic_object n as super 
     initializer
       vfs_tiles#create_dyn_func tiles s f;
   end;;
@@ -290,7 +290,7 @@ class graphic_dyn_object n s f=
 class graphic_real_object nm tile=
   object (self)
 (* FIXME : need test *)
-    inherit g_object nm as super 
+    inherit graphic_generic_object nm as super 
     initializer
       rect#set_size (tile_get_w tile) (tile_get_h tile);
       vfs_tiles#create_simple tiles tile;
@@ -300,7 +300,7 @@ class graphic_real_object nm tile=
 (** Graphic object class from a file with simple entry *)
 class graphic_simple_object tilefile=
   object (self)
-  inherit g_object tilefile 
+  inherit graphic_generic_object tilefile 
     initializer
       vfs_tiles#create_simple_from_func tilefile (function()->(
 	let t=tile_load tilefile in tile_set_alpha t 255 255 255;t;
@@ -315,7 +315,7 @@ class graphic_simple_object tilefile=
 (** Graphic object class from a file with multiple entries*)
 class graphic_object_alpha wi hi tilesfile mirror is_shaded alpha=
 object (self)
-  inherit g_object tilesfile as super
+  inherit graphic_generic_object tilesfile as super
 
   initializer
     rect#set_size (wi) (hi);
@@ -363,7 +363,7 @@ end;;
 (** Graphic object class from a file with multiple entries*)
 class graphic_object wi hi tilesfile mirror is_shaded =
 object (self)
-  inherit g_object tilesfile as super
+  inherit graphic_generic_object tilesfile as super
 
   initializer
     rect#set_size (wi) (hi);
@@ -435,7 +435,7 @@ end;;
 
 class graphic_object_colored wi hi tilesfile mirror is_shaded (uc:unit_color) (un:int)=
 object (self)
-  inherit g_object (tilesfile^":colored") as super
+  inherit graphic_generic_object (tilesfile^":colored") as super
 
   initializer
     rect#set_size (wi) (hi);
