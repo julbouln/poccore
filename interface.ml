@@ -34,7 +34,7 @@ open Olua;;
 
 (** parent widget *)
 class iface_object w h=
-  object
+object(self)
     val mutable id="none"
     method set_id i=id<-i
     method get_id=id
@@ -43,7 +43,10 @@ class iface_object w h=
     val mutable data1=0
     val mutable data_text=""
     val mutable showing=false
+
     val mutable rect=new rectangle 0 0 w h
+      
+
     val mutable click=(function()->())
     val mutable release=(function()->())
     val mutable mouseover=(function()->())
@@ -77,7 +80,9 @@ class iface_object w h=
     method hide()=showing<-false
       
     method move x y=rect#set_position x y
+
     method get_rect=rect
+    method get_vrect=self#get_rect
 
     method put()=()
 
@@ -95,7 +100,9 @@ class iface_graphic_object gr w h=
   object (self)
     inherit iface_object (gr#get_rect#get_w) (gr#get_rect#get_h) as super
     val mutable graphic=gr
-    method move x y=super#move x y;graphic#move x y
+    method move x y=
+      super#move x y;
+      graphic#move x y
     method put()=
       if showing==true then
 	graphic#put()
@@ -128,17 +135,7 @@ class iface_container c=
     method private foreach f=
       Array.iter f content;
       
-    method private reset_size()=
-      let w=ref 0 in
-      let h=ref 0 in
-      self#foreach (
-      let f obj=
-	h:=!h+obj#get_rect#get_h;
-	if obj#get_rect#get_w> !w then
-	  w:=obj#get_rect#get_w
-      in f
-     );
-      rect#set_size !w !h;
+    method private reset_size()=()
 
     method get_rect=
       self#reset_size();
@@ -166,12 +163,63 @@ class iface_container c=
 class iface_vcontainer c=
   object (self)
     inherit iface_container c as super
+
+    val mutable vrect=new rectangle 0 0 0 0
+    method get_vrect=vrect
+
+    method private reset_size()=
+      let w=ref 0 in
+      let h=ref 0 in
+      self#foreach (
+      let f obj=
+	h:=!h+obj#get_rect#get_h;
+	if obj#get_rect#get_w> !w then
+	  w:=obj#get_rect#get_w
+      in f
+      );
+	rect#set_size !w !h;
+
+      let vw=ref 0 in
+      let vh=ref 0 in	
+      self#foreach (
+      let f obj=
+	vh:=!vh+obj#get_vrect#get_h;
+	if obj#get_vrect#get_w> !vw then
+	  vw:=obj#get_vrect#get_w
+      in f
+     );
+	vrect#set_size !vw !vh;
+	
+    method move x y=
+      super#move x y;
+      self#foreachi (
+	fun i obj->
+	  obj#move x (y+ (obj#get_rect#get_h*i))
+      )
+  end;;
+
+(** vertical container widget *)
+class iface_hcontainer c=
+  object (self)
+    inherit iface_container c as super
+
+    method private reset_size()=
+      let w=ref 0 in
+      let h=ref 0 in
+      self#foreach (
+      let f obj=
+	w:=!w+obj#get_rect#get_w;
+	if obj#get_rect#get_h> !h then
+	  h:=obj#get_rect#get_h
+      in f
+     );
+      rect#set_size !w !h;
 	
     method move x y=
       super#move x y;
       self#foreachi (
       fun i obj->
-	obj#move x (y+ (obj#get_rect#get_h*i))
+	obj#move (x+(obj#get_rect#get_w*i)) y
      )
   end;;
 
@@ -226,16 +274,20 @@ class iface_text fnt color txt_s=
 class iface_label_static fnt color txt=
   object
     inherit iface_graphic_object  
-    (new graphic_real_object 
-	("label/static/"^txt^":"^(string_of_int fnt#get_size)^":"
+    (
+      new graphic_real_object 
+
+       ("label/static/"^txt^":"^(string_of_int fnt#get_size)^":"
 	^string_of_int(match color with (r,v,b) -> r)
 	^string_of_int(match color with (r,v,b) -> v)
 	^string_of_int(match color with (r,v,b) -> b)
 	)
  
-	(tile_text fnt#get_font txt color)
+       (tile_text fnt#get_font txt color)
+	  
 	)
 	0 0 as super
+
 
   end;;
 
@@ -1163,10 +1215,10 @@ class interface bgfile w h=
     method get_object_num_at_position x y=
       let t=ref (0) in
       let f i obj=
-	if x > obj#get_rect#get_x 
-	    && x < (obj#get_rect#get_w + obj#get_rect#get_x) 
-	    && y > obj#get_rect#get_y 
-	    && y < (obj#get_rect#get_h + obj#get_rect#get_y) 
+	if x > obj#get_vrect#get_x 
+	    && x < (obj#get_vrect#get_w + obj#get_vrect#get_x) 
+	    && y > obj#get_vrect#get_y 
+	    && y < (obj#get_vrect#get_h + obj#get_vrect#get_y) 
 	    && obj#is_showing==true 
 	then
 	  t:=i;
@@ -1174,7 +1226,8 @@ class interface bgfile w h=
       Array.iteri f object_array;
       !t
 
-    method get_object_at_position x y=self#get_object_num (self#get_object_num_at_position x y)
+    method get_object_at_position x y=
+      self#get_object_num (self#get_object_num_at_position x y)
 
     method get_object_num n=object_array.(n)
 
@@ -1359,13 +1412,14 @@ object(self)
   method get_oarr=oarr
   method is_container=container
 
-  method oarr_to_arr oa=
+(*  method oarr_to_arr oa=
     let a=DynArray.create() in
     Array.iter (fun (id,lua,o)->
 		  if id<>"none" then
 		    DynArray.add a o
 	       ) oa;
       DynArray.to_array a
+*)
 
   val mutable lua=""
   method tag=""
@@ -1389,8 +1443,8 @@ object(self)
       | "text" -> let p=(new xml_string_parser "str") in p#parse v;txt<-p#get_val
       | "lua" -> lua<-v#get_pcdata;
       | "show" -> show<-true
-      | "container" -> let p=(new iface_objects_container_parser (fun()->new iface_object_parser)) in p#parse v;oarr<-p#get_array.(0);container<-true
-
+(*      | "container" -> let p=(new iface_objects_container_parser (fun()->new iface_object_parser)) in p#parse v;oarr<-p#get_array.(0);container<-true
+*)
       | _ -> ()
 
   method get_val=
@@ -1404,7 +1458,7 @@ object(self)
       | "iface_text_edit" -> new iface_text_edit fnt (r,g,b) (video#f_size_w w)
       | "iface_password_edit" -> new iface_password_edit fnt (r,g,b) (video#f_size_w w)
       | "iface_graphic_object" -> new iface_graphic_file_object file (video#f_size_w w) (video#f_size_h h)
-      | "iface_container_object" -> new iface_container (self#oarr_to_arr oarr)
+(*      | "iface_container_object" -> new iface_container (self#oarr_to_arr oarr)*)
       | _ -> new iface_object (video#f_size_w w) (video#f_size_h h)
     ) in
       o#move x y;

@@ -330,6 +330,16 @@ class graphic_simple_object tilefile=
 
   end;;
 
+class graphic_simple_from_func tilefile f=
+  object (self)
+  inherit graphic_generic_object tilefile 
+    initializer
+      vfs_tiles#create_simple_from_func tilefile f;
+      let t=vfs_tiles#get_simple (tilefile) in
+      rect#set_size (tile_get_w t) (tile_get_h t);
+
+  end;;
+
 (** Graphic object class from a file with simple entry *)
 class graphic_from_func tilefile func=
   object (self)
