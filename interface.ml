@@ -39,6 +39,12 @@ object(self)
     method set_id i=id<-i
     method get_id=id
 
+(*
+    val mutable parent=new iface_object w h
+    method set_parent p=parent<-p
+    method get_parent=parent
+*)
+
     val mutable data=0
     val mutable data1=0
     val mutable data_text=""
@@ -132,6 +138,15 @@ class iface_container c=
     inherit iface_object 0 0 as super
     val mutable content=c
 
+(*
+    method init_content()=
+      self#foreach (fun obj->
+		      obj#set_parent (self:>iface_object)
+		   )
+
+    initializer
+      self#init_content();
+*)
     method private foreach f=
       Array.iter f content;
       
@@ -203,6 +218,10 @@ class iface_hcontainer c=
   object (self)
     inherit iface_container c as super
 
+
+    val mutable vrect=new rectangle 0 0 0 0
+    method get_vrect=vrect
+
     method private reset_size()=
       let w=ref 0 in
       let h=ref 0 in
@@ -215,6 +234,18 @@ class iface_hcontainer c=
      );
       rect#set_size !w !h;
 	
+
+      let vw=ref 0 in
+      let vh=ref 0 in	
+      self#foreach (
+      let f obj=
+	vw:=!vw+obj#get_vrect#get_w;
+	if obj#get_vrect#get_h> !vh then
+	  vh:=obj#get_vrect#get_h
+      in f
+     );
+	vrect#set_size !vw !vh;
+
     method move x y=
       super#move x y;
       self#foreachi (
