@@ -19,7 +19,7 @@
 open Low;;
 open Config;;
 open Video;;
-open Object;;
+open Medias;;
 open Event_manager;;
 open Cursors;;
 

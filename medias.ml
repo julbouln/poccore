@@ -17,6 +17,8 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
+(* MUST BE NAMED medias.ml *)
+
 open Low;;
 open Rect;;
 open Video;;
@@ -545,3 +547,111 @@ class graphic_scr_resized_object wi hi tilesfile mirror is_shaded=
   end;;
 
 
+
+
+class canvas_NEW =
+object(self)
+  val mutable objs_list=RefList.empty()
+
+  val mutable tile_list=RefList.empty()
+
+  val mutable del_list=RefList.empty()
+
+  method clear()=
+    objs_list<-RefList.empty();
+    tile_list<-RefList.empty();
+    del_list<-RefList.empty();
+
+  method foreach_sorted f=
+    self#foreach_obj f;
+
+(** sort tiles to put from layer *)
+  method sort_layer()=
+    self#sort_obj  
+       (fun ao bo ->
+	    match ao#get_layer with
+	      | x when x < bo#get_layer -> -1
+	      | x when x = bo#get_layer -> 0
+	      | x when x > bo#get_layer -> 1
+	      | _ -> 0
+      );
+
+
+  method add_obj (o:graphic_generic_object)=    
+(*    o#set_graphic(); *)
+    RefList.add objs_list o;
+
+
+  method del_obj (od:graphic_generic_object)=
+  RefList.filter
+    ( fun o->
+	  if o#get_rect#get_x=od#get_rect#get_x 
+	  && o#get_rect#get_y=od#get_rect#get_y
+	then false else true
+    )
+    objs_list
+
+(*
+  method del_dead ()=
+    RefList.filter 
+      ( fun o->
+	  if o#will_i_dead=false then true else false	     	    
+      )
+      objs_list
+*) 
+
+  method sort_obj (f:graphic_generic_object->graphic_generic_object->int)=
+    RefList.sort ~cmp:f objs_list;
+
+  method foreach_obj (f:graphic_generic_object->unit)=
+      RefList.iter f objs_list
+
+
+(** sort tiles to put from position *)
+
+  method sort_position()=
+    self#sort_obj 
+      ( fun ao bo ->
+	  let ax=ao#get_rect#get_x and
+	      ay=ao#get_rect#get_y and
+	      bx=bo#get_rect#get_x and
+	      by=bo#get_rect#get_y and
+	      aw=ao#get_rect#get_w and
+	      ah=ao#get_rect#get_h and
+	      bw=bo#get_rect#get_w and
+	      bh=bo#get_rect#get_h in
+	    
+	    match ay with
+	      | y when y+ah<by+bh -> -1
+	      | y when y+ah=by+bh -> 0
+	      | y when y+ah>by+bh -> 1
+	      | _ -> 0
+      );
+
+  (** refresh the canvas. Refresh graphic part of each object *)
+ method refresh (vx:int) (vy:int) (tw:int) (th:int)=
+
+   self#sort_position();
+   self#sort_layer();
+   self#foreach_obj (
+      fun o->
+	let ox=o#get_rect#get_x and
+	    oy=o#get_rect#get_y and
+	    ow=o#get_rect#get_w and
+	    oh=o#get_rect#get_h in
+	  
+	if 
+	  (ox+ow)>vx & (oy+oh)>vy & vx<(ox+800) & vy<(oy+600) then 
+
+	(
+	  let nx=ox-vx and
+	      ny=oy-vy in
+
+	    o#move nx ny;
+	    o#put();	
+	    o#move ox oy
+	)
+   )
+
+
+end;;

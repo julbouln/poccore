@@ -19,7 +19,7 @@
 open Low;;
 open Video;;
 open Event_manager;;
-open Object;;
+open Medias;;
 open Interface;;
 
 (** GUI event parser *)

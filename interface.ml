@@ -21,7 +21,7 @@ open Str;;
 open Rect;;
 open Low;;
 open Video;;
-open Object;;
+open Medias;;
 open Music;;
 open Event_manager;;
 
