@@ -1,3 +1,4 @@
+open Generic;;
 (** Oo style lua-ml *)
 
 module T  = Lua.Lib.Combine.T1 (Luaiolib.T)
@@ -14,45 +15,6 @@ let ( **-> ) = OLuaVal. ( **-> )
 let ( **->> ) x y = x **-> OLuaVal.result y
 
 (** lua classes *)
-(* DEPRECATED *)
-class lua_object=
-object
-  val mutable lmod=""
-  method set_mod t=lmod<-t
-  method get_mod=lmod
-
-  val mutable funcs=Hashtbl.create 2
-  method add_function (nm:string) (args:string) (block:string)=
-    Hashtbl.add funcs nm 
-      ("function "^ 
-(if lmod<>"" then (lmod^".") else "") ^nm^" ("^args^")\n"^block^"\nend")
-
-  method get_function nm=Hashtbl.find funcs nm
-    
-  method lua_block()=
-(*    (if lmod<>"" then (lmod^"={};\n") else "")^*)(
-      let fcs=ref "" in
-      Hashtbl.iter (fun k f-> fcs:= !fcs^f^"\n") funcs;
-	!fcs
-    )
-
-end;;
-
-class lua_obj=
-object(self)
-  val mutable vals=Luahash.create (fun a b->a=b) 2
-
-  method set_val k (v:OLuaVal.value)=
-    Luahash.replace vals ~key:(OLuaVal.String k) ~data:v
-
-(*
-  method set_method k (v) (f)=
-    Luahash.replace vals ~key:(OLuaVal.String k) ~data:(OLuaVal.efunc v f)
-*)
-
-  method to_table=vals
-
-end;;
 
 class lua_interp=
 object(self)
@@ -66,7 +28,6 @@ self#register_vals_global()
 method set_module_val m n f=
 self#add_val n f;
 self#register_vals_module m
-
 
 method get_val f=
 I.getglobal interp (OLuaVal.String f)
@@ -87,14 +48,66 @@ method register_vals_module m=
  DynArray.clear vals;
 		
 method parse e= I.dostring interp e
-method init_object (o:lua_object)=
-  self#parse (o#lua_block())
-
-method parse_object (o:lua_object)=
-  self#parse (o#lua_block())
 
 end;;
 
+
+class lua_obj=
+object(self)
+  val mutable interp=new lua_interp
+  val mutable vals=Luahash.create (fun a b->a=b) 2
+    
+  method set_val k (v:OLuaVal.value)=
+    Luahash.replace vals ~key:(k) ~data:v;
+    self#update_interp();
+      
+  method get_val k=
+    self#update_vals();
+    Luahash.find vals (k)
+
+  method exec_val_fun k args=
+    let v=self#get_val k in
+     (match v with
+	| OLuaVal.Function (v,f)-> f args
+	| _ -> [OLuaVal.Nil]
+     )
+  method parse e=
+    interp#parse e;
+
+  method update_interp()=
+    interp#set_global_val "self" (OLuaVal.Table self#to_table);
+    
+  method update_vals()=
+    let tv=interp#get_val "self" in
+      match tv with
+	| OLuaVal.Table tbl->vals<-tbl
+	| _ ->()
+
+  method to_table=vals
+
+  method set_obj_val (nm:string) (o:lua_obj)=
+    self#set_val (OLuaVal.String nm) (OLuaVal.Table o#to_table)
+
+
+end;;
+
+class lua_object=
+object
+  val mutable lua=new lua_obj
+  method get_lua=lua
+
+  val mutable lua_script=""
+  method set_lua_script l=lua_script<-l
+  method get_lua_script=lua_script
+
+  method lua_init()=
+    lua#parse lua_script
+
+  method lua_parent_of nm (obj:lua_object)=
+    obj#get_lua#set_obj_val "parent" lua;
+    lua#set_obj_val nm obj#get_lua;
+
+end;;
 
 
 (*

@@ -1,6 +1,8 @@
 open Oxml;;
 open Olua;;
 
+(* DEPRECATED use oval instead *)
+
 type prop=
   | PropInt of int
   | PropFloat of float
@@ -15,7 +17,6 @@ exception Bad_prop of string
 
 class properties=
 object
-  val mutable lo=new lua_object
 
   val mutable props=Hashtbl.create 2
   method add_prop (n:string) (p:prop)=Hashtbl.add props n p
@@ -24,7 +25,6 @@ object
 
 
   method lua_register (m:string) (interp:lua_interp)=
-    lo#set_mod m;
     Hashtbl.iter (fun n v->
 		    interp#parse (
 		      match v with
@@ -32,11 +32,10 @@ object
 			| PropInt i->(m^"."^n^"="^string_of_int i)
 			| PropString s->(m^"."^n^"='"^s^"'")
 			| PropBool b->(m^"."^n^"="^(if b then "true" else "false"))
-			| PropLua (a,c) -> lo#add_function n a c;""
+			| PropLua (a,c) -> ""
 			| _ -> ""
 		    );()
 		 ) props;
-    interp#parse_object lo;()
 
 (*
   method from_db : ?

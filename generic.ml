@@ -1,17 +1,26 @@
 type color=(int*int*int);;
 
 (** the most lowlevel object *)
+exception Object_id_not_set;;
+
 class generic_object=
 object
-  val mutable id="none"
+  val mutable id=None
   (** set the id of this object *)
-  method set_id (i:string)=id<-i
+  method set_id (i:string)=id<-(Some i)
   (** get the id of this object *)
-  method get_id=id
+  method get_id=
+    match id with
+      | Some i->i
+      | None -> raise Object_id_not_set
 
+(*
   method print_info()=
     print_string ("POCCORE: object info");print_newline();
-    print_string (" * id: "^id);print_newline();
+    match id with
+      | Some i->print_string (" * id: "^i);print_newline();
+      | None ->print_string (" * id: not set!");print_newline();
+*)
 end;;
 
 
@@ -25,7 +34,7 @@ object(self)
     let nid=
       (match id with
 	 | Some nid->(nid)
-	 | None ->("object#"^string_of_int (Oo.id o)))
+	 | None ->("object"^string_of_int (Oo.id o)))
        in
       o#set_id nid;
       Hashtbl.add objs nid o;nid

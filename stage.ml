@@ -27,6 +27,8 @@ open Medias;;
 
 open Cursors;;
 
+open Olua;;
+
 
 (** Stage subsystem *)
 (** Stage is a high-level container for interface and game engine. When you define a stage, you specify some thing to do when loading, leaving, on each frame and the event parser. You can handle multiple stage through the stages global class. See exemples for more informations *)
@@ -34,6 +36,7 @@ open Cursors;;
 (** stage class *)
 class stage  (cursor:cursors)=
 object (self)
+  inherit lua_object
   val mutable initialized=false
   val curs=cursor
 
@@ -90,7 +93,9 @@ end;;
 
 (** General stages handler *)
 class stages curs=
-object
+object(self)
+  inherit lua_object as lo
+
   val mutable current_stage="none"
 
   (* create an Hashtbl of stages *)
@@ -98,6 +103,8 @@ object
 
   (** add a stage in stages *)
   method stage_add n s=
+    self#lua_parent_of n (s:>lua_object);
+
     if (Hashtbl.mem stages n)==true then
       (
 	let v=Hashtbl.find stages n in
@@ -134,6 +141,12 @@ object
   method stage_leave n=(Hashtbl.find stages n)#leave();
   
 (*  method stage_connect v=v#init(); *)
+
+  method lua_init()=
+    lua#set_val (OLuaVal.String "load") (OLuaVal.efunc (OLuaVal.string **->> OLuaVal.unit) self#stage_load);
+    lua#set_val (OLuaVal.String "continue") (OLuaVal.efunc (OLuaVal.string **->> OLuaVal.unit) self#stage_continue);
+    lua#set_val (OLuaVal.String "leave") (OLuaVal.efunc (OLuaVal.string **->> OLuaVal.unit) self#stage_leave);
+    lo#lua_init()
 
 end;;
 

@@ -1,4 +1,5 @@
 open Medias;;
+open Graphic;;
 
 (** Anim subsystem *)
 
@@ -58,7 +59,7 @@ end;;
 class graphic_anim_from_file w h file frames refresh= 
 object
   val mutable anim=new anim_object frames refresh
-  val mutable graph=new graphic_from_file file w h
+  val mutable graph=new graphic_from_file "anim" file w h
 
   method get_rect=graph#get_rect
 

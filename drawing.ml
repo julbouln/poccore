@@ -326,6 +326,24 @@ object(self)
       let drl=(fun()->self#call_drawing_fun args) in    
 	self#add_cache n drl;
 
+  method add_cache_from_drawing_fun_fmt_auto (fargs:(val_ext) val_format)=
+    let args=val_ext_handler_of_format fargs in
+    let largs=list_of_val_ext_handler args in
+    let n=ref "cache" in
+      List.iter (
+	fun v->
+	  match v with
+	    | `String s->n:= (!n^"_"^s);
+	    | `Int i->n:= (!n^"_"^string_of_int i);
+	    | _ ->()
+      ) largs;
+      
+      if self#is_cache_fun (string_of_val (List.nth largs 0))=false then (
+	let drl=(fun()->self#call_drawing_fun args) in    
+	  self#add_cache !n drl;
+      );
+	  !n
+
 
   initializer
     (** generic drawing creation functions *)

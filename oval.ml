@@ -89,6 +89,7 @@ type val_ext=
     | `Size of (int*int)
     | `Color of (int*int*int)
     | `List of val_ext list 
+(*    | `Function of val_ext list-> val_ext list *)
     ]
 ;;
 
@@ -114,7 +115,8 @@ let rec xml_of_val_ext=function
   | `Position (x,y)->Xml.Element("val_position",[("x",string_of_int x);("y",string_of_int y)],[])
   | `Size (w,h)->Xml.Element("val_size",[("w",string_of_int w);("h",string_of_int h)],[])
   | `Color (r,g,b)->Xml.Element("val_color",[("r",string_of_int r);("g",string_of_int g);("b",string_of_int b)],[])
-  | `List vl->Xml.Element("val_list",[],List.map (fun v->xml_of_val_ext v) vl);; 
+  | `List vl->Xml.Element("val_list",[],List.map (fun v->xml_of_val_ext v) vl)
+;; 
 
 let rec val_ext_of_xml=function
   | Element("val_position",_,_) as x-> 
@@ -244,7 +246,7 @@ type ('a) val_format=
   | ValList of 'a list
   | ValXml of Xml.xml
   | ValXmlString of string
-  | ValLua of OLuaVal.value
+  | ValLua of lua_obj
   | ValLuaString of string;;
 
 
@@ -402,31 +404,30 @@ object(self)
 	  
     );
 
-      Element(id,[],
+      Element(self#get_id,[],
 	      (DynArray.to_list a)
 	     );
 
 (** Lua part *)
   method from_lua_string str =
-    let interp=new lua_interp in
-    self#from_lua (List.nth (interp#parse str) 0)
+    let lo=new lua_obj in
+      ignore(lo#parse str);
+      self#from_lua ( lo);
+      
 
-  method from_lua (t:OLuaVal.value)=
-    match t with
-      | OLuaVal.Table tbl ->
-	  Luahash.iter (
-	    fun k v->
-	      let ak=luato k and
+  method from_lua (t:lua_obj)=
+    t#update_vals();
+    Luahash.iter (
+      fun k v->
+	let ak=luato k and
 		  av=luato v in
-		self#set_val ak av;
-	  ) tbl;
-      | _ ->  ()   
+	  self#set_val ak av;
+    ) t#to_table;
 
   method to_lua_string=
-    match self#to_lua with
-      | OLuaVal.Table tbl ->
+    let tbl=self#to_lua#to_table in
 	  let str=ref "" in
-	    str := (!str^id^"={");
+	    str := (!str^self#get_id^"={");
 	    Luahash.iter (
 	      fun k v->
 		let ak=luato k and
@@ -445,20 +446,15 @@ object(self)
 	    ) tbl;
 	    str := (!str^"}");
 	    !str
-      | _ -> ""
 
-
-  method to_lua_interp (interp:lua_interp)=
-    interp#set_global_val id (self#to_lua)
 
   method to_lua=
-    let tbl=Luahash.create (fun a b->a=b) 2 in
+    let lo=new lua_obj in
       self#foreach_val (
 	fun k v ->
-	  Luahash.replace tbl ~key:(luafrom k) ~data:(luafrom v)
+	  lo#set_val (luafrom k) (luafrom v)
       );
-      OLuaVal.Table tbl
-
+      lo
 
 
 end;;
