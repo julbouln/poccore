@@ -213,7 +213,6 @@ object(self)
     super#on_loop();
     sprites#update();
     canvas#refresh 0 0 32 32;
-    video#flip();
 
   method ev_parser e=
     interaction#ev_parser e
