@@ -190,10 +190,22 @@ end;;
 let digest_of_string_list txt=
   (Digest.to_hex(Digest.string (String.concat "" txt)));;
 
+
+
+let string_of_color c=
+  let (r,g,b)=c in
+    ("("^string_of_int r^","^string_of_int g^","^string_of_int b^")");;
+
+let string_of_fnt_t f=
+  match f with
+    | FontTTF(f,s)->(f^"_"^string_of_int s)
+    | FontEmbed -> "embed";;
+
+
 class graphic_object_text fnt_t (txt:string list) color=
 object
   inherit graphic_from_drawing 
-("text_"^digest_of_string_list txt)
+("text_"^string_of_fnt_t fnt_t^"_"^string_of_color color^"_"^digest_of_string_list txt)
 (*((random_string "text_" 10)^digest_of_string_list txt)*)
     (fun()->
 

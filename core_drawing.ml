@@ -46,7 +46,7 @@ exception Drawing_not_found of string;;
 type color=(int*int*int);;
 
 (* use oval *)
-type ('t) val_drawing=
+(*type ('t) val_drawing=
     [
       val_ext
     | `DrawingSizeFloat of (float*float) 
@@ -54,7 +54,7 @@ type ('t) val_drawing=
 
     | `DrawingList of ('t) val_drawing list
     ];;
-
+*)
 
 type draw_op_t=
   | DrawTypeCreate

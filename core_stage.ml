@@ -106,7 +106,20 @@ object (self)
   method on_leave()=()
 
 (** parse the event coming in stage *)
-  method ev_parser (e:event)=()		      
+  method ev_parser (e:event)=
+    (match e with
+       | EventMouse em ->
+	   (match em with
+	      | MouseMotion(x,y) -> 
+		  curs#move x y;
+	      | MouseRelease(x,y,but) -> 
+		  curs#set_state "normal";
+	      | MouseClick(x,y,but) -> 
+		  curs#set_state "clicked";
+	      | _ -> ()
+	   )
+       | _ -> ()
+    )
 
 
 (** {2 General part} *)
@@ -190,6 +203,7 @@ object(self)
     )
 
   method ev_parser e=
+    super#ev_parser e;
     self#foreach_object (
       fun n s-> s#ev_parser e
     )

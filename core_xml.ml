@@ -32,6 +32,7 @@ open Core_main;;
 open Core_font;;
 open Core_event;;
 open Core_sprite;;
+open Core_cursor;;
 
 open Binding;;
 
@@ -666,7 +667,18 @@ end;;
 class xml_stage_parser=
 object (self)
   inherit [stage] xml_object_parser (fun()->new stage generic_cursor) as super
-    
+
+  val mutable curs=generic_cursor
+
+  method private init_cursor()=
+    let args=args_parser#get_val in
+    if args#is_val (`String "cursor_file") 
+      && args#is_val (`String "cursor_size")
+    then (
+      let (w,h)=(size_of_val(args#get_val (`String "cursor_size"))) and
+	  fi=(string_of_val(args#get_val (`String "cursor_file"))) in
+      curs<-new cursors w h (Some fi)
+    )
 (** object initial init *)
   method init_object o=
     o#set_lua_script (lua);
@@ -695,6 +707,7 @@ object(self)
   inherit xml_stage_parser as super
   val mutable stages_parser=(Global.get xml_default_stages_parser)()
 
+
   method parse_child k v=
     super#parse_child k v;
     match k with
@@ -707,7 +720,8 @@ object(self)
   method get_val=
     let ofun()=
       let o=
-	new multi_stage generic_cursor
+	self#init_cursor();
+	new multi_stage curs
       in
 	
 	self#init_multi_stage o;
@@ -738,7 +752,8 @@ object (self)
   method get_val=
     let ofun()=
       let o=
-	new sprite_engine generic_cursor 
+	self#init_cursor();
+	new sprite_engine curs
       in
 	sprite_type_parser#init o#get_sprites#add_object_type;
 	let inter=(snd interaction_parser#get_val)() in

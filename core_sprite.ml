@@ -11,6 +11,8 @@ open Core_type;;
 open Core_event;;
 open Core_video;;
 
+(** Sprites *)
+
 (** graphic container *)
 class graphics_container=
 object(self)
@@ -215,9 +217,13 @@ object(self)
     canvas#refresh 0 0 32 32;
 
   method ev_parser e=
+    super#ev_parser e;
     interaction#ev_parser e
 
   method lua_init()=
+    ignore(curs#lua_init());
+    self#lua_parent_of "cursor" (curs:>lua_object);
+
     ignore(sprites#lua_init());
     self#lua_parent_of "sprites" (sprites:>lua_object);
 

@@ -17,6 +17,9 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
+open Value_common;;
+open Value_lua;;
+
 open Core_rect;;
 open Core_video;;
 open Core_medias;;
@@ -29,21 +32,22 @@ open Core_anim;;
 
 (** Cursor class : handler of graphic cursor *)
 class cursors w h (fc:string option)=
-  object
-    val mutable g=
+object(self)
+  inherit generic_object
+  inherit lua_object as lo
+  val mutable g=
       match fc with
 	| Some f->video#hide_cursor();new graphic_from_file f w h
 	| None ->video#show_cursor(); new graphic_object
-(*    val mutable viseur=new graphic_object_anim 42 40 "medias/misc/viseur.png" [|0;1;2;3;4;3;4;3|] 2
-*)
+
     val mutable state="normal"
-    val mutable pl=1
 
     method get_x=g#get_rect#get_x;
     method get_y=g#get_rect#get_y;
  
     method move x y=
       g#move x y
+
     method put()=
       match fc with
 	| Some v-> g#put()
@@ -56,19 +60,23 @@ class cursors w h (fc:string option)=
       )
 *)
     method get_state=state
-    method set_player p=pl<-p
+
+    method set_cur_drawing d=
+      g#set_cur_drawing d
+
     method set_state n=
       state<-n;            
       match n with
-      | "normal" -> g#set_cur_drawing (if pl=1 then 0 else 2)
-      | "clicked" -> g#set_cur_drawing (if pl=1 then 1 else 3)
-      | "bottom" -> g#set_cur_drawing 4
-      | "top" -> g#set_cur_drawing 5
-      | "left" -> g#set_cur_drawing 6
-      | "right" -> g#set_cur_drawing 7
-      | "can_attack" -> g#set_cur_drawing 8
-      | "on_ennemy" -> ()
+      | "normal" -> g#set_cur_drawing 0
+      | "clicked" -> g#set_cur_drawing 1
       | _ -> g#set_cur_drawing 0;
+
+    method lua_init()=
+      lua#set_val (OLuaVal.String "get_x") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.int) (fun()->self#get_x));
+      lua#set_val (OLuaVal.String "get_y") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.int) (fun()->self#get_y));
+      lua#set_val (OLuaVal.String "move") (OLuaVal.efunc (OLuaVal.int **-> OLuaVal.int **->> OLuaVal.unit) self#move);
+      lua#set_val (OLuaVal.String "set_cur_drawing") (OLuaVal.efunc (OLuaVal.int **->> OLuaVal.unit) self#set_cur_drawing);
+      lo#lua_init()
 
 
   end;;
