@@ -1,5 +1,7 @@
 open Olua;;
 
+(** Type manager *)
+
 exception No_obj_type of string;;
 
 class ['a] obj_types=

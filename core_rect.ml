@@ -18,6 +18,8 @@
 *)
 
 
+(** Rectangle class *)
+
 (* from pocengine *)
 
 (** rectangle class x y w h *)

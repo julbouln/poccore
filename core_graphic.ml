@@ -13,10 +13,13 @@ open Olua;;
 open Binding;;
 
 
-(** Graphic object class parent *)
+
+(** Graphic classes *)
+
 
 exception Drawing_id_not_set;;
 
+(** Graphic object class parent *)
 class graphic_object=
   object (self)
     inherit generic_object

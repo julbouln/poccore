@@ -28,7 +28,7 @@ open Oval;;
 
 (** Drawing operations *)
 
-(** {2 Exceptions *)
+(** {2 Exceptions} *)
 
 exception Draw_op_not_found of string;;
 exception Draw_op_val_error of int;;
@@ -38,7 +38,7 @@ exception Drawing_not_initialized;;
 exception Drawing_not_found of string;;
 
 
-(** {2 Types *)
+(** {2 Types} *)
 
 type color=(int*int*int);;
 
@@ -78,7 +78,7 @@ let get_draw_op_result_val ores=match ores with
   | DrawResultVal x->x
   | _ -> raise Bad_draw_op_result;;
 
-(** {2 Classes *)
+(** {2 Classes} *)
 
 class ['t] draw_ops=
 object(self)

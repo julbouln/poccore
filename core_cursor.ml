@@ -25,9 +25,9 @@ open Core_anim;;
 
 (* FIXME why so static ? *)
 
+(** Cursor *)
+
 (** Cursor class : handler of graphic cursor *)
-
-
 class cursors w h (fc:string option)=
   object
     val mutable g=

@@ -5,6 +5,8 @@ open Core_action;;
 open Core_graphic;;
 open Core_stage;;
 
+(** Core xml interface *)
+
 (** globals *)
 
 (** global default graphics parser, can be overided *)

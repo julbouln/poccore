@@ -17,6 +17,8 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
+(** Cache manager *)
+
 exception Cache_fun_not_found of string;;
 exception Cache_no_corres of string;;
 exception Cache_out_of_bound of (string*int);;
