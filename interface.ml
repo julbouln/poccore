@@ -25,6 +25,10 @@ open Object;;
 open Music;;
 open Event_manager;;
 
+open Otype;;
+open Oxml;;
+open Olua;;
+
 (** GUI objects class definitions *)
 
 
@@ -882,6 +886,48 @@ class interface bgfile w h=
 	    )
 	)
   end;;
+
+class iface_object_types=
+object
+  inherit [iface_object] obj_types (new iface_object 0 0)
+end;;
+
+class iface_object_parser=
+object
+  inherit xml_parser
+  val mutable nm=""
+  val mutable file=""
+  val mutable w=0
+  val mutable h=0
+  val mutable x=0
+  val mutable y=0
+
+  method tag=""
+
+  method parse_attr k v=
+    match k with
+      | "type" ->  nm<-k
+      | _ -> ()
+   
+  method parse_child k v=
+    match k with
+      | "file" -> let p=(new xml_string_parser "path") in p#parse v;file<-p#get_val    
+      | "size" -> let p=(new xml_size_parser ) in p#parse v;w<-p#get_w;h<-p#get_h;
+      | "position" -> let p=(new xml_point_parser ) in p#parse v;x<-p#get_x;y<-p#get_y;
+      | _ -> ()
+
+end;;
+
+(*
+
+<iface_object type="button">
+  <file path="medias/iface/button.png"/>
+  <size w="100" h="40"/>
+  <position x="10" y="10"/>
+
+</iface_object>
+
+*)
 
 
 (* some functions *)
