@@ -450,7 +450,7 @@ end;;
 
 
 
-class unit_color=
+class v_color=
 object
   val mutable colors=Hashtbl.create 2
 
@@ -473,7 +473,10 @@ object
 
 end;;
 
-
+class unit_color=
+object
+  inherit v_color
+end;;
 
 class graphic_object_colored wi hi tilesfile mirror is_shaded (uc:unit_color) (un:int)=
 object (self)
