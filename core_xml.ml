@@ -160,6 +160,7 @@ object (self)
 
 (** object initial init *)
   method init_object o=
+    o#set_lua_script(lua);
       let args=args_parser#get_val in
       if args#is_val (`String "layer") then
 	o#set_layer (int_of_val(args#get_val (`String "layer")));
