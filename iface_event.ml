@@ -25,8 +25,9 @@ open Interface;;
 (** GUI event parser *)
 
 let ev_iface_parser a iface curs=
+  if a.etype="mouse" then (
   curs#move a.ex a.ey;  
-  
+  );  
   if a.etype="mouse" && a.eval= "released" then (
     iface#release a.ex a.ey; 
     curs#set_state "normal";

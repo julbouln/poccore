@@ -596,39 +596,51 @@ object(self)
   val mutable text=""
   method get_text=text
 
+  method utf_length=UTF8.length text
+
+  val mutable cur_pos=0;
+  method get_cur_pos=cur_pos
+  method get_cur_utf_pos=UTF8.nth text cur_pos
+  method get_utf_pos n=UTF8.nth text n
+
+  method insert_char c=
+    let p1=String.sub text 0 (self#get_cur_utf_pos) and
+	p2=String.sub text (self#get_cur_utf_pos) (String.length text - self#get_cur_utf_pos) in
+      text<-String.concat "" [p1;c;p2]
 
   method add_char c=
     text<-String.concat "" [text;c];
 
-  method del_last_char_OLD()=
-    if (String.length text > 0) then
-      text<-String.sub text 0 (String.length text - 1);
-
   method del_last_char()=
     if (UTF8.length text > 0) then
       text<-String.sub text 0 (UTF8.last text);
- 
 
+  method del_cur_char()=
+    if (UTF8.length text > 0) then (
+      let p1=String.sub text 0 (self#get_utf_pos (cur_pos-1)) and
+	  p2=String.sub text (self#get_cur_utf_pos) (String.length text - self#get_cur_utf_pos) in
+	text<-String.concat "" [p1;p2]
+    )
   method set_text t=text<-t
 
   method parse c u=
     match c with
-      | KeySpace ->self#add_char " "
+      | KeySpace ->self#add_char " ";cur_pos<-cur_pos + 1;
 (*      | KeyChar ch->self#add_char ch *)
-      | KeyBackspace ->self#del_last_char()
+      | KeyBackspace ->if cur_pos>0 then (self#del_cur_char();cur_pos<-cur_pos - 1);
       | KeyReturn -> ()
       | KeyShift -> ()
       | KeyUp -> ()
       | KeyDown -> ()
-      | KeyLeft -> ()
-      | KeyRight -> ()
+      | KeyLeft -> if cur_pos>0 then cur_pos<-cur_pos - 1
+      | KeyRight -> if cur_pos<self#utf_length then cur_pos<-cur_pos + 1
       | KeyEchap -> ()
       | KeyCtrl -> ()
       | KeyAlt -> ()
       | _ ->
 	  match u with
 	    | KeyUnicode ch->let c=(UTF8.init 1 (fun i->ch)) in
-		self#add_char c
+		self#insert_char c;cur_pos<-cur_pos + 1;
 	    | _ ->()
 
 
@@ -640,10 +652,14 @@ class iface_text_edit fnt color (te:text_edit) bw=
   object (self)
     inherit iface_object bw (fnt#get_height) as super
 
+    val mutable cur_refresh=30
+    val mutable cur_c=0
+
     method put()=
 	self#set_data_text (te#get_text);
 
       if showing==true then (	  
+
 	  let t=tile_rect (bw+12) (fnt#get_height + 12) (0,0,0) in
 	    tile_put t (rect#get_x-6) (rect#get_y-6);
 	    tile_free t;
@@ -656,7 +672,17 @@ class iface_text_edit fnt color (te:text_edit) bw=
 	    h=tile_get_h tmp in
             rect#set_size (w) (h);
 	    tile_put tmp (rect#get_x) (rect#get_y);
-	    tile_free tmp      
+	    tile_free tmp;
+	    
+	    if cur_c>cur_refresh/2 then (
+	      let cu=tile_rect 1 (fnt#get_height + 4) (0,0,0) in
+	      let (cw,ch)=(fnt#sizeof_text (Str.string_before te#get_text te#get_cur_utf_pos)) in 
+		tile_put cu (rect#get_x + cw) (rect#get_y-2);
+		tile_free cu;
+	    );
+	    if cur_c=cur_refresh then cur_c<-0
+	    else cur_c<-cur_c+1
+
 	)
       )
   end;;
