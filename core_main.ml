@@ -249,7 +249,8 @@ end;;
 
 
 let game_init_from_xml f=
-  let game_file=new xml_node (Xml.parse_file f) in
+(*  let game_file=new xml_node (Xml.parse_file f) in *)
+  let game_file=xml_node_from_file f in
   let p=new xml_game_parser in
     p#parse game_file;
     p#init();;

@@ -28,6 +28,8 @@ let xml_default_actions_parser=
 let xml_default_stages_parser=
   Global.empty("xml_default_stages_parser");;
 
+
+
 (** Core xml part *)
 
 class xml_val_ext_list_parser otag=
@@ -42,9 +44,9 @@ object(self)
   method parse_child k v=
     match k with
       | tag when tag=otag ->
-	  let n=new xml_node_NEW in
-	    n#of_xml_t v#get_node;
-	    vals#from_xml n
+(*	  let n=new xml_node_NEW in
+	    n#of_xml_t v#get_node; *)
+	    vals#from_xml v
       | _ -> ()
 end;;
 
@@ -85,7 +87,7 @@ object(self)
 		  sp#parse v;
 		  DynArray.add objs sp#get_val
 		)
-      | "script" -> lua<-v#get_pcdata;
+      | "script" -> lua<-v#pcdata;
       | _ ->()
 	  
 	  
@@ -102,6 +104,9 @@ object(self)
 
 
 end;;
+
+
+
 
 class ['ot] xml_object_parser (new_obj:unit->'ot)= 
 object (self)
@@ -128,7 +133,7 @@ object (self)
   method parse_child k v=
     args_parser#parse_child k v;
     match k with
-      | "script" -> lua<-v#get_pcdata;
+      | "script" -> lua<-v#pcdata;
       | _ -> ()
 
 (** object initial init *)
@@ -443,7 +448,8 @@ let xml_factory_stages_parser()=
 Global.set xml_default_stages_parser xml_factory_stages_parser;;
 
 let stages_init_from_xml f=
-  let stages_file=new xml_node (Xml.parse_file f) in
+(*  let stages_file=new xml_node (Xml.parse_file f) in *)
+  let stages_file=xml_node_from_file f in
   let p=(Global.get xml_default_stages_parser)() in
     p#parse stages_file;
     p#init_simple stages#stage_add;

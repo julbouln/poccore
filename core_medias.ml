@@ -307,7 +307,9 @@ object(self)
   inherit xml_color_parser as vcolor
 
   method get_colors=
-    self#get_array
+    let l=List.rev self#get_list in
+     let da=DynArray.of_list l in
+     DynArray.to_array da
 
   method parse_attr k v=vcolor#parse_attr k v
   method parse_child k v=list#parse_child k v
@@ -321,7 +323,7 @@ object(self)
   val mutable vcolors=DynArray.create()    
 
   method get_vcolors=
-    DynArray.to_list vcolors
+    List.rev(DynArray.to_list vcolors)
 
   method parse_child k v=
        match k with
@@ -334,7 +336,8 @@ end;;
 
 let v_color_from_xml f=
 (*  print_string ("XML: load "^f);print_newline(); *)
-  let colfile=new xml_node (Xml.parse_file f) in
+(*  let colfile=new xml_node (Xml.parse_file f) in *)
+  let colfile=xml_node_from_file f in 
   let colparser=new xml_v_colors_parser in    
     colparser#parse colfile;
   let uc=new v_color in
