@@ -95,6 +95,7 @@ object(self)
 
 end;;
 
+exception Vfs_dyn_not_found of string;;
 exception Vfs_data_not_found of string;;
 exception Vfs_data_from_func_not_found of string;;
 
@@ -108,8 +109,13 @@ class ['a] vfs_files (t: 'a)=
    val mutable dyn=let a=Hashtbl.create 2 in Hashtbl.add a "none" (1,(function k->(t)));a
    val mutable free_f=(function t->())
    
-   (* create only if there is no entry *)
-     
+   (* create only if there is no entry *)     
+
+   method get_dyn n=
+     (try 
+	Hashtbl.find dyn n
+      with Not_found -> raise (Vfs_dyn_not_found n))
+
    method get_data n=
      (try 
 	Hashtbl.find datas n
@@ -124,9 +130,7 @@ class ['a] vfs_files (t: 'a)=
    method create_from_func k f=
      if(Hashtbl.mem datas k)==false then 
        (
-(*	let t=f() in *)
 	Hashtbl.add datas_from_func k f
-(*	self#create k t; *)
        )
 
    (** Create simple entry from function (static) *)
@@ -170,7 +174,7 @@ class ['a] vfs_files (t: 'a)=
      if(Hashtbl.mem dyn k)==true then 
        (
 	let a=Array.make 1 t in
-	let o=Hashtbl.find dyn k in
+	let o=self#get_dyn k in
 	let n=(fst o) in
 	for i=0 to n-1 do
 	  let exe=(snd o) in
@@ -199,7 +203,7 @@ class ['a] vfs_files (t: 'a)=
 
    (** Is one entry *)	
    method is_one k i=
-     let s=Array.length (Hashtbl.find datas k) in
+     let s=Array.length (self#get_data k) in
      if s<=i then false else true
 
    (** Get one entry *)	
@@ -207,7 +211,7 @@ class ['a] vfs_files (t: 'a)=
 
      if(Hashtbl.mem dyn k)==true then 
        (
-	let o=Hashtbl.find dyn k in
+	let o=self#get_dyn k in
 	let n=(fst o) in
 	let exe=(snd o) in
 	exe i;
@@ -215,28 +219,11 @@ class ['a] vfs_files (t: 'a)=
      else 
        (
 	 let r=(self#get k).(i) in
-(*	   self#add_cached k r;
-	   if self#need_cached k=false then r else 
-	     if r<>t then (
-	       ((self#get k).(i)<-self#get_cached k;(self#get k).(i)))
-	     else
-*)
 	       r
-
-
-(*	let a_s=Array.length (Hashtbl.find datas k) in
-	if i<a_s then
-	  (self#get k).(i)
-(* (Hashtbl.find datas k).(i) *)
-	else (
-(*	  (Hashtbl.find datas k).(a_s-1) *)
-	  (self#get k).(a_s -1)
-	 )
-*)
        )
 
    (** Get entry size *)
-   method size k=Array.length (Hashtbl.find datas k)
+   method size k=Array.length (self#get_data k)
 
    (** Free entry.
        This only free memory of d data.
@@ -247,7 +234,7 @@ class ['a] vfs_files (t: 'a)=
    (** Delete entry *)    
    method delete k=
      if(Hashtbl.mem datas k) then (
-       let d=Hashtbl.find datas k in
+       let d=self#get_data k in
        for i=0 to (Array.length d)-1 do
 	 free_f (d.(i));
        done;

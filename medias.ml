@@ -24,6 +24,9 @@ open Rect;;
 open Video;;
 open Vfs;;
 
+open Drawing;;
+open Oxml;;
+
 let medias_dir=(Filename.dirname(Sys.executable_name));;
 
 (** Media objects *)
@@ -239,9 +242,6 @@ class sound_object soundfiles=
 
 (** {2 Graphic part} *)
 
-exception Vfs_not_found of string;;
-exception Vfs_out_of_bounds of int;;
-
 class virtual canvas_object=
 object
   inherit generic_object as super
@@ -281,15 +281,27 @@ class graphic_generic_object nid=
     method get_tile n=
 	vfs_tiles#get_one id n
 
-    method get_tile_shaded n=
-      vfs_tiles#get_one (id^":shaded") n
       
-    method get_rect=rect
     method set_cur_tile c=cur_tile<-c
     method get_cur_tile=cur_tile
     method get_tiles_size=(Array.length (vfs_tiles#get id))
 
-    method move x y=rect#set_position x y 
+    method move x y=
+      rect#set_position x y 
+
+    method put() =      
+      let t=self#get_tile cur_tile in
+	tile_put t rect#get_x rect#get_y;
+	vfs_tiles#free_dyn id t
+
+
+(* DEPRECATED *)
+
+    method put_to dest = 
+      let t=self#get_tile cur_tile in
+      tile_put_to t dest rect#get_x rect#get_y;
+      vfs_tiles#free_dyn id t
+
 
     method resize fw fh=
       rect#set_size (int_of_float(fw*.(float_of_int rect#get_w))) (int_of_float(fh*.(float_of_int rect#get_h)));
@@ -298,16 +310,6 @@ class graphic_generic_object nid=
 	ts.(i)<-(tile_resize (self#get_tile i) fw fh); 
       done;
 
-
-    method put() =      
-      let t=self#get_tile cur_tile in
-	tile_put t rect#get_x rect#get_y;
-	vfs_tiles#free_dyn id t
-
-    method put_to dest = 
-      let t=self#get_tile cur_tile in
-      tile_put_to t dest rect#get_x rect#get_y;
-      vfs_tiles#free_dyn id t
 
     method put_shaded ()=
       let shaded=(self#get_tile_shaded cur_tile) in      
@@ -321,6 +323,10 @@ class graphic_generic_object nid=
       tile_put_to shaded dest rect#get_x rect#get_y;
       vfs_tiles#free_dyn (id^":shaded") shaded
       
+
+    method get_tile_shaded n=
+      vfs_tiles#get_one (id^":shaded") n
+
 
   end;;
 
@@ -609,8 +615,6 @@ class graphic_scr_resized_object wi hi tilesfile mirror is_shaded=
   end;;
 
 
-
-
 class canvas_NEW =
 object(self)
   val mutable objs_list=RefList.empty()
@@ -756,25 +760,139 @@ let white_border t=
     tile_free t;
     t2
 
+(** white border around tile *)
+class graphic_white_border tilesfile w h=
+object
+  inherit graphic_from_func (tilesfile^"/white_border") 
+    (fun()->
+	 let t=tile_load tilesfile in
+	 let t2=white_border t in
+	 let ta=tile_split t2 w h in
+	   for i=0 to (Array.length (ta))-1 do
+	     tile_set_alpha ta.(i) 255 255 255; 
+	   done;
+	   ta
+    )
 
+    as super
+    
+  val mutable gr=new graphic_object w h tilesfile false false
+    
+  val mutable over=false
+  method set_over o=over<-o
+
+  method move x y=
+    super#move x y;
+    gr#move x y;
+
+  method put()=
+    if over then
+      super#put()
+    else
+      gr#put()
+  
+end;;
+
+class graphic_generic_white_border id=
+object
+  inherit graphic_generic_object id
+  method set_over (v:bool)=()
+end;;
+
+
+(* NEW : use drawing_vault *)
+
+(** Graphic object class parent *)
+class graphic_cached_object nid=
+  object (self)
+    inherit canvas_object
+
+    initializer
+      self#set_id nid
+
+    val mutable cur_tile=0
+	
+(*    method get_rpos=
+      vfs_tiles#get_rpos id
+*)
+
+(* FIXME: must be get_drawing and return drawing_object *)
+    method get_tile n=
+      (drawing_vault#get_cache_entry id n)#get_t
+      
+    method set_cur_tile c=cur_tile<-c
+    method get_cur_tile=cur_tile
+    method get_tiles_size=(Array.length (drawing_vault#get_cache id))
+
+    method move x y=
+      rect#set_position x y 
+
+    method put() =      
+      let t=self#get_tile cur_tile in
+	tile_put t rect#get_x rect#get_y;
+
+  end;;
+
+class graphic_from_drawing n (f)=
+object
+  inherit graphic_cached_object n
+
+  initializer
+    drawing_vault#add_cache n f;
+    let dra=drawing_vault#get_cache_simple n in
+    rect#set_size (dra#get_w) (dra#get_h); 
+    
+end;;
+
+class graphic_from_drawing_fun n dfn args=
+object
+  inherit graphic_cached_object n
+
+  initializer
+    drawing_vault#add_cache_from_drawing_fun n dfn args;
+
+  let dra=drawing_vault#get_cache_simple n in
+  rect#set_size (dra#get_w) (dra#get_h);
+
+end;;
+
+class graphic_object_from_file file w h=
+object(self)
+  inherit graphic_from_drawing_fun file "with_alpha"   
+	[
+	  DrawValString "load_multiple";
+	  DrawValString file;
+	  DrawValSize(w,h);
+	  DrawValColor(255,255,255)
+	]
+end;;
 
 
 (** special graphic pattern resize with 9 tiles *)
-class graphic_pattern pid ptile=
+class graphic_pattern pid pdrawid=
 object(self)
   inherit graphic_generic_object pid as super
 
-  val mutable gr=new graphic_generic_object pid
+  val mutable gr=new graphic_cached_object pid
 
   val mutable crect=new rectangle 0 0 0 0
   method get_crect=crect
 
 
   method private init()=
-    let cw=tile_get_w ptile and
-	ch=tile_get_h ptile in
+    let pdrawing=(drawing_vault#get_cache_simple pdrawid) in
+    let cw=pdrawing#get_w and
+	ch=pdrawing#get_h in
       crect#set_size (cw/3) (ch/3);
 
+      gr<-new graphic_from_drawing_fun pid "with_alpha" 
+	[
+	  DrawValString "create_multiple";
+	  DrawValString pdrawid;
+	  DrawValSize(crect#get_w,crect#get_h);
+	  DrawValColor(255,255,255)
+	];
+(*
     gr<-new graphic_from_func pid (
       fun()->
 	let ta=tile_split ptile crect#get_w crect#get_h in
@@ -783,8 +901,7 @@ object(self)
 	  done;
 	  ta
     );
-
-
+*)
 
   initializer
     self#init()
@@ -827,45 +944,104 @@ end;;
 
 class graphic_pattern_file pfile=
 object
-  inherit graphic_pattern pfile (tile_load pfile)
+  initializer
+    drawing_vault#add_cache_from_drawing_fun (pfile^":simple") "load_simple"
+      [DrawValString pfile];
+
+  inherit graphic_pattern pfile (pfile^":simple")
+
 end;;
 
 
-(** white border around tile *)
-class graphic_white_border tilesfile w h=
+
+(** XML part *)
+
+(** xml font parser : <font path="fontfile" size="sizeoffont"/> *)
+class xml_font_parser=
 object
-  inherit graphic_from_func (tilesfile^"/white_border") 
-    (fun()->
-	 let t=tile_load tilesfile in
-	 let t2=white_border t in
-	 let ta=tile_split t2 w h in
-	   for i=0 to (Array.length (ta))-1 do
-	     tile_set_alpha ta.(i) 255 255 255; 
-	   done;
-	   ta
+  inherit xml_parser
+
+  val mutable file="none"
+  val mutable size=0
+
+  method get_val=new font_object file size
+
+  method parse_attr k v=
+    match k with
+      | "path" -> file<-v
+      | "size" -> size<-int_of_string v
+      | _ -> ()
+  method parse_child k v=()
+
+
+end;;
+
+
+(** xml tile parser : <tile path="tilefile"/> *)
+class xml_tile_parser=
+object
+  inherit xml_parser
+
+  val mutable file="none"
+
+  method get_val=tile_load file
+  method get_file=file
+
+  method parse_attr k v=
+    match k with
+      | "path" -> file<-v
+      | _ -> ()
+  method parse_child k v=()
+
+
+end;;
+
+
+
+(** v_color parser stuff *)
+(* 8< *) 
+
+class xml_v_color_parser=
+object(self)
+  inherit [color,xml_color_parser] xml_list_parser "color" (fun()->new xml_color_parser) as list
+  inherit xml_color_parser as vcolor
+
+  method get_colors=
+    self#get_array
+
+  method parse_attr k v=vcolor#parse_attr k v
+  method parse_child k v=list#parse_child k v
+
+end;;
+
+class xml_v_colors_parser=
+object(self)
+  inherit xml_parser
+
+  val mutable vcolors=DynArray.create()    
+
+  method get_vcolors=
+    DynArray.to_list vcolors
+
+  method parse_child k v=
+       match k with
+	 | "vcolor" -> let p=new xml_v_color_parser in p#parse v;DynArray.add vcolors (p#get_color,p#get_colors);
+	 | _ ->();
+  method parse_attr k v=()
+
+end;;
+
+
+let v_color_from_xml f=
+  print_string ("XML: load "^f);print_newline();
+  let colfile=new xml_node (Xml.parse_file f) in
+  let colparser=new xml_v_colors_parser in    
+    colparser#parse colfile;
+  let uc=new unit_color in
+    List.iter (
+      fun v->(	
+	uc#add_vcolor (fst v) (snd v) 
+      )
     )
-
-    as super
-    
-  val mutable gr=new graphic_object w h tilesfile false false
-    
-  val mutable over=false
-  method set_over o=over<-o
-
-  method move x y=
-    super#move x y;
-    gr#move x y;
-
-  method put()=
-    if over then
-      super#put()
-    else
-      gr#put()
-  
-end;;
-
-class graphic_generic_white_border id=
-object
-  inherit graphic_generic_object id
-  method set_over (v:bool)=()
-end;;
+      colparser#get_vcolors;
+  uc

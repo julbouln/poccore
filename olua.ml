@@ -38,6 +38,17 @@ object
 
 end;;
 
+class lua_obj=
+object(self)
+  val mutable vals=Luahash.create (fun a b->a=b) 2
+
+  method set_val k (v:OLuaVal.value)=
+    Luahash.replace vals ~key:(OLuaVal.String k) ~data:v
+
+  method to_table=vals
+
+end;;
+
 class lua_interp=
 object(self)
 val mutable vals=DynArray.create();

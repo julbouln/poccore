@@ -1,15 +1,10 @@
 exception No_obj_type of string;;
 
-class ['a] obj_types (none_obj:'a)=
+class ['a] obj_types=
   object
-    val mutable object_types=let a=Hashtbl.create 2 in Hashtbl.add a "none" (function()->
-(none_obj
+    val mutable object_types=Hashtbl.create 2
+    val mutable objects=Hashtbl.create 2
 
-));a
-    val mutable objects=let a=Hashtbl.create 2 in Hashtbl.add a "none" (
-none_obj
-)
-;a
     method add_object_type nm (obj:unit->'a)=
       if(Hashtbl.mem objects nm)==false then
 	Hashtbl.add objects nm (obj());	  
