@@ -14,7 +14,7 @@ let ( **-> ) = OLuaVal. ( **-> )
 let ( **->> ) x y = x **-> OLuaVal.result y
 
 (** lua classes *)
-
+(* DEPRECATED *)
 class lua_object=
 object
   val mutable lmod=""
@@ -44,6 +44,11 @@ object(self)
 
   method set_val k (v:OLuaVal.value)=
     Luahash.replace vals ~key:(OLuaVal.String k) ~data:v
+
+(*
+  method set_method k (v) (f)=
+    Luahash.replace vals ~key:(OLuaVal.String k) ~data:(OLuaVal.efunc v f)
+*)
 
   method to_table=vals
 

@@ -20,6 +20,7 @@ open Rect;;
 open Generic;;
 open Olua;;
 open Oxml;;
+open Oval;;
 
 open Cache;;
 
@@ -39,6 +40,16 @@ exception Drawing_not_found of string;;
 (** {2 Types *)
 
 type color=(int*int*int);;
+
+type ('t) val_drawing=
+    [
+      val_ext
+    | `DrawingSizeFloat of (float*float) 
+    | `DrawingRectangle of rectangle
+    | `DrawingT of 't
+    | `DrawingTArray of 't array
+    | `DrawingList of ('t) val_drawing list
+    ];;
 
 type ('t) draw_op_val=
   | DrawValInt of int
@@ -236,6 +247,11 @@ object(self)
     (try 
        Hashtbl.find drs n
      with Not_found-> raise (Drawing_not_found n));
+
+  method call_drawing_fun (args:('t) draw_op_val list)=
+    let n=get_draw_op_string args 0 in
+    let drf=self#get_drawing_fun n in
+      drf (List.tl args)
     
   method exec_drawing_fun (n:string) (args:('t) draw_op_val list)=
     print_string ("DRAWING_HANDLER: exec "^n);print_newline();
@@ -260,9 +276,9 @@ object(self)
   inherit ['t] drawing_handler
 
   (* link between cache & handler *)
-  method add_cache_from_drawing_fun (n:string) (dfn:string) (args:('t) draw_op_val list)=
-    if self#is_cache_fun dfn=false then 
-      let drl=(fun()->self#exec_drawing_fun dfn args) in    
+  method add_cache_from_drawing_fun (n:string) (args:('t) draw_op_val list)=
+    if self#is_cache_fun (get_draw_op_string args 0)=false then 
+      let drl=(fun()->self#call_drawing_fun args) in    
 	self#add_cache n drl;
 
   initializer
@@ -395,9 +411,13 @@ object(self)
 		      let col1=get_draw_op_color col1_l !i and
 			  col2=get_draw_op_color col2_l !i in
 			(try
-			   ndr#set_t ((ndr#exec_op_copy "color_change" [DrawValColor col1;DrawValColor col2]).(0)#get_t)
+			   ndr#set_t ((ndr#exec_op_copy "color_change" 
+					 [DrawValColor col1;
+					  DrawValColor col2]).(0)#get_t)
 			 with Drawing_not_initialized ->
-			   ndr#set_t ((dr#exec_op_copy "color_change" [DrawValColor col1;DrawValColor col2]).(0)#get_t)
+			   ndr#set_t ((dr#exec_op_copy "color_change" 
+					 [DrawValColor col1;
+					  DrawValColor col2]).(0)#get_t)
 			);
 			i:= !i+1;
 		  ) col1_l;

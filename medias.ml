@@ -292,12 +292,12 @@ object
     
 end;;
 
-class graphic_from_drawing_fun n dfn args=
+class graphic_from_drawing_fun n args=
 object
   inherit graphic_cached_object n
 
   initializer
-    drawing_vault#add_cache_from_drawing_fun n dfn args;
+    drawing_vault#add_cache_from_drawing_fun n args;
 
     let dra=drawing_vault#get_cache_simple n in
       rect#set_size (dra#get_w) (dra#get_h);
@@ -308,8 +308,9 @@ end;;
 
 class graphic_object_from_file file w h=
 object(self)
-  inherit graphic_from_drawing_fun file "with_alpha"   
+  inherit graphic_from_drawing_fun file 
 	[
+	  DrawValString "with_alpha";
 	  DrawValColor(255,255,255);
 	  DrawValString "load_multiple";
 	  DrawValString file;
@@ -570,8 +571,9 @@ object(self)
 	ch=pdrawing#get_h in
       crect#set_size (cw/3) (ch/3);
 
-      gr<-new graphic_from_drawing_fun pid "with_alpha" 
+      gr<-new graphic_from_drawing_fun pid
 	[
+	  DrawValString "with_alpha";
 	  DrawValColor(255,255,255);
 	  DrawValString "create_multiple";
 	  DrawValString pdrawid;
@@ -630,8 +632,11 @@ end;;
 class graphic_pattern_file pfile=
 object
   initializer
-    drawing_vault#add_cache_from_drawing_fun (pfile^":simple") "load_simple"
-      [DrawValString pfile];
+    drawing_vault#add_cache_from_drawing_fun (pfile^":simple") 
+      [
+	DrawValString "load_simple";
+	DrawValString pfile
+      ];
 
   inherit graphic_pattern pfile (pfile^":simple")
 

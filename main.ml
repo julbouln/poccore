@@ -3,7 +3,7 @@ open Locale;;
 open Config;;
 open Video;;
 open Audio;;
-
+open Olua;;
 
 
 class info=
@@ -59,6 +59,10 @@ class main=
 object(self)
   val mutable info=new info
   method info=info
+
+    val mutable interp=new lua_interp
+    method get_interp=interp
+
 
 
   method configfile=
