@@ -1313,8 +1313,9 @@ object(self)
       !r
 
   method private pos_position x y=
+    let (pw,ph)=self#size_from_parent() in
     match pos with
-      | MenuRight -> ((x+tobj#get_rect#get_w+32),y)
+      | MenuRight -> ((x+pw),y)
       | MenuBottom ->(x,(y+tobj#get_rect#get_h));
 
   method private pos_size w h=
@@ -1347,14 +1348,17 @@ object(self)
     let (vnw,vnh)=self#pos_size vrect#get_w vrect#get_h in
     vrect#set_size (vnw) (vnh);
 
-    fond#resize (rrect#get_w+64) (rect#get_h+16);
+
 
   method private init()=
     self#reset_size();
     print_int rect#get_w;print_newline();
     print_int rect#get_h;print_newline();
-    fond#resize (rect#get_w) (rect#get_h+16); 
+    fond#resize (rect#get_w) (rect#get_h); 
 (*    tfond#resize (tobj#get_rect#get_w+16) (tobj#get_rect#get_h);	*)
+    let (pw,ph)=self#size_from_parent() in
+      fond#resize pw ph;
+
 
   method init_tree()=
     self#parse_tree (snd mt) (
@@ -1368,12 +1372,52 @@ object(self)
       | Some (o,tl)->o
       | None->new iface_object 0 0
 
+
+
+  method size_from_parent()=
+    match parent with
+      | Some v->
+	  let (o,tl)=v in
+	  let w=ref 0 in
+	    List.iter (
+	      fun (ct)->
+		match ct with
+		  | Menu (co,ctl) ->
+		    if !w <co#get_rect#get_w then
+		      w:=co#get_rect#get_w		
+		  | MenuEntry (co) ->
+		    if !w <co#get_rect#get_w then
+		      w:=co#get_rect#get_w		
+	    ) tl;
+	    ((!w+16),(rect#get_h+16));	    
+      | None->(0,0)
+	  
   method init_parent()=
     (
       match parent with
 	| Some v->
 	    let (o,tl)=v in
-	      o#append_click self#close
+	    List.iter (
+	      fun ct->
+		match ct with
+		  | Menu (co,ctl) ->
+(*		      if co<>(fst mt) then
+		      co#append_click self#close
+*)
+		      List.iter (		      
+			fun cct->			  
+			  match cct with
+			    | Menu (cco,cctl) ->
+				if cco<>(fst mt) then
+				cco#append_click self#close
+			    | MenuEntry (cco) -> 
+				cco#append_click self#close
+
+		      ) ctl;
+
+		  | MenuEntry co ->
+		      co#append_click self#close
+	    ) tl;
 	| None->()
 	    
     );
@@ -1498,7 +1542,7 @@ object(self)
     let a=DynArray.create() in
 	List.iter ( fun v->
 		      (match v with
-			 | Menu (o,tl)->DynArray.add a (new iface_menu MenuBottom (o,tl) None :>iface_object)
+			 | Menu (o,tl)->DynArray.add a (new iface_menu MenuBottom (o,tl) (Some (o,tl)) :>iface_object)
 			 | _ -> ()
 			     
 		      );
