@@ -7,6 +7,9 @@ open Core_rect;;
 open Core_medias;;
 open Core_graphic;;
 open Core_action;;
+open Core_type;;
+open Core_event;;
+open Core_video;;
 
 (** graphic container *)
 class graphics_container=
@@ -58,8 +61,8 @@ object(self)
   method get_prect=prect
 
   method jump x y=
-    prect#set_position x y
-
+    prect#set_position x y;
+    self#graphics_update();
 
 (** states *)
   val mutable states=new state_actions
@@ -91,23 +94,129 @@ object(self)
     lua#set_val (OLuaVal.String "get_prect_y") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.int) (fun()->prect#get_y));
     
     lua#set_val (OLuaVal.String "set_prect_position") (OLuaVal.efunc (OLuaVal.int **-> OLuaVal.int **->> OLuaVal.unit) (prect#set_position));
-
+    
     lua#set_val (OLuaVal.String "jump") (OLuaVal.efunc (OLuaVal.int **-> OLuaVal.int **->> OLuaVal.unit) (self#jump));
     
     lua#set_val (OLuaVal.String "get_id") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.string) (fun()->self#get_id));
-
-      lua#set_val (OLuaVal.String "get_type") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.string) (fun()->self#get_name));
-
-
+    
+    lua#set_val (OLuaVal.String "get_type") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.string) (fun()->self#get_name));
+    
+    
     lua#set_val (OLuaVal.String "properties") (OLuaVal.Table props#to_lua#to_table);
-
+    
     lua#set_val (OLuaVal.String "graphics_update") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.unit) (self#graphics_update));
-
-    graphics#lua_init();
+    
+    ignore(graphics#lua_init());
     self#lua_parent_of "graphics" (graphics:>lua_object);
-    states#lua_init();
+    ignore(states#lua_init());
     self#lua_parent_of "states" (states:>lua_object);
-
+    
     lo#lua_init()
 
 end
+
+class sprite_object_types=
+object(self)
+  inherit [sprite_object] obj_types
+end;;
+
+open Value_common;;
+
+class sprite_vault=
+object(self)
+  inherit [sprite_object] generic_object_handler as super
+  inherit lua_object as lo
+
+  val mutable obj_type=new sprite_object_types
+  method get_obj_type=obj_type
+  method add_object_type nm (t:unit->'a)=
+    obj_type#add_object_type nm t
+  method get_object_from_type nm=
+    obj_type#get_object_type nm
+
+  val mutable canvas=None
+  method set_canvas (c:canvas option)=canvas<-c
+
+  method add_sprite_to_canvas o=
+    (match canvas with 
+       | Some cvas->o#graphics_register cvas#add_obj;
+       | None -> ());
+
+  method del_sprite_from_canvas o=
+    (match canvas with 
+       | Some cvas->o#graphics_unregister cvas#del_obj;
+       | None -> ());
+
+  method add_sprite_at (id:string option) (o:sprite_object) (px:int) (py:int)=
+    self#add_sprite_to_canvas o;
+    o#jump px py;
+    let n=self#add_object id o in
+      self#lua_parent_of n (o:>lua_object);
+      n
+
+  method add_sprite_from_type id t x y=
+    let o=self#get_object_from_type t in
+      self#add_sprite_at id o x y 
+
+  method delete_sprite id=
+    let o=self#get_object id in
+      self#del_sprite_from_canvas o;
+      lo#get_lua#del_val (OLuaVal.String id) ;
+      super#delete_object id;
+
+  method update()=
+    self#foreach_object (fun k o->
+			   o#act();
+			)
+
+  method lua_init()=
+   lua#set_val (OLuaVal.String "add_sprite_from_type") 
+     (OLuaVal.efunc (OLuaVal.string **-> OLuaVal.int **-> OLuaVal.int **->> OLuaVal.string) 
+	(fun t x y->self#add_sprite_from_type None t x y));
+   lua#set_val (OLuaVal.String "add_sprite_named_from_type") 
+     (OLuaVal.efunc (OLuaVal.string **-> OLuaVal.string **-> OLuaVal.int **-> OLuaVal.int **->> OLuaVal.unit) 
+	(fun n t x y->ignore(self#add_sprite_from_type (Some n) t x y)));
+   lua#set_val (OLuaVal.String "delete_sprite") (OLuaVal.efunc (OLuaVal.string **->> OLuaVal.unit) self#delete_sprite);
+   lo#lua_init()
+
+
+end;;
+
+open Core_stage;;
+
+class sprite_engine curs=
+object(self)
+  inherit stage curs as super
+
+  val mutable interaction=new interaction_lua
+  method set_interaction i=interaction<-i
+
+  val mutable canvas=new canvas
+  method get_canvas=canvas
+
+  val mutable sprites=new sprite_vault
+  method get_sprites=sprites
+
+
+  initializer
+    sprites#set_canvas (Some canvas);
+
+  method on_loop()=
+    super#on_loop();
+    sprites#update();
+    canvas#refresh 0 0 32 32;
+    video#flip();
+
+  method ev_parser e=
+    interaction#ev_parser e
+
+  method lua_init()=
+    ignore(sprites#lua_init());
+    self#lua_parent_of "sprites" (sprites:>lua_object);
+
+    ignore(interaction#lua_init());
+    self#lua_parent_of "interaction" (interaction:>lua_object);
+
+    super#lua_init();
+
+end;;

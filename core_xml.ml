@@ -1,3 +1,23 @@
+(*
+    poccore - core functionality
+    Copyright (C) 2005 POC 
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+*)
+
+open Value_common;;
 open Value_xml;;
 open Value_lua;;
 open Value_val;;
@@ -10,6 +30,8 @@ open Core_medias;;
 open Core_stage;;
 open Core_main;;
 open Core_font;;
+open Core_event;;
+open Core_sprite;;
 
 open Binding;;
 
@@ -183,11 +205,14 @@ object(self)
     match k with
       | tag when tag=otag ->
 	  let p=gen_parser() in p#parse v;
-	    if self#parser_is p#get_type then
+	    if self#parser_is p#get_type then (
 	      let sp=(self#parser_get p#get_type)() in (
 		  sp#parse v;
 		  DynArray.add objs sp#get_val
 		)
+	    )
+	    else
+	        DynArray.add objs p#get_val
       | "script" -> lua<-v#pcdata;
       | _ ->()
 	  
@@ -247,7 +272,7 @@ object (self)
 	new_obj()
       in
 	self#init_object o;
-	o	  
+	o
     in      
       (id,ofun)
 
@@ -290,6 +315,8 @@ object(self)
 
 
 end;;
+
+
 
 class xml_graphic_from_drawing_fun_parser=
 object(self)
@@ -362,6 +389,29 @@ object(self)
 
 end;;
 
+class xml_graphic_text_parser=
+object(self)
+  inherit xml_graphic_object_parser
+
+
+  method get_val=
+    let ofun()=
+      let o=
+	let args=args_parser#get_val in
+	  let fn=string_of_val (args#get_val (`String "font_file")) and
+	      fs=int_of_val (args#get_val (`String "font_size")) and
+	      fc=color_of_val (args#get_val (`String "font_color")) in
+	    new graphic_text id (FontTTF(fn,fs)) fc
+      in
+	self#init_object (o:>graphic_object);
+	(o:>graphic_object)	  
+    in      
+      (id,ofun)
+
+
+end;;
+
+
 class xml_graphics_parser=
 object(self)
   inherit [xml_graphic_object_parser,graphic_object] xml_container_parser "graphic_object" (fun()->new xml_graphic_object_parser)
@@ -378,6 +428,7 @@ let xml_factory_graphics_parser()=
     p#parser_add "graphic_from_drawing_fun" (fun()->new xml_graphic_from_drawing_fun_parser);
     p#parser_add "graphic_from_drawing_create" (fun()->new xml_graphic_from_drawing_create_parser);
     p#parser_add "graphic_from_drawing_script" (fun()->new xml_graphic_from_drawing_script_parser);
+    p#parser_add "graphic_text" (fun()->new xml_graphic_text_parser);
     p;;
 
 
@@ -516,6 +567,104 @@ object(self)
 
 end;;
 
+(** interaction *)
+
+class xml_interaction_object_parser=
+object(self)
+  inherit [interaction_lua] xml_object_parser (fun()->new interaction_lua) as super
+  method get_type=nm
+
+  method init_object o=
+    super#init_object o;
+    let args=args_parser#get_val in
+      o#set_lua_script (lua);
+      ignore(o#lua_init());
+ 
+  method parse_attr k v=
+    match k with
+      | "name"->nm<-v
+      | _ -> ()
+
+  method get_val=
+    let ofun()=
+      let o=
+	  new interaction_lua
+      in
+	self#init_object o;
+	o	  
+    in      
+      (nm,ofun)
+
+end;;
+
+
+(** sprite *)
+
+class xml_sprite_object_type_parser=
+object(self)
+  inherit [sprite_object] xml_object_parser (fun()->new sprite_object) as super
+  val mutable props_parser=new xml_val_ext_list_parser "properties"
+
+  val mutable graphics_parser=(Global.get xml_default_graphics_parser)()
+  val mutable states_parser=new xml_state_actions_parser    
+  
+  method get_type=nm
+
+  method init_object o=
+    super#init_object o;
+    let args=args_parser#get_val in
+    let (gw,gh)=size_of_val (args#get_val (`String "pixel_size")) in
+      
+      o#set_name nm; 
+      o#get_prect#set_size gw gh;
+      graphics_parser#init_simple (o#get_graphics#add_graphic);
+      states_parser#init_simple (o#get_states#add_state);
+      o#set_props props_parser#get_val;
+      o#set_lua_script (lua);
+      ignore(o#lua_init());
+ 
+  method parse_attr k v=
+    match k with
+      | "name"->nm<-v
+      | _ -> ()
+
+  method parse_child k v=
+    super#parse_child k v;
+    props_parser#parse_child k v;
+    match k with
+      | "graphics" ->
+	  graphics_parser#parse v;	  
+      | "state_actions" ->
+	  states_parser#parse v;
+      | _ -> ()
+
+  method get_val=
+    let ofun()=
+      let o=
+	  new sprite_object
+      in
+	self#init_object o;
+	o	  
+    in      
+      (nm,ofun)
+
+end;;
+
+class xml_sprite_object_types_parser=
+object(self)
+  inherit [(unit->sprite_object)] xml_stringhash_parser "sprite_object_type" (fun()->new xml_sprite_object_type_parser) as super
+
+  method parse_child k v=
+    super#parse_child k v;
+
+  method init (add_obj:string->(unit->sprite_object)->unit)=
+    Hashtbl.iter (
+      fun k v->
+      add_obj k v
+    ) super#get_hash;
+
+end;;
+
 
 (** stages *)
 
@@ -530,6 +679,9 @@ object (self)
 (** object initial init *)
   method init_object o=
     o#set_lua_script (lua);
+    let args=args_parser#get_val in
+      if args#is_val (`String "show_fps") then
+	o#get_frame_limiter#set_show_fps (bool_of_val(args#get_val (`String "show_fps")));
 
 end;;
 
@@ -537,31 +689,90 @@ end;;
 class xml_stages_parser=
 object(self)
   inherit [xml_stage_parser,stage] xml_container_parser "stage" (fun()->new xml_stage_parser)
+
 end;;
 
+let xml_generic_stages_parser()=
+  let p=new xml_stages_parser in
+    p#parser_add "stage" (fun()->new xml_stage_parser);
+    p;;
+
+Global.set xml_default_stages_parser  xml_generic_stages_parser;;
+
+class xml_multi_stage_parser=
+object(self)
+  inherit xml_stage_parser as super
+  val mutable stages_parser=(Global.get xml_default_stages_parser)()
+
+  method parse_child k v=
+    super#parse_child k v;
+    match k with
+      | "stages"->stages_parser#parse v
+      | _ -> ()
+
+  method private init_multi_stage o=
+    stages_parser#init_simple o#add_stage
+    
+  method get_val=
+    let ofun()=
+      let o=
+	new multi_stage generic_cursor
+      in
+	
+	self#init_multi_stage o;
+	self#init_object (o:>stage);
+	(o:>stage)
+    in      
+      (id,ofun)
+    
+end;;
+
+
+
+class xml_sprite_engine_stage_parser=
+object (self)
+  inherit xml_stage_parser as super
+
+  val mutable sprite_type_parser=new xml_sprite_object_types_parser
+  val mutable interaction_parser=new xml_interaction_object_parser
+
+  method parse_child k v=
+    super#parse_child k v;
+    match k with
+      | "sprite_object_types" -> sprite_type_parser#parse v 
+      | "interaction"->	  interaction_parser#parse v
+      | _ -> ()
+
+    
+  method get_val=
+    let ofun()=
+      let o=
+	new sprite_engine generic_cursor 
+      in
+	sprite_type_parser#init o#get_sprites#add_object_type;
+	let inter=(snd interaction_parser#get_val)() in
+	  o#set_interaction inter;
+	self#init_object (o:>stage);
+	(o:>stage)	  
+    in      
+      (id,ofun)
+
+end;;
 
 let xml_factory_stages_parser()=
   let p=new xml_stages_parser in
     p#parser_add "stage" (fun()->new xml_stage_parser);
+    p#parser_add "multi_stage" (fun()->new xml_multi_stage_parser);
+    p#parser_add "sprite_engine" (fun()->new xml_sprite_engine_stage_parser);
     p;;
 
 
 Global.set xml_default_stages_parser xml_factory_stages_parser;;
 
-let stages_init_from_xml f=
-(*  let stages_file=new xml_node (Xml.parse_file f) in *)
-  let stages_file=xml_node_from_file f in
-  let p=(Global.get xml_default_stages_parser)() in
-    p#parse stages_file;
-    p#init_simple stages#stage_add;
-    ignore(stages#lua_init());
-
-;;
 
 
-
-
-class xml_game_parser=
+(** the XPOC parser! *)
+class xpoc_parser=
 object(self)
   inherit xml_parser
   val mutable info_parser=new xml_val_ext_list_parser "infos"
@@ -616,24 +827,29 @@ object(self)
 	main#medias_init();
     );
 *)
-    main#parse_args();
-    main#medias_init();
+
 (*    if args_parser#get_val#is_val (`String "stages") then (
       stages_init_from_xml (string_of_val (args_parser#get_val#get_val (`String "stages")));
     );
 *)
+    main#parse_args();
+    main#medias_init();
+
     stages_parser#init_simple stages#stage_add;
     ignore(stages#lua_init());
 
     if args_parser#get_val#is_val (`String "stage_start") then (
       stages#stage_load (string_of_val (args_parser#get_val#get_val (`String "stage_start")));
     );
+
+
+
 end;;
 
 
 let game_init_from_xml f=
 (*  let game_file=new xml_node (Xml.parse_file f) in *)
   let game_file=xml_node_from_file f in
-  let p=new xml_game_parser in
+  let p=new xpoc_parser in
     p#parse game_file;
     p#init();;

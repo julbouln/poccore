@@ -17,16 +17,64 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
+open Value_common;;
+
 open Core_event;;
 open Core_video;;
 open Core_medias;;
 open Core_cursor;;
-
-
+open Core_timer;;
+open Core_graphic;;
+open Core_font;;
 open Binding;;
 
 
 open Value_lua;;
+
+let rec usleep sec = ignore (Unix.select [] [] [] sec);;
+
+class frame_limiter=
+object(self)
+
+  val mutable t1=0.
+  val mutable t2=0.
+
+  val mutable ffps=float (Global.get default_fps)
+  val mutable fcount=0
+  val mutable lcount=0				
+
+  val mutable fpsgr=None
+  val mutable show_fps=false
+  method set_show_fps s=
+    show_fps<-s;
+    if show_fps then
+      fpsgr<-(Some (new graphic_text "fpsinfo" (FontEmbed) (200,200,200)))
+      
+  method put_fps()=
+    match fpsgr with
+      | Some g->
+	g#move 8 (video#get_h - 16);
+	g#put();
+      | None -> ()
+
+  method get_current_fps=fcount/lcount
+
+
+
+  method start()=
+    t1<-Unix.gettimeofday();
+  method finish()=
+    t2<-Unix.gettimeofday();
+    lcount<-lcount+1;
+    fcount<-fcount+(int_of_float (1./.(t2 -. t1)));
+    (match fpsgr with
+      | Some g ->
+	  g#set_text ("fps: "^string_of_int(fcount/lcount)); 
+      | None ->());
+    if (t2 -. t1)<(1./. ffps) then
+      usleep ((1./. ffps)  -. (t2 -. t1));     
+  
+end;;
 
 
 (** Stage subsystem *)
@@ -35,7 +83,8 @@ open Value_lua;;
 (** stage class *)
 class stage  (cursor:cursors)=
 object (self)
-  inherit lua_object
+  inherit generic_object
+  inherit lua_object as super
   val mutable initialized=false
   val curs=cursor
 
@@ -43,9 +92,11 @@ object (self)
 
 
 (** what to do when first load stage *)
-  method on_load()=()
+  method on_load()=
+    ignore(lua#exec_val_fun (OLuaVal.String "on_load") [OLuaVal.Nil]);
 (** what to do on each frame *)
-  method on_loop()=()
+  method on_loop()=
+    ignore(lua#exec_val_fun (OLuaVal.String "on_loop") [OLuaVal.Nil]);
 
 (** what to do when quit stage *)
   method on_quit()=()
@@ -66,13 +117,24 @@ object (self)
 
   method get_curs=curs
   
+  val mutable frml=new frame_limiter
+  method get_frame_limiter=frml
   method load()=
     initialized<-true;
     self#on_load();
 
     eventm#set_parser self#ev_parser;
     eventm#set_on_quit self#on_quit;
-    eventm#set_on_loop self#on_loop;
+    eventm#set_on_loop 
+      (
+	fun()->
+	  frml#start();
+	  self#on_loop();
+	  curs#put();
+	  frml#put_fps();
+	  video#flip();
+	  frml#finish();	  
+      );
     eventm#init();
     eventm#main();()
   
@@ -87,6 +149,49 @@ object (self)
 
   method reinit()=self#on_reinit();
   method leave()=self#on_leave();
+
+  method lua_init()=
+    lua#set_val (OLuaVal.String "on_load") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.unit) (fun()->()));
+    lua#set_val (OLuaVal.String "on_loop") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.unit) (fun()->()));
+    super#lua_init()
+
+end;;
+
+class multi_stage  (cursor:cursors)=
+object(self)
+  inherit [stage] generic_object_handler3
+  inherit stage cursor
+
+  method add_stage n o=
+    o#lua_init();
+    self#lua_parent_of n (o:>lua_object);
+    ignore(self#add_object (Some n) o);
+
+
+  method on_load()=
+    self#foreach_object (
+      fun n s-> s#on_load()
+    )
+
+  method on_loop()=
+    self#foreach_object (
+      fun n s-> s#on_loop()
+    )
+
+  method on_continue()=
+    self#foreach_object (
+      fun n s-> s#on_continue()
+    )
+
+  method on_leave()=
+    self#foreach_object (
+      fun n s-> s#on_leave()
+    )
+
+  method ev_parser e=
+    self#foreach_object (
+      fun n s-> s#ev_parser e
+    )
 
 end;;
 
@@ -148,6 +253,7 @@ object(self)
 (*  method stage_connect v=v#init(); *)
 
   method lua_init()=
+
     lua#set_val (OLuaVal.String "load") (OLuaVal.efunc (OLuaVal.string **->> OLuaVal.unit) self#stage_load);
     lua#set_val (OLuaVal.String "continue") (OLuaVal.efunc (OLuaVal.string **->> OLuaVal.unit) self#stage_continue);
     lua#set_val (OLuaVal.String "leave") (OLuaVal.efunc (OLuaVal.string **->> OLuaVal.unit) self#stage_leave);
@@ -161,3 +267,4 @@ let stages=new stages generic_cursor;;
 
 
 (* FIXME : must declare stages here like video and audio *)
+

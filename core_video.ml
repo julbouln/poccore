@@ -26,11 +26,6 @@ You can define a default size for your screen to automaticly resize tile (see gr
 *)
 
 
-(* FIXME : need delete these *)
-let tile_w=ref 32;;
-let tile_h=ref 32;;
-
-let fps=ref 30;;
 
 (** Video class *)
 class video=
@@ -48,13 +43,6 @@ object
     depth<-bpp;
     fullscreen<-fs;    
     screen#init width height depth fullscreen
-(*    video_init width height depth fullscreen *)
-
-(** get if video screen is initialized *)
-(*  method initialized=
-    is_video
-*)
-
 
 (** get screen width *)
   method get_w=width
@@ -79,25 +67,20 @@ object
 (** blank the screen *)
   method blank=
     screen#blank
-(*    video_blank_screen *)
 
 (** get video screen tile *)
   method get_drawing=
     screen
-(*  method get_tile=
-    video_surface_get
-*)
+
 (** set video screen clip *)
   method set_clip x y w h=
     screen#set_clip x y w h 
-(*    video_set_clip x y w h *)
 
   method show_cursor()=
     screen#show_cursor();
 
   method hide_cursor()=
     screen#hide_cursor();
-
 
 end;;
 
