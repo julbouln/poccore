@@ -157,6 +157,35 @@ object
 end;;
 
 
+class action_intime max_time=
+object
+  inherit action_lua as al
+  val mutable time=new timer
+  initializer
+    time#set_limit max_time
+
+  method on_start ve=
+    al#on_start ve;
+(*    let t={h=0;m=1;s=0;f=0} in *)
+(*    let t=time_of_val (ve#get_val (`String "interval")) in *)
+    let t=time_of_val (ve#get_val (`Int 0)) in
+      if time#is_timer t=false then
+	time#add_timer_from_now t (fun()->al#on_loop());
+      time#start();
+
+  method on_loop()=
+    time#step()
+
+  method on_stop()=
+    al#on_stop();
+    time#reset();
+    time#stop();
+
+  method lua_init()=
+    al#lua_init();
+end;;
+
+
 class state_object=
 object(self)
   inherit [action_object] generic_object_handler

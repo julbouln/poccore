@@ -22,6 +22,8 @@ object(self)
   val mutable timers=Hashtbl.create 2
   method add_timer (t:time) (f:unit->unit)=
     Hashtbl.add timers (self#from_time t) f
+  method is_timer (t)=
+    Hashtbl.mem timers (self#from_time t)
   method del_timer (t:time)=
     Hashtbl.remove timers (self#from_time t)
 
@@ -57,6 +59,7 @@ object(self)
       Hashtbl.iter 
 	(
 	  fun tfr e->
+	    (* FIXME : exec when cfrm=0 *)
 	    if cfrm mod tfr=0 then e()
 	) tasks;
 

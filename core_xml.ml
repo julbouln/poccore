@@ -529,6 +529,36 @@ object(self)
 end;;
 
 
+class xml_action_intime_parser=
+object(self)
+  inherit xml_action_object_parser
+
+  method get_val=
+    let ofun()=
+    let (nm,vh,l)=mt in      
+      let o=
+	let args=args_parser#get_val in
+	  args#merge vh;
+	  new action_intime (time_of_val (args#get_val (`String "limit")))
+      in
+	self#init_object (o:>action_lua);
+	(o:>action_lua)	  
+    in      
+      (id,ofun)
+
+  method get_val_from_meta (m:string*val_ext_handler*string)=
+    let ofun()=
+      let (nm,vh,l)=m in
+      let o=
+	new action_intime (time_of_val (vh#get_val (`String "limit"))) in
+	o#set_lua_script (l);
+	o in	
+      (ofun)
+
+end;;
+
+
+
 class xml_action_anim_parser=
 object(self)
   inherit xml_action_object_parser
@@ -621,6 +651,7 @@ let xml_factory_actions_parser()=
     p#parser_add "action_lua" (fun()->new xml_action_object_parser);
     p#parser_add "action_anim" (fun()->new xml_action_anim_parser);
     p#parser_add "action_timed" (fun()->new xml_action_timed_parser);
+    p#parser_add "action_intime" (fun()->new xml_action_intime_parser);
     p;;
 
 (** global default actions parser, can be overided *)

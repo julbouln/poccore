@@ -63,6 +63,9 @@ class graphic_object=
       lua#set_val (OLuaVal.String "set_cur_drawing") (OLuaVal.efunc (OLuaVal.int **->> OLuaVal.unit) self#set_cur_drawing);
       lua#set_val (OLuaVal.String "get_drawings_size") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.int) (fun()->self#get_drawings_size));
 
+      lua#set_val (OLuaVal.String "show") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.unit) self#show);
+      lua#set_val (OLuaVal.String "hide") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.unit) self#hide);
+
       lo#lua_init();
   end;;
 
