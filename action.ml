@@ -242,12 +242,15 @@ object(self)
     self#lua_parent_of n (st:>lua_object)
 
   method set_state (sn:string option) (ve:val_ext_handler)=
+
     (match current with
       | Some n->let o=self#get_object n in o#stop()
       | None -> ());
     current<-sn;
     (match current with
-      | Some n->let o=self#get_object n in o#start ve
+      | Some n->
+	  (*print_string ("STATE_ACTIONS : set state "^n);print_newline();*)
+	    let o=self#get_object n in o#start ve
       | None -> ());    
 
   method act()=

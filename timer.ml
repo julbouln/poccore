@@ -59,8 +59,7 @@ object(self)
       Hashtbl.iter 
 	(
 	  fun tfr e->
-	    (* FIXME : exec when cfrm=0 *)
-	    if cfrm mod tfr=0 then e()
+	    if cfrm mod tfr=0 && cfrm>0 then e()
 	) tasks;
 
       if Hashtbl.mem timers cfrm then (

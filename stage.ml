@@ -93,6 +93,7 @@ object (self)
 
 end;;
 
+exception Stage_not_found of string;;
 
 (** General stages handler *)
 class stages curs=
@@ -111,7 +112,7 @@ object(self)
 
     if (Hashtbl.mem stages n)==true then
       (
-	let v=Hashtbl.find stages n in
+	let v=self#stage_get n in
 	  v#reinit();
 	  Hashtbl.replace stages n s;
       )
@@ -124,25 +125,28 @@ object(self)
   method stage_is n=Hashtbl.mem stages n;
 
   (** get a stage in stages *)
-  method stage_get n=Hashtbl.find stages n;
+  method stage_get n=
+    (try
+    Hashtbl.find stages n;
+     with Not_found -> raise (Stage_not_found n))
 
   (** load a stage in stages *)
   method stage_load n=
-    (Hashtbl.find stages n)#get_curs#set_state "normal";
+    (self#stage_get n)#get_curs#set_state "normal";
     if current_stage<>"none" then
-      (Hashtbl.find stages current_stage)#leave();   
+      (self#stage_get current_stage)#leave();   
     current_stage<-n;
-    (Hashtbl.find stages n)#load();
+    (self#stage_get n)#load();
   
   (** continue with a stage in stages *)
   method stage_continue n=
-    (Hashtbl.find stages n)#get_curs#set_state "normal";
-    (Hashtbl.find stages current_stage)#leave(); 
+    (self#stage_get n)#get_curs#set_state "normal";
+    (self#stage_get current_stage)#leave(); 
     current_stage<-n;
-    (Hashtbl.find stages n)#continue();
+    (self#stage_get n)#continue();
 
   (** leave a stage in stages *)
-  method stage_leave n=(Hashtbl.find stages n)#leave();
+  method stage_leave n=(self#stage_get n)#leave();
   
 (*  method stage_connect v=v#init(); *)
 
