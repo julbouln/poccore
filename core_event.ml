@@ -138,6 +138,8 @@ object(self)
   inherit interaction_object
   inherit lua_object as super
 
+  method get_id="interaction"
+
   method on_keypress (e:(key_type*key_type))=
     ignore(lua#exec_val_fun (OLuaVal.String "on_keypress") [OLuaVal.String (string_of_key (fst e))])
   method on_keyrelease (e:(key_type*key_type))=

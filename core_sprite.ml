@@ -16,11 +16,11 @@ class graphics_container=
 object(self)
   inherit [graphic_object] generic_object_handler
   inherit lua_object as lo
-
+  method get_id="graphics"
   method add_graphic n gr=
 (*    print_string ("GRAPHICS_CONTAINER : add graphic "^n);print_newline(); *)
-    self#add_object (Some n) gr;
-    gr#lua_init();
+    ignore(self#add_object (Some n) gr);
+    ignore(gr#lua_init());
     self#lua_parent_of n (gr:>lua_object)
 
   method graphics_update()=
@@ -96,9 +96,9 @@ object(self)
     lua#set_val (OLuaVal.String "set_prect_position") (OLuaVal.efunc (OLuaVal.int **-> OLuaVal.int **->> OLuaVal.unit) (prect#set_position));
     
     lua#set_val (OLuaVal.String "jump") (OLuaVal.efunc (OLuaVal.int **-> OLuaVal.int **->> OLuaVal.unit) (self#jump));
-    
+(*    
     lua#set_val (OLuaVal.String "get_id") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.string) (fun()->self#get_id));
-    
+*)  
     lua#set_val (OLuaVal.String "get_type") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.string) (fun()->self#get_name));
     
     
@@ -108,9 +108,10 @@ object(self)
     
     ignore(graphics#lua_init());
     self#lua_parent_of "graphics" (graphics:>lua_object);
-    ignore(states#lua_init());
+
+    ignore(states#lua_init());    
     self#lua_parent_of "states" (states:>lua_object);
-    
+
     lo#lua_init()
 
 end
@@ -126,6 +127,7 @@ class sprite_vault=
 object(self)
   inherit [sprite_object] generic_object_handler as super
   inherit lua_object as lo
+  method get_id="sprites"
 
   val mutable obj_type=new sprite_object_types
   method get_obj_type=obj_type
@@ -149,9 +151,10 @@ object(self)
 
   method add_sprite_at (id:string option) (o:sprite_object) (px:int) (py:int)=
     self#add_sprite_to_canvas o;
-    o#jump px py;
     let n=self#add_object id o in
+      ignore(o#lua_init());
       self#lua_parent_of n (o:>lua_object);
+      o#jump px py;
       n
 
   method add_sprite_from_type id t x y=

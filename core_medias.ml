@@ -257,6 +257,7 @@ exception Drawing_script_error;;
 class drawing_script=
 object(self)
   inherit lua_object as super
+  method get_id="drawing_script"
 
   val mutable drv=Hashtbl.create 2
   method add_dr n dr=Hashtbl.add drv n dr

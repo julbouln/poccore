@@ -10,6 +10,7 @@ object(self)
     val mutable object_types=Hashtbl.create 2
     val mutable objects=Hashtbl.create 2
 
+    method get_id="obj_types"
     method add_object_type nm (obj:unit->'a)=
 (*      print_string ("OBJ_TYPES : add object type "^nm);print_newline(); *)
 

@@ -252,7 +252,7 @@ class state_actions=
 object(self)
   inherit [state_object] generic_object_handler
   inherit lua_object as lo
-
+  method get_id="state_actions"
   val mutable current=None
 
   method get_state=current

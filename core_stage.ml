@@ -201,7 +201,7 @@ exception Stage_not_found of string;;
 class stages curs=
 object(self)
   inherit lua_object as lo
-
+  method get_id="stages"
   val mutable current_stage="none"
 
   (* create an Hashtbl of stages *)
@@ -209,9 +209,6 @@ object(self)
 
   (** add a stage in stages *)
   method stage_add n s=
-    s#lua_init();
-    self#lua_parent_of n (s:>lua_object);
-
     if (Hashtbl.mem stages n)==true then
       (
 	let v=self#stage_get n in
@@ -222,6 +219,11 @@ object(self)
       (
 	Hashtbl.add stages n s;
       );
+    s#set_id n;
+    s#lua_init();
+    self#lua_parent_of n (s:>lua_object);
+
+
 
   (** check for a stage in stages *)
   method stage_is n=Hashtbl.mem stages n;

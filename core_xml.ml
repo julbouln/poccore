@@ -222,9 +222,8 @@ object(self)
 	DynArray.iter (
 	  fun (n,o)->
 	    let no=o() in	  	  
-	      no#lua_init();
 	      add_obj n (no);
-
+	      ignore(no#lua_init());
 	) objs;
 
 
@@ -350,7 +349,7 @@ object(self)
       let o=
 	let args=args_parser#get_val in
 	let ds=text_of_val(args#get_val (`String "drawing_script")) in
-	  drs#lua_init();
+	  ignore(drs#lua_init());
 	  new graphic_from_drawing (random_string "dscr" 15)
 	    (fun()->
 		(drs#register ds)
@@ -611,7 +610,7 @@ object(self)
   method get_type=nm
 
   method init_object o=
-    super#init_object o;
+(*    super#init_object o; *)
     let args=args_parser#get_val in
     let (gw,gh)=size_of_val (args#get_val (`String "pixel_size")) in
       
