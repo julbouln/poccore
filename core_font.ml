@@ -1,5 +1,5 @@
-open Generic;;
-open Cache;;
+open Core_generic;;
+open Core_cache;;
 
 (** Font management *)
 

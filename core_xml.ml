@@ -1,12 +1,9 @@
-open Core_global;;
-
 open Oxml;;
 open Oval;;
-open Action;;
-open Graphic;;
 
-
-open Stage;;
+open Core_action;;
+open Core_graphic;;
+open Core_stage;;
 
 (** globals *)
 

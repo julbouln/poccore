@@ -1,7 +1,8 @@
-open Generic;;
 open Xml;;
 
-open Timer;;
+open Core_generic;;
+open Core_timer;;
+
 open Oxml;;
 open Olua;;
 

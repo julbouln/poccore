@@ -1,12 +1,13 @@
 
-open Generic;;
+
 open Olua;;
 open Oval;;
 
-open Anim;;
-open Rect;;
+open Core_generic;;
+open Core_anim;;
+open Core_rect;;
 
-open Timer;;
+open Core_timer;;
 
 (** Action and state manager *)
 

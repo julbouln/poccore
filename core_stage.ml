@@ -17,15 +17,14 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
+open Core_event;;
+open Core_video;;
+open Core_medias;;
+open Core_cursor;;
 
-open Event;;
+
 open Binding;;
 
-open Config;;
-open Video;;
-open Medias;;
-
-open Cursors;;
 
 open Olua;;
 

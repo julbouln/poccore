@@ -16,13 +16,15 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
-open Rect;;
-open Generic;;
+open Core_rect;;
+open Core_generic;;
+open Core_cache;;
+
 open Olua;;
 open Oxml;;
 open Oval;;
 
-open Cache;;
+
 
 (** Drawing operations *)
 

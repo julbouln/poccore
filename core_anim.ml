@@ -1,5 +1,5 @@
-open Medias;;
-open Graphic;;
+open Core_medias;;
+open Core_graphic;;
 
 (** Anim subsystem *)
 

@@ -20,17 +20,18 @@
 open Str;;
 
 open Oval;;
+open Oxml;;
 
-open Generic;;
-open Rect;;
-open Video;;
+open Core_generic;;
+open Core_rect;;
+open Core_video;;
 
-open Font;;
-open Drawing;;
+open Core_font;;
+open Core_drawing;;
 
 open Binding;;
 
-open Oxml;;
+
 
 let medias_dir=(Filename.dirname(Sys.executable_name));;
 

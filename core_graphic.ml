@@ -1,14 +1,15 @@
 open Str;;
 
-open Generic;;
-open Rect;;
+open Core_generic;;
+open Core_rect;;
+open Core_video;;
+open Core_medias;;
+open Core_font;;
+open Core_drawing;;
 
 open Oval;;
 open Olua;;
-open Video;;
-open Medias;;
-open Font;;
-open Drawing;;
+
 open Binding;;
 
 

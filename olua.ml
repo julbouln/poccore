@@ -1,4 +1,4 @@
-open Generic;;
+open Core_generic;;
 (** Oo style lua-ml *)
 
 module T  = Lua.Lib.Combine.T1 (Luaiolib.T)

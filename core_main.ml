@@ -1,8 +1,10 @@
-open Config;;
-open Video;;
+
+open Core_video;;
+open Core_stage;;
+
 open Olua;;
 
-open Stage;;
+
 
 let n s=s;;
 
@@ -57,11 +59,11 @@ object(self)
     method get_interp=interp
 
 
-
+(*
   method configfile=
     if Sys.os_type="Unix" then (Sys.getenv("HOME")^"/."^info#get_cmd^".conf")
     else (info#get_cmd^".conf")
-
+*)
 
 (*  val mutable screen_tile=(tile_empty())
   method screen_tile=screen_tile
@@ -108,26 +110,27 @@ object(self)
 (** get the height ratio from default height and real height *)
   method get_fact_h()=(float_of_int scr_h)/.(float_of_int def_h)
 
-    
+
+(*    
   val mutable conf=new config_file
     
   method set_lang l=self#this_config.lang<-l
   method this_config=conf#load self#configfile
   method save_config()=conf#save self#configfile self#this_config
-
+*)
   
-  initializer
+(*  initializer
     at_exit (self#save_config);
     print_string self#configfile ;print_newline();
-
+*)
 
   (* get configs *)
-  method get_config()=
+(*  method get_config()=
     if self#this_config.screen_size=0 then (scr_w<-640;scr_h<-480);
     if self#this_config.screen_size=1 then (scr_w<-800;scr_h<-600);
     if self#this_config.screen_size=2 then (scr_w<-1024;scr_h<-768);
     if self#this_config.video_opt2=1 then (fullscreen:=true);
-    
+*)  
 
   method parse_args()=
     let args=[
@@ -138,8 +141,8 @@ object(self)
       ("-w",Arg.Int (self#set_scr_w),(n("screen width")));
       ("-h",Arg.Int (self#set_scr_h),(n("screen height")));
       ("-fps",Arg.Int (self#set_fps),(n("frame per second")));
-      ("-bpp",Arg.Int (self#set_depth),(n("depth")));
-      ("-lang",Arg.String (self#set_lang),(n("default language")))] in 
+      ("-bpp",Arg.Int (self#set_depth),(n("depth")))] in
+(*      ("-lang",Arg.String (self#set_lang),(n("default language")))] in *)
     let usage= "usage : "^info#get_cmd^" [-fs] [-ws] [-w width] [-h height] [-fps fps] [-lang lang]" in
       Arg.parse args (fun s -> ()) usage
 	
