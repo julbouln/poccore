@@ -259,6 +259,7 @@ class graphic_generic_object id=
     method get_tiles_size=(Array.length (vfs_tiles#get tiles))
 
     method move x y=rect#set_position x y 
+
     method resize fw fh=
       rect#set_size (int_of_float(fw*.(float_of_int rect#get_w))) (int_of_float(fh*.(float_of_int rect#get_h)));
       let ts=(vfs_tiles#get tiles) in
@@ -301,6 +302,10 @@ class graphic_dyn_object n s f=
       vfs_tiles#create_dyn_func tiles s f;
   end;;
 
+
+
+
+
 (** Graphic object class from a tile *)
 class graphic_real_object nm tile=
   object (self)
@@ -320,6 +325,18 @@ class graphic_simple_object tilefile=
       vfs_tiles#create_simple_from_func tilefile (function()->(
 	let t=tile_load tilefile in tile_set_alpha t 255 255 255;t;
        ));
+      let t=vfs_tiles#get_simple (tilefile) in
+      rect#set_size (tile_get_w t) (tile_get_h t);
+
+  end;;
+
+(** Graphic object class from a file with simple entry *)
+class graphic_from_func tilefile func=
+  object (self)
+  inherit graphic_generic_object tilefile 
+    initializer
+      vfs_tiles#create_from_func tilefile (func);
+
       let t=vfs_tiles#get_simple (tilefile) in
       rect#set_size (tile_get_w t) (tile_get_h t);
 

@@ -789,6 +789,7 @@ end;;
 
 exception Text_error of string;;
 
+(* FIXME must inherit graphic_generic_object *)
 class text id fnt=
 object(self)
   val mutable graphic=new graphic_generic_object id
@@ -796,9 +797,6 @@ object(self)
 
   val mutable id=id
   method set_id i=id<-i
-
-  method move x y=graphic#move x y
-  method get_rect=graphic#get_rect
 
 
   val mutable max_size=16
@@ -852,6 +850,9 @@ in
   method get_color=color
   method set_color c=color<-c
 
+
+  method move x y=graphic#move x y
+  method get_rect=graphic#get_rect
 
   method put()=
     for i=0 to (List.length self#get_text)-1 do
