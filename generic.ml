@@ -8,6 +8,10 @@ object
   method set_id (i:string)=id<-i
   (** get the id of this object *)
   method get_id=id
+
+  method print_info()=
+    print_string ("POCCORE: object info");print_newline();
+    print_string (" * id: "^id);print_newline();
 end;;
 
 

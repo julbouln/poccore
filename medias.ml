@@ -1,6 +1,6 @@
 (*
     Battle For Rashitoul - The ultimate strategy/arcade game
-    Copyright (C) 2003 POC 
+    Copyright (C) 2003,2004,2005 POC 
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -151,12 +151,12 @@ class font_object fontfile s=
 	(
 	  (String.length txt*8,8);
 	)
-(*
+
     method get_font=
       if fontfile<>"none" then
 	vfs_fonts#get_simple (font ^ ":" ^ string_of_int(size)^"pt")
       else font_empty()
-*)
+
     method create_text txt color =
       if fontfile<>"none" then
 	tile_text (vfs_fonts#get_simple (font ^ ":" ^ string_of_int(size)^"pt")) txt color
@@ -244,7 +244,7 @@ exception Vfs_out_of_bounds of int;;
 
 class virtual canvas_object=
 object
-  inherit generic_object
+  inherit generic_object as super
   val mutable layer=0
   method set_layer l=layer<-l
   method get_layer=layer
@@ -254,6 +254,13 @@ object
 
   method virtual move : int -> int -> unit
   method virtual put : unit -> unit
+
+
+  method print_info()=
+    super#print_info();
+    print_string (" * position: "^string_of_int rect#get_x^" - "^string_of_int rect#get_y);print_newline();
+    print_string (" * size: "^string_of_int rect#get_w^" - "^string_of_int rect#get_h);print_newline();
+    print_string (" * layer: "^string_of_int layer);print_newline();
 end;;
 
 
@@ -497,6 +504,7 @@ object
 
 end;;
 
+(* bfr compat *)
 class unit_color=
 object
   inherit v_color

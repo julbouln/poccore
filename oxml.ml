@@ -315,3 +315,55 @@ object
 
 
 end;;
+
+
+(** v_color parser stuff *)
+(* 8< *) 
+
+class xml_v_color_parser=
+object(self)
+  inherit [color,xml_color_parser] xml_list_parser "color" (fun()->new xml_color_parser) as list
+  inherit xml_color_parser as vcolor
+
+  method get_colors=
+    self#get_array
+
+  method parse_attr k v=vcolor#parse_attr k v
+  method parse_child k v=list#parse_child k v
+
+end;;
+
+class xml_v_colors_parser=
+object(self)
+  inherit xml_parser
+
+  val mutable vcolors=DynArray.create()    
+
+  method get_vcolors=
+    DynArray.to_list vcolors
+
+  method parse_child k v=
+       match k with
+	 | "vcolor" -> let p=new xml_v_color_parser in p#parse v;DynArray.add vcolors (p#get_color,p#get_colors);
+	 | _ ->();
+  method parse_attr k v=()
+
+end;;
+
+
+let v_color_from_xml f=
+  print_string ("XML: load "^f);print_newline();
+  let colfile=new xml_node (Xml.parse_file f) in
+  let colparser=new xml_v_colors_parser in    
+    colparser#parse colfile;
+  let uc=new unit_color in
+    List.iter (
+      fun v->(	
+	uc#add_vcolor (fst v) (snd v) 
+      )
+    )
+      colparser#get_vcolors;
+  uc
+
+
+
