@@ -275,7 +275,7 @@ object
   method virtual set_clip: int->int->int->int->unit
   method virtual show_cursor:unit->unit
   method virtual hide_cursor:unit->unit
-
+  method virtual fcompose:('t) drawing_object -> int -> int -> unit
 end;;
 
 class virtual ['t] drawing_handler=

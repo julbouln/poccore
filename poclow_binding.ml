@@ -234,6 +234,8 @@ object(self)
   method hide_cursor()=
     video_hide_cursor()
 
+  method fcompose (dr:poclow_drawing_object) x y=tile_put dr#get_t x y
+
 end;;
 
 let digest_of_string txt=

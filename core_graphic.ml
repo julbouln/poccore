@@ -56,7 +56,7 @@ class graphic_object=
     method put()=
       if self#is_showing then (
 	let t=self#get_drawing cur_drawing in
-	  video#get_drawing#compose t rect#get_x rect#get_y
+	  video#get_drawing#fcompose t rect#get_x rect#get_y
       )
 
 
