@@ -86,7 +86,7 @@ class ['a] vfs_files (t: 'a)=
    method create_simple k sd=
      if(Hashtbl.mem datas k)==false then 
        (
-	Hashtbl.add datas k [|sd|];
+	   Hashtbl.add datas k [|sd|];
        )
 
   (** Get an entry *)	

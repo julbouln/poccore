@@ -82,13 +82,26 @@ class font_object fontfile s=
     val mutable font=fontfile
     val mutable size=int_of_float(video#get_fact_w()*.(float_of_int s))
     initializer 
-      vfs_fonts#create_simple (fontfile ^ ":" ^ (string_of_int(size))^"pt") (font_load fontfile size)
+      if fontfile<>"none" then
+	vfs_fonts#create_simple (fontfile ^ ":" ^ (string_of_int(size))^"pt") (font_load fontfile size)
 
     method get_size=size
-    method get_height=font_height (vfs_fonts#get_simple (font ^ ":" ^ string_of_int(size)^"pt"))
-    method sizeof_text txt=font_sizeof (vfs_fonts#get_simple (font ^ ":" ^ string_of_int(size)^"pt")) txt
-    method get_font=vfs_fonts#get_simple (font ^ ":" ^ string_of_int(size)^"pt")
-    method create_text txt color =tile_text (vfs_fonts#get_simple (font ^ ":" ^ string_of_int(size)^"pt")) txt color
+    method get_height=
+      if fontfile<>"none" then
+	font_height (vfs_fonts#get_simple (font ^ ":" ^ string_of_int(size)^"pt"))
+      else 0
+    method sizeof_text txt=
+      if fontfile<>"none" then     
+     font_sizeof (vfs_fonts#get_simple (font ^ ":" ^ string_of_int(size)^"pt")) txt
+      else (0,0)
+    method get_font=
+      if fontfile<>"none" then
+	vfs_fonts#get_simple (font ^ ":" ^ string_of_int(size)^"pt")
+      else font_empty()
+    method create_text txt color =
+      if fontfile<>"none" then
+	tile_text (vfs_fonts#get_simple (font ^ ":" ^ string_of_int(size)^"pt")) txt color
+      else tile_empty()
   end;;
 
 
@@ -233,7 +246,7 @@ class graphic_real_object nm tile=
     initializer
       rect#set_size (tile_get_w tile) (tile_get_h tile);
       vfs_tiles#create_simple tiles tile;
-
+      
   end;;
 
 (** Graphic object class from a file with simple entry *)
