@@ -56,7 +56,7 @@ class graphic_object=
     method put()=
       if self#is_showing then (
 	let t=self#get_drawing cur_drawing in
-	  video#get_drawing#fcompose t rect#get_x rect#get_y
+	  video#get_drawing#compose t rect#get_x rect#get_y
       )
 
 
@@ -189,7 +189,9 @@ let digest_of_string_list txt=
 
 class graphic_object_text fnt_t (txt:string list) color=
 object
-  inherit graphic_from_drawing ((random_string "text_" 10)^digest_of_string_list txt)
+  inherit graphic_from_drawing 
+("text_"^digest_of_string_list txt)
+(*((random_string "text_" 10)^digest_of_string_list txt)*)
     (fun()->
 
 	 let fnt_n=get_font_id fnt_t in
@@ -223,7 +225,7 @@ object(self)
   initializer 
     self#set_drawing_id did
 
-  val mutable graphic=new graphic_object_text fnt_t (["text_empty"]) col;
+  val mutable graphic=new graphic_object_text fnt_t ([did]) col;
   val mutable fnt=(font_vault#get_cache_simple (get_font_id fnt_t))
  
   val mutable color=col
