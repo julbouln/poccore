@@ -34,8 +34,8 @@ class cursors w h (fc:string option)=
   object
     val mutable g=
       match fc with
-	| Some f->video#hide_cursor();new graphic_from_file "cursor" f w h
-	| None ->video#show_cursor(); new graphic_object "cursor"
+	| Some f->video#hide_cursor();new graphic_from_file f w h
+	| None ->video#show_cursor(); new graphic_object
 (*    val mutable viseur=new graphic_object_anim 42 40 "medias/misc/viseur.png" [|0;1;2;3;4;3;4;3|] 2
 *)
     val mutable state="normal"

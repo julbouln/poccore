@@ -5,6 +5,7 @@
 open Generic;;
 open Olua;;
 open Oval;;
+open Oxml;;
 
 open Anim;;
 open Rect;;
@@ -17,6 +18,8 @@ open Rect;;
 class virtual action_object_NEW=
 object(self)
   inherit generic_object
+  inherit lua_object as lo
+
 
   method virtual on_start : val_ext_handler -> unit
   method virtual on_loop : unit -> unit
@@ -27,6 +30,7 @@ end;;
 class action_fun=
 object
   inherit action_object_NEW
+
   val mutable f_on_start=(fun ve->())
   val mutable f_on_loop=(fun()->())
   val mutable f_on_stop=(fun()->())
@@ -90,8 +94,7 @@ end;;
 
 class action_lua=
 object(self)
-  inherit action_object_NEW
-  inherit lua_object as lo
+  inherit action_object_NEW as super
 
   method on_start ev=
     ignore(lua#exec_val_fun (OLuaVal.String "on_start") [OLuaVal.Table ev#to_lua#to_table])
@@ -105,7 +108,7 @@ object(self)
     lua#set_val (OLuaVal.String "on_loop") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.unit) (fun()->()));
     lua#set_val (OLuaVal.String "on_stop") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.unit) (fun()->()));
 
-    lo#lua_init();
+    super#lua_init();
 
 end;;
 
@@ -115,6 +118,12 @@ object(self)
   inherit action_lua as al
   inherit anim_object frs r
   method on_loop()=self#anim();al#on_loop();
+
+  method lua_init()=
+    lua#set_val (OLuaVal.String "get_frame") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.int) (fun()->self#get_frame));
+
+    al#lua_init();
+
 end;;
 
 
@@ -122,6 +131,12 @@ class state_object_NEW=
 object(self)
   inherit [action_object_NEW] generic_object_handler
   inherit generic_object
+  inherit lua_object as lo
+
+  method add_action n act=
+    print_string ("STATE_OBJECT : add action "^n);print_newline();
+    ignore(self#add_object (Some n) act);
+    self#lua_parent_of n (act:>lua_object)
 
   method start (ve:val_ext_handler)=
     self#foreach_object (fun k o-> 
@@ -142,7 +157,14 @@ end;;
 class state_actions=
 object(self)
   inherit [state_object_NEW] generic_object_handler
+  inherit lua_object as lo
+
   val mutable current=None
+
+  method add_state n st=
+    print_string ("STATE_ACTIONS : add state "^n);print_newline();
+    ignore(self#add_object (Some n) st);
+    self#lua_parent_of n (st:>lua_object)
 
   method set_state (sn:string option) (ve:val_ext_handler)=
     (match current with
@@ -159,6 +181,182 @@ object(self)
       | None -> ()
     
 end;;
+
+
+(* xml part *)
+
+class xml_action_object_parser=
+object(self)
+  inherit [action_lua] xml_object_parser (fun()->new action_lua)
+
+  val mutable mt=("",new val_ext_handler,"")
+  method set_metatype (m:string*val_ext_handler*string)=mt<-m
+
+  method init_object o=
+    let (nm,vh,l)=mt in
+    o#set_lua_script (l^lua);
+
+  method get_val_from_meta (m:string*val_ext_handler*string)=
+    let ofun()=
+      let (nm,vh,l)=m in
+      let o=
+	new action_lua in
+	o#set_lua_script (l);
+	o in	
+      (ofun)
+
+end;;
+
+class xml_action_anim_parser=
+object(self)
+  inherit xml_action_object_parser
+
+
+  method get_val=
+    let ofun()=
+    let (nm,vh,l)=mt in      
+      let o=
+	let args=args_parser#get_val in
+	  args#merge vh;
+	  new action_anim 
+	    (Array.map (
+	       fun v->
+		 int_of_val v
+	     )
+	       (Array.of_list 
+		  (list_of_val (args#get_val (`String "frames")))
+	       )
+	    )
+	      (int_of_val (args#get_val (`String "refresh")))
+      in
+	self#init_object (o:>action_lua);
+	(o:>action_lua)	  
+    in      
+      (id,ofun)
+
+
+  method get_val_from_meta (m:string*val_ext_handler*string)=
+    let ofun()=
+      let (nm,vh,l)=m in
+      let o=
+	new action_anim 
+	  (Array.map (
+	     fun v->
+	       int_of_val v
+	   )
+	     (Array.of_list 
+		(list_of_val (vh#get_val (`String "frames")))
+	     )
+	  )
+	  (int_of_val (vh#get_val (`String "refresh"))) in
+	  o#set_lua_script (l);
+	(o:>action_lua) in	
+      (ofun)
+
+
+
+end;;
+
+
+class xml_actions_parser=
+object(self)
+  inherit [xml_action_object_parser,action_lua] xml_parser_container "action_object" (fun()->new xml_action_object_parser)
+
+  method set_metatype (m:string*(string,string*val_ext_handler*string)Hashtbl.t*string)=mt<-m
+
+  val mutable id=""
+  method get_id=id
+
+  method parse_attr k v=
+    match k with
+      | "id" ->id<-v
+      | _ -> ()
+
+  method get_type="unique"
+
+  method get_val=
+    let ofun()=
+      let o=new state_object_NEW in
+	self#init o#add_action;
+	o in
+      (id,ofun)
+
+  method get_val_from_meta (m:string*(string,string*val_ext_handler*string)Hashtbl.t*string)=
+    let ofun()=
+      let (nm,h,l)=m in
+      let o=new state_object_NEW in 
+	self#init_from_meta_h o#add_action h;
+(*	o#set_lua_script l; *)
+	o in
+      (ofun)
+
+end;;
+
+
+let xml_factory_actions_parser()=
+  let p=new xml_actions_parser in
+    p#parser_add "action_lua" (fun()->new xml_action_object_parser);
+    p#parser_add "action_anim" (fun()->new xml_action_anim_parser);
+    p;;
+
+(** global default actions parser, can be overided *)
+let xml_default_actions_parser=
+  let gl=Global.empty("xml_default_actions_parser") in
+    Global.set gl xml_factory_actions_parser;
+    gl;;
+  
+
+class xml_state_actions_parser=
+object(self)
+  inherit [xml_actions_parser,state_object_NEW] xml_parser_container "state_object" (fun()->(Global.get xml_default_actions_parser)())
+
+
+  method set_metatype (m:string*(string,string*(string,string*val_ext_handler*string)Hashtbl.t*string)Hashtbl.t*string)=mt<-m
+
+  initializer
+    self#parser_add "unique" (fun()->(Global.get xml_default_actions_parser)())
+
+
+  method get_val=
+    let ofun()=
+      let o=new state_actions in
+	self#init o#add_state;
+	o in
+      (ofun)
+
+end;;
+
+
+(** metatype *)
+
+class xml_action_object_mt_parser=
+object
+  inherit xml_metatype_parser
+end;;
+
+class xml_state_object_mt_parser=
+object(self)
+  inherit [(string*val_ext_handler*string)] xml_stringhash_parser "action_object" (fun()->new xml_action_object_mt_parser)
+
+  val mutable id=""
+
+  method parse_attr k v=
+    match k with
+      | "id" ->id<-v
+      | _ -> ()
+
+  method get_val=
+    (id,("unique",(self#get_hash),""))
+
+end;;
+
+class xml_states_mt_parser=
+object
+  inherit [string*(string,string*val_ext_handler*string)Hashtbl.t*string] xml_stringhash_parser "state_object" (fun()->new xml_state_object_mt_parser)
+
+end;;
+
+
 
 
 (* DEPRECATED *)
