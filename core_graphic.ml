@@ -376,6 +376,9 @@ object(self)
 
   method lua_init()=
       lua#set_val (OLuaVal.String "set_text") (OLuaVal.efunc (OLuaVal.string **->> OLuaVal.unit) self#set_text);
+
+      lua#set_val (OLuaVal.String "set_size") (OLuaVal.efunc (OLuaVal.int **->> OLuaVal.unit) self#set_max_size);
+      lua#set_val (OLuaVal.String "set_lines") (OLuaVal.efunc (OLuaVal.int **->> OLuaVal.unit) self#set_lines);
 (*      lua#set_val (OLuaVal.String "get_text") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.string) (fun()->String.concat self#get_text)); *)
       super#lua_init();
 

@@ -200,6 +200,11 @@ object(self)
   val mutable sprites=new sprite_vault
   method get_sprites=sprites
 
+  method on_load()=
+    canvas#clear();
+    sprites#clear();
+    super#on_load();
+    ignore(self#lua_init());
 
   initializer
     sprites#set_canvas (Some canvas);
