@@ -232,7 +232,7 @@ class ['a] vfs_files (t: 'a)=
 
    (** Delete entry *)    
    method delete k=
-     if(Hashtbl.mem datas k)==false then (
+     if(Hashtbl.mem datas k) then (
        let d=Hashtbl.find datas k in
        for i=0 to (Array.length d)-1 do
 	 free_f (d.(i));
