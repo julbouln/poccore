@@ -285,6 +285,7 @@ class iface_button file w h=
       is_clicked<-true;
       graphic#set_cur_tile 1;
       super#on_click x y
+
     method on_release x y=
       is_clicked<-false;
       graphic#set_cur_tile 0;

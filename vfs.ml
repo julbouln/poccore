@@ -177,13 +177,17 @@ class ['a] vfs_files (t: 'a)=
   end;;
 
 
+exception No_refresh_pos_found of string
 
 class refresh_pos=
 object
   val mutable npos=Hashtbl.create 2
 
   method add_pos (n:string) (p:rectangle)=Hashtbl.add npos n p
-  method get_pos n=Hashtbl.find npos n
+  method get_pos n=
+    try
+      Hashtbl.find npos n
+    with Not_found-> raise (No_refresh_pos_found n)
   method is_pos n=Hashtbl.mem npos n
 end;;
 
@@ -211,8 +215,11 @@ object(self)
 
     method get_rpos (n:string)=
 (*      new rectangle 0 0 0 0 *)
-      self#add_rpos n;
-      rpos#get_pos n
+      if n<>"none" then (
+	self#add_rpos n;
+	rpos#get_pos n
+      ) else (new rectangle 0 0 0 0)
+
 
     initializer      
       free_f<-(function t->tile_free t);
