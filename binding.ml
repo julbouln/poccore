@@ -7,8 +7,6 @@ open Drawing;;
 (** poclow binding *)
 open Low;;
 
-all_init();
-
 (** poclow font *)
 
 class poclow_font_object=
@@ -218,6 +216,7 @@ object(self)
   inherit poclow_drawing_object
 
   method init w h bpp fs=
+    all_init();
     print_string "BINDING(poclow): init screen";print_newline();
     self#set_t (video_init w h bpp fs)
 
