@@ -90,7 +90,17 @@ let parse_key k=
     | 304 -> KeyShift
 
     | 33 -> KeyChar "!";
+
+    | 36 -> KeyChar "$"
+
+    | 39 -> KeyChar "'"
+    | 40 -> KeyChar "("
+    | 41 -> KeyChar ")"
+    | 42 -> KeyChar "*"
+    | 43 -> KeyChar "+"
     | 44 -> KeyChar ",";
+    | 45 -> KeyChar "-"
+    | 47 -> KeyChar "/"
 
     | 48 -> KeyChar "0"
     | 49 -> KeyChar "1";
@@ -104,7 +114,10 @@ let parse_key k=
     | 57 -> KeyChar "9";
 
     | 58 -> KeyChar ":";
+    | 59 -> KeyChar ";";
+    | 60 -> KeyChar "<";
     | 61 -> KeyChar "=";
+    | 62 -> KeyChar ">";
 
     | 97 -> KeyChar "a";
     | 98 -> KeyChar "b";

@@ -657,6 +657,8 @@ class iface_password_edit fnt color (te:text_edit) bw=
 
   end;;
 
+exception Iface_object_not_found of string;;
+
 (** main iface class *)
 class interface bgfile w h=
   object (self)
@@ -705,7 +707,7 @@ class interface bgfile w h=
 
     method get_object_num n=object_array.(n)
 
-    method get_object_char n=object_array.(Hashtbl.find object_hash n)
+    method get_object_char n=object_array.(try Hashtbl.find object_hash n with Not_found -> raise (Iface_object_not_found n))
     method is_object n=(Hashtbl.mem object_hash n)
     method get_object_hash=object_hash
 
