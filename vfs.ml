@@ -103,7 +103,7 @@ class ['a] vfs_files (t: 'a)=
 	 let f=Hashtbl.find datas_from_func k in
 	 let d=f() in
 	   self#create k d;
-	   print_string "VFS:exec func";print_newline();
+	   print_string ("VFS:exec_func:"^k);print_newline();
        );
 	 Hashtbl.find datas k
      )	 

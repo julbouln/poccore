@@ -40,7 +40,7 @@ object
     width<-w;
     height<-h;
     depth<-bpp;
-    fullscreen<-fs;
+    fullscreen<-fs;    
     video_init width height depth fullscreen
 
   method initialized=
