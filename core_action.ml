@@ -11,7 +11,7 @@ open Core_timer;;
 
 (** Action and state manager *)
 
-
+(** action object - repeat some function *)
 class virtual action_object=
 object(self)
   inherit generic_object
@@ -24,6 +24,7 @@ object(self)
 
 end;;
 
+(** action from func val *)
 class action_fun=
 object
   inherit action_object
@@ -89,6 +90,7 @@ end;;
 
 *)
 
+(** action from lua func definition *)
 class action_lua=
 object(self)
   inherit action_object as super
@@ -109,7 +111,7 @@ object(self)
 
 end;;
 
-
+(** action with anim capabilities and lua func definition *)
 class action_anim frs r=
 object(self)
   inherit action_lua as al
@@ -129,6 +131,7 @@ object(self)
 
 end;;
 
+(** action repeat over specified time *)
 class action_timed max_time=
 object
   inherit action_lua as al
@@ -157,7 +160,7 @@ object
     al#lua_init();
 end;;
 
-
+(** action happen after specified time *)
 class action_intime max_time=
 object
   inherit action_lua as al
@@ -187,6 +190,7 @@ object
 end;;
 
 
+(** manage multiple actions in the same time *)
 class state_object=
 object(self)
   inherit [action_object] generic_object_handler
@@ -216,7 +220,19 @@ object(self)
     self#foreach_object (fun k o-> o#on_stop());
 
 
+(** check before set *)
+  method check (ve:val_ext_handler)=
+    let v=(ve#to_lua#to_table) in
+    match (List.nth (lua#exec_val_fun (OLuaVal.String "on_check") [OLuaVal.Table v]) 0) with
+      | OLuaVal.Nil->false
+      | _ -> true
+
   method lua_init()=
+    lua#set_val (OLuaVal.String "on_check") 
+      (OLuaVal.efunc (OLuaVal.table **->> OLuaVal.bool) 
+	 (fun v->true
+	 )
+      );
     lua#set_val (OLuaVal.String "start") 
       (OLuaVal.efunc (OLuaVal.table **->> OLuaVal.unit) 
 	 (fun v->
@@ -225,9 +241,12 @@ object(self)
 	      self#start (val_ext_handler_of_format (ValLua lo))
 	 )
       );
-    [OLuaVal.Nil]
+
+    lo#lua_init()
+
 end;;
 
+(** manage multiple state one at time *)
 class state_actions=
 object(self)
   inherit [state_object] generic_object_handler
@@ -241,6 +260,15 @@ object(self)
 (*    print_string ("STATE_ACTIONS : add state "^n);print_newline(); *)
     ignore(self#add_object (Some n) st);
     self#lua_parent_of n (st:>lua_object)
+
+  method request_state sn ve ave=
+    match sn with
+      | Some n->
+	  let o=self#get_object n in
+	    if (o#check ave) then
+	      self#set_state sn ve
+      | None ->()
+
 
   method set_state (sn:string option) (ve:val_ext_handler)=
 
@@ -275,6 +303,17 @@ object(self)
 	    let lo=new lua_obj in
 	      lo#from_table v;
 	    self#set_state (Some n) (val_ext_handler_of_format (ValLua lo))
+	 )
+      );
+
+    lua#set_val (OLuaVal.String "request_state") 
+      (OLuaVal.efunc (OLuaVal.string **-> OLuaVal.table **->OLuaVal.table **->> OLuaVal.unit) 
+	 (fun n v av->
+	    let lo=new lua_obj and
+		alo=new lua_obj in
+	      lo#from_table v;
+	      alo#from_table av;
+	      self#request_state (Some n) (val_ext_handler_of_format (ValLua lo)) (val_ext_handler_of_format (ValLua alo))
 	 )
       );
 

@@ -105,6 +105,13 @@ object(self)
 	DrawResultT (tile_rect w h col);
     );
 
+    self#add_op_from_list "box" DrawTypeCreate (
+      fun ovl->
+	let (w,h)=size_of_val (List.nth ovl 0) in
+	let col=color_of_val (List.nth ovl 1) in
+	DrawResultT (tile_box w h col);
+    );
+
     self#add_op_from_list "create_text" DrawTypeCreate (
       fun ovl->
 	let fnt_n=string_of_val (List.nth ovl 0)  and

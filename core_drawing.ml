@@ -231,6 +231,15 @@ object(self)
   method get_lua=lua
 
   initializer
+(*    self#add_op_from_list "create" DrawTypeWrite (
+      fun ovl->
+	let (w,h)=size_of_val (List.nth ovl 0) and
+	    col=color_of_val (List.nth ovl 1) in
+	  (*	print_string ("DRAWING_OBJECT: load "^f);print_newline(); *)
+	  self#create w h col;
+	  DrawResultUnit();
+    );
+*)
     self#add_op_from_list "put_pixel" DrawTypeWrite (
       fun ovl->
 	let (x,y)=position_of_val (List.nth ovl 0) and

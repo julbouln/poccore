@@ -57,6 +57,8 @@ class ['pt,'t] xml_parser_container otag (gen_parser:unit->'pt)=
 object(self)
   inherit xml_parser
 
+  val mutable lua=""
+
   val mutable objs=DynArray.create()
 
   val mutable obj_parsers=Hashtbl.create 2
@@ -80,6 +82,7 @@ object(self)
 		  sp#parse v;
 		  DynArray.add objs sp#get_val
 		)
+      | "script" -> lua<-v#get_pcdata;
       | _ ->()
 	  
 	  
@@ -400,6 +403,7 @@ object(self)
   method get_val=
     let ofun()=
       let o=new state_object in
+	o#set_lua_script lua;
 	self#init_simple o#add_action;
 	o in
       (id,ofun)
