@@ -255,16 +255,16 @@ class ['k,'v] xml_hash_parser ct pc =
 object
   inherit xml_parser
 
-  val mutable frms=Hashtbl.create 2
+  val mutable h=Hashtbl.create 2
 (*  method get_val n=(DynArray.get frms n : 'a) *)
-  method get_hash=frms
+  method get_hash=h
   method tag=""
   method parse_attr k v=()
   method parse_child k v=
     match k with
       | r when r=ct -> let p=pc() in p#parse v;
 	  let r=p#get_val in
-	  Hashtbl.add frms (fst r:'k) (snd r:'v)
+	  Hashtbl.add h (fst r:'k) (snd r:'v)
       | _ -> ()
 end;;
 
@@ -273,7 +273,97 @@ object
   inherit [string,'v] xml_hash_parser ct pc
 end;;
 
+(* NEW *)
+(*
 
+arbre_type.xml (pousse)
+<game_object name="arbre">
+<header>
+  <inherit file="decor_type.xml"/>
+</header>
+<args>
+</args>
+
+
+</game_object>
+
+arbre_tropical.xml (climat=tropical, qualite du bois=4)
+<game_object name="arbre_tropical">
+<header>
+  <inherit file="arbre_type.xml"/>
+</header>
+<args>
+</args>
+<properties>
+<val_string name="climat" value="tropical"/>
+<val_named_list name="bois">
+ <val_int name="qualite">4</val_int>
+</val_named_list>
+</properties>
+</game_object>
+
+decor->arbre->arbre_fruitier->cocotier
+            ->arbre_tropical->
+
+*)
+
+
+class virtual xml_object=
+object(self)
+
+(* general *)
+  method get_tag x=Xml.tag x
+  method get_attrib x n=Xml.attrib x n
+  method get_attribs x=Xml.attribs x
+  method get_children x=Xml.children x
+  method get_pcdate x=Xml.pcdata x
+
+  method foreach_attrib x f=
+    List.iter f (self#get_attribs x);
+
+  method foreach_child x f=
+    List.iter f (self#get_children x);
+
+
+  method merge x1 x2=
+    let rec m xe1 xe2=
+      match (xe1,xe2) with
+	| (Element(t1,a1,c1),Element(t2,a2,c2)) when t1=t2 && a1=a2->
+	    let ncl=ref c1 in
+	      List.iter (
+		fun c->
+		  List.iter (
+		    fun cc ->
+		      ncl:= !ncl@(m cc c);
+		  ) c1;		  
+	      ) c2;
+	      
+	      [(Element(t1,a1,!ncl))]
+		
+	| (o1,o2) -> [] in
+      m x1 x2
+
+(* to xml *)
+  method virtual to_xml : Xml.xml
+  method to_xml_string=
+    let x=self#to_xml in
+      Xml.to_string x
+  method save_to_file f=
+    let fo=open_out f in
+      output_string fo (self#to_xml_string);
+      close_out fo;
+
+(* from xml *)
+  method virtual from_xml : Xml.xml -> unit
+  method from_xml_string s=
+    let x=Xml.parse_string s in
+      self#from_xml x
+  method load_from_file f=
+    let x=Xml.parse_file f in
+      self#from_xml x
+
+
+end;;
 
 
 

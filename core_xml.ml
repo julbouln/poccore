@@ -170,6 +170,108 @@ object(self)
 
 end;;
 
+(* shit *)
+(*< NEW object with meta parser *)
+
+class ['ot] xml_object_parser_NEW (new_obj:unit->'ot)= 
+object (self)
+  inherit xml_parser
+
+(** object unique id *)
+  val mutable id=""
+  method get_id=id
+(** object type *)
+  val mutable nm=""
+  method get_type=nm
+
+(** object args *)
+  val mutable args=new val_ext_handler
+  method get_args=args
+
+  method parse_attr k v=
+    match k with
+      | "type" ->nm<-v
+      | "id" ->id<-v
+      | _ -> ()
+   
+  method parse_child k v=
+    let args_parser=new xml_val_ext_list_parser "args" in
+    args_parser#parse_child k v;
+    args<-args_parser#get_val;
+    self#merge_metas();
+
+  (* parse metas file and merge with current *)
+  method merge_metas()=
+    if args#is_val (`String "metatypes") then (
+      let metas=list_of_val(args#get_val (`String "metatypes")) in
+	List.iter (
+	  fun meta->
+	    let metafilename=string_of_val meta in
+	    let metafile=new xml_node (Xml.parse_file metafilename) in
+	    let p=Oo.copy self in
+	      p#parse metafile;
+	      args#merge p#get_args;
+	      args#append (`String "script") p#get_args;
+	) metas;
+    );
+
+(** object initial init *)
+  method init_object o=
+    let lua= (text_of_val(args#get_val (`String "script"))) in
+      o#set_lua_script lua
+	    
+  method get_val=
+    let ofun()=
+      let o=
+	new_obj()
+      in
+	self#init_object o;
+	o	  
+    in      
+      (id,ofun)
+
+end;;
+
+
+
+class ['ot] xml_objects_parser ct (new_obj:unit->'ot)=
+object(self)
+  inherit [unit->'ot] xml_stringhash_parser ct (fun()->new xml_object_parser_NEW new_obj)
+
+end;;
+
+
+class ['ot] xml_objects_typed_parser ct (new_obj:unit->'ot)=
+object(self)
+  inherit [unit->'ot] xml_stringhash_parser ct (fun()->new xml_object_parser_NEW new_obj)
+    
+  val mutable obj_parsers=Hashtbl.create 2
+  method parser_add (n:string) (p:unit->('ot) xml_object_parser_NEW)=Hashtbl.add obj_parsers n p
+  method parser_is n=Hashtbl.mem obj_parsers n
+  method parser_get n=
+    (try
+       Hashtbl.find obj_parsers n
+     with
+	 Not_found -> raise (Xml_parser_not_found n))
+
+  method parse_child k v=
+    match k with
+      | tag when tag=ct ->
+	  let p=new xml_object_parser_NEW new_obj in p#parse v;
+	    if self#parser_is p#get_type then
+	      let sp=(self#parser_get p#get_type)() in (
+		  sp#parse v;
+		  let spr=sp#get_val in
+		  Hashtbl.add h (fst spr) (snd spr)
+		)
+      | _ ->()
+
+
+end;;
+
+
+(* NEW object with meta parser >*)
+
 class ['ot] xml_object_parser (new_obj:unit->'ot)= 
 object (self)
   inherit xml_parser
@@ -251,32 +353,17 @@ object (self)
   val mutable mt=("",new val_ext_handler,"")
   method set_metatype (m:string*val_ext_handler*string)=mt<-m
 
-(** canvas layer *)
-  val mutable layer=0
-
-(** object x position *)
-  val mutable x=0
-(** object y position *)
-  val mutable y=0
-
-  val mutable w=0
-  val mutable h=0
-
   method parse_child k v=
     super#parse_child k v;
-    match k with
-      | "layer" -> let p=(new xml_int_parser "pos" ) in p#parse v;layer<-p#get_val;
-      | "size" -> let p=(new xml_size_parser ) in p#parse v;w<-p#get_w;h<-p#get_h;
-      | "position" -> let p=(new xml_point_parser ) in p#parse v;x<-p#get_x;y<-p#get_y;
-      | _ -> ()
+
 
 (** object initial init *)
   method init_object o=
     let (nm,vh,l)=mt in
     o#set_lua_script (l^lua);
-    o#set_layer layer;
+(*    o#set_layer layer;
     o#move x y;
-
+*)
 
   method get_val_from_meta (m:string*val_ext_handler*string)=
     let ofun()=
@@ -508,7 +595,7 @@ object(self)
 
   method get_val=
     let ofun()=
-      let o=new state_object_NEW in
+      let o=new state_object in
 	self#init o#add_action;
 	o in
       (id,ofun)
@@ -516,7 +603,7 @@ object(self)
   method get_val_from_meta (m:string*(string,string*val_ext_handler*string)Hashtbl.t*string)=
     let ofun()=
       let (nm,h,l)=m in
-      let o=new state_object_NEW in 
+      let o=new state_object in 
 	self#init_from_meta_h o#add_action h;
 (*	o#set_lua_script l; *)
 	o in
@@ -542,7 +629,7 @@ let xml_default_actions_parser=
 
 class xml_state_actions_parser=
 object(self)
-  inherit [xml_actions_parser,state_object_NEW] xml_parser_container "state_object" (fun()->(Global.get xml_default_actions_parser)())
+  inherit [xml_actions_parser,state_object] xml_parser_container "state_object" (fun()->(Global.get xml_default_actions_parser)())
 
 
   method set_metatype (m:string*(string,string*(string,string*val_ext_handler*string)Hashtbl.t*string)Hashtbl.t*string)=mt<-m

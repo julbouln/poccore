@@ -11,7 +11,7 @@ open Timer;;
 (** Action and state manager *)
 
 
-class virtual action_object_NEW=
+class virtual action_object=
 object(self)
   inherit generic_object
   inherit lua_object as lo
@@ -25,7 +25,7 @@ end;;
 
 class action_fun=
 object
-  inherit action_object_NEW
+  inherit action_object
 
   val mutable f_on_start=(fun ve->())
   val mutable f_on_loop=(fun()->())
@@ -90,7 +90,7 @@ end;;
 
 class action_lua=
 object(self)
-  inherit action_object_NEW as super
+  inherit action_object as super
 
   method on_start ev=
     ignore(lua#exec_val_fun (OLuaVal.String "on_start") [OLuaVal.Table ev#to_lua#to_table])
@@ -151,9 +151,9 @@ object
 end;;
 
 
-class state_object_NEW=
+class state_object=
 object(self)
-  inherit [action_object_NEW] generic_object_handler
+  inherit [action_object] generic_object_handler
   inherit generic_object
   inherit lua_object as lo
 
@@ -179,11 +179,22 @@ object(self)
   method stop()=
     self#foreach_object (fun k o-> o#on_stop());
 
+
+  method lua_init()=
+    lua#set_val (OLuaVal.String "start") 
+      (OLuaVal.efunc (OLuaVal.table **->> OLuaVal.unit) 
+	 (fun v->
+	    let lo=new lua_obj in
+	      lo#from_table v;
+	      self#start (val_ext_handler_of_format (ValLua lo))
+	 )
+      );
+    [OLuaVal.Nil]
 end;;
 
 class state_actions=
 object(self)
-  inherit [state_object_NEW] generic_object_handler
+  inherit [state_object] generic_object_handler
   inherit lua_object as lo
 
   val mutable current=None

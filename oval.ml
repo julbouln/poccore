@@ -362,7 +362,21 @@ object(self)
     let g (n,v)=f n v in
     DynArray.iter g vals
 
-
+(* append val 'a from vh to val 'a self : work for string and text*)
+  method append (v:'a) (vh:('a) val_handler)=
+    if self#is_val v && vh#is_val v then (
+      let sv=self#get_val v and
+	  vv=vh#get_val v in
+      let rv=
+	match (sv,vv) with
+	  | (`String v1,`String v2) -> `String (v2^v1)
+	  | (`Text v1,`String v2) -> `Text (v2^v1)
+	  | (`String v1,`String v2) -> `Text (v2^v1)
+	  | (`Text v1,`Text v2) -> `Text (v2^v1)
+	  | _ ->`Nil
+      in
+	self#set_val v rv;
+    );
   (* add vh val to self *)
   method merge (vh:('a) val_handler)=
     vh#foreach_val (
