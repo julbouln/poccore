@@ -1045,6 +1045,10 @@ class interface bgfile w h=
       let o=self#get_object_char n in
 	o#get_data_text
 
+    method object_set_text n t=
+      let o=self#get_object_char n in
+	o#set_data_text t
+
 
     method show_object n=
       let o=self#get_object_char n in
