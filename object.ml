@@ -24,15 +24,30 @@ open Vfs;;
 
 let medias_dir=(Filename.dirname(Sys.executable_name));;
 
-(** Media objects class definitions *)
+(** Media objects *)
 
 Random.self_init();;
 
+(** {2 General function (FIXME: must fall in another file)} *)
+
+(** get random number *)
 let randomize n=
  (Random.int n)
 
+let carree x=float_of_int(x*x);;
+let racine x=(sqrt x);;
 
-(* FIXME : put this in bfrlib/bfrlib.ml *)
+(** Generate a random string of size s with prefix p *)
+let random_string p s=
+  let str=String.create s in
+  String.blit (p^"/_") 0 str 0 5;
+  for i=5 to s-1 do
+    let r=Char.chr ((randomize 25)+65) in
+    String.set str i r;
+  done;
+  str;;
+
+
 (** Load an unit tile of 5 directions and make mirrors to have 8 directions *)
 let tiles_load_with_mirror file w h=
   let t=tiles_load_with_mirror_space file w h in
@@ -59,7 +74,7 @@ let tiles_load_with_mirror file w h=
 ;;
 
 
-
+(** {2 Font part} *)
 
 (** Font object class *)
 class font_object fontfile s=
@@ -76,8 +91,8 @@ class font_object fontfile s=
     method create_text txt color =tile_text (vfs_fonts#get_simple (font ^ ":" ^ string_of_int(size)^"pt")) txt color
   end;;
 
-let carree x=float_of_int(x*x);;
-let racine x=(sqrt x);;
+
+(** {2 Sound part} *)
 
 (** Sound object class *)
 class sound_object soundfiles=
@@ -140,14 +155,9 @@ class sound_object soundfiles=
 	  
   end;;
 
-let resized_objs=let a=Hashtbl.create 2 in Hashtbl.add a "none" false;a;;
 
-class refresh_position=
-object
-  
 
-end;;
-
+(** {2 Graphic part} *)
 
 (** Graphic object class parent *)
 class g_object id=
@@ -206,15 +216,6 @@ class g_object id=
 
   end;;
 
-(** Generate a random string of size s with prefix p*)
-let random_string p s=
-  let str=String.create s in
-  String.blit (p^"/_") 0 str 0 5;
-  for i=5 to s-1 do
-    let r=Char.chr ((randomize 25)+65) in
-    String.set str i r;
-  done;
-  str;
 
 (** Dyn graphic object class *)
 class graphic_dyn_object n s f=
@@ -309,33 +310,14 @@ object (self)
       vfs_tiles#create_from_func tilesfile (function()->(
 					      
 	let t=tiles_load tilesfile wi hi in
-(*	let t2=Array.create (Array.length (t)) (tile_empty()) in *)
 	for i=0 to (Array.length (t))-1 do
 	  tile_set_alpha t.(i) 255 255 255; 
-(*	  t2.(i)<-tile_copy t.(i);
-	  tile_free t.(i); *)
 	done;
 	  t
 
        ));
       if is_shaded=true then
 	(
-	 (* create a (own) shaded version of the pics  for fogofwar*)
-
-(*	 vfs_tiles#create_dyn_func (tilesfile^":shaded") 1 (function k->
-	   (	
-	     let t=self#get_tile k  in
-	     let ta=tile_resize t 0.25 0.25 in
-	     let tb=tile_resize ta 4.0 4.0 in
-	     let tc=tile_fogofwar1 tb in 
-	     tile_free ta;
-	     tile_free tb;
-	     tc
-	    )
-	 )
-	)
-*)
-
 	 vfs_tiles#create_from_func (tilesfile^":shaded") (function()->(
 	   let t=tiles_load tilesfile wi hi in
 	   let t_s=Array.make (Array.length (t)) (tile_empty()) in
@@ -376,7 +358,6 @@ object
     let rt=ref t in
     Hashtbl.iter
       (fun k v->
-(*	 print_string "CHANGE COLOR";print_newline(); *)
 	 let tr=tile_color_change !rt k v.(n) in	 
 	   tile_free !rt;
 	   rt:=tr
@@ -447,6 +428,9 @@ object (self)
 end;;
 
 
+
+let resized_objs=let a=Hashtbl.create 2 in Hashtbl.add a "none" false;a;;
+
 class graphic_real_resized_object nm fw fh tile=
   object
     inherit graphic_real_object nm tile as super
@@ -486,11 +470,4 @@ class graphic_scr_resized_object wi hi tilesfile mirror is_shaded=
     inherit graphic_resized_object wi hi (video#get_fact_w()) (video#get_fact_h()) tilesfile mirror is_shaded as super
   end;;
 
-
-(* FIXME : must be in config.ml *)
-(* let game_opt1=ref true;;
-let game_opt2=ref true;;
-let game_opt3=ref true;;
-let video_opt1=ref true;;
-*)
 

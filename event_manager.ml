@@ -33,8 +33,6 @@ object(self)
   method set_on_loop f=on_loop<-f
   method set_on_quit f=on_quit<-f
 
-			 
-
   method init()=
     Callback.register "add_event" (self#add);
     Callback.register "loop" (self#for_loop);
@@ -47,11 +45,11 @@ object(self)
     event_loop ev_stack;
 
   method for_loop()=
-  while Stack.length ev_stack <> 0 do
-    let a=(Stack.top ev_stack) in
-      parser a;
-    Stack.pop ev_stack;
-  done;
+    while Stack.length ev_stack <> 0 do
+      let a=(Stack.top ev_stack) in
+	parser a;
+	let r=Stack.pop ev_stack in ()
+    done;
     on_loop();
 
 
@@ -67,7 +65,7 @@ let eventm=new event_manager;;
 
 
 (* FIXME : deprecated *)
-
+(*
 let ev_stack=Stack.create();;
 let ev_a=ref ev_stack;;
 let add_event etype eval ebut ex ey=(Stack.push {etype=etype;eval=eval;ebut=ebut;ex=ex;ey=ey} !ev_a);;
@@ -176,3 +174,4 @@ let clear_stack()=
     let a=(Stack.top !ev_a) in
     Stack.pop !ev_a;
   done;;
+*)

@@ -24,23 +24,38 @@ open Event_manager;;
 open Cursors;;
 
 
-(** Stage objects class definitions *)
+(** Stage subsystem *)
+(** Stage is a high-level container for interface and game engine. When you define a stage, you specify some thing to do when loading, leaving, on each frame and the event parser. You can handle multiple stage through the stages global class. See exemples for more informations *)
 
-(* stage class *)
+(** stage class *)
 class stage  (cursor:cursors)=
 object (self)
   val mutable initialized=false
   val curs=cursor
-  method get_initialized=initialized
+
+(** {2 Virtual part} *)
 
 
+(** what to do when first load stage *)
   method on_load()=()
+(** what to do on each frame *)
   method on_loop()=()
+(** what to do when quit stage *)
   method on_quit()=()
   method on_reinit()=()
+(** what to do when continue a stage already loaded *)
   method on_continue()=()
   method on_leave()=()
+
+(** parse the event coming in stage *)
   method ev_parser (e:event)=()		      
+
+
+(** {2 General part} *)
+
+  (** get if stage initialized *)
+  method get_initialized=initialized
+
 
   method get_curs=curs
   
@@ -69,6 +84,7 @@ object (self)
 end;;
 
 
+(** General stages handler *)
 class stages curs=
 object
   val mutable current_stage="none"
@@ -76,7 +92,7 @@ object
   (* create an Hashtbl of stages *)
   val mutable stages=let a=Hashtbl.create 2 in Hashtbl.add a "none" (new stage curs);a;
 
-(* add a stage in stages *)
+  (** add a stage in stages *)
   method stage_add n s=
     if (Hashtbl.mem stages n)==true then
       (
@@ -89,13 +105,13 @@ object
 	Hashtbl.add stages n s;
       );
 
-  (* check for a stage in stages *)
+  (** check for a stage in stages *)
   method stage_is n=Hashtbl.mem stages n;
 
-  (* get a stage in stages *)
+  (** get a stage in stages *)
   method stage_get n=Hashtbl.find stages n;
 
-  (* load a stage in stages *)
+  (** load a stage in stages *)
   method stage_load n=
     (Hashtbl.find stages n)#get_curs#set_state "normal";
     if current_stage<>"none" then
@@ -103,69 +119,20 @@ object
     current_stage<-n;
     (Hashtbl.find stages n)#load();
   
-  (* continue with a stage in stages *)
+  (** continue with a stage in stages *)
   method stage_continue n=
     (Hashtbl.find stages n)#get_curs#set_state "normal";
     (Hashtbl.find stages current_stage)#leave(); 
     current_stage<-n;
     (Hashtbl.find stages n)#continue();
 
-  (* leave a stage in stages *)
+  (** leave a stage in stages *)
   method stage_leave n=(Hashtbl.find stages n)#leave();
   
 (*  method stage_connect v=v#init(); *)
 
 end;;
 
-(* FIXME : deprecated *)
-
-let current_stage=ref "none";;
-
-let bfr_exit()=
-  exit(1);;
 
 
-
-(* create an Hashtbl of stages *)
-let stages_create curs=let a=Hashtbl.create 2 in Hashtbl.add a "none" (new stage curs);a;;
-
-(* add a stage in stages *)
-let stage_add stages n s=
-  if (Hashtbl.mem stages n)==true then
-    (
-     let v=Hashtbl.find stages n in
-     v#reinit();
-     Hashtbl.replace stages n s;
-    )
-  else
-    (
-     Hashtbl.add stages n s;
-    );;
-
-(* check for a stage in stages *)
-let stage_is stages n=Hashtbl.mem stages n;;
-
-(* get a stage in stages *)
-let stage_get stages n=Hashtbl.find stages n;;
-
-(* load a stage in stages *)
-let stage_load stages n=
-  (Hashtbl.find stages n)#get_curs#set_state "normal";
-  if !current_stage<>"none" then
-    (Hashtbl.find stages !current_stage)#leave();   
-  current_stage:=n;
-  (Hashtbl.find stages n)#load();;
-
-(* continue with a stage in stages *)
-let stage_continue stages n=
-  (Hashtbl.find stages n)#get_curs#set_state "normal";
-  (Hashtbl.find stages !current_stage)#leave(); 
-  current_stage:=n;
-  (Hashtbl.find stages n)#continue();;
-
-(* leave a stage in stages *)
-let stage_leave stages n=(Hashtbl.find stages n)#leave();;
-
-let stage_connect v=v#init();;
-
-
+(* FIXME : must declare stages here like video and audio *)

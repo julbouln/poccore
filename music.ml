@@ -21,11 +21,19 @@ open Unix;;
 
 (* FIXME : use class here : music_manager *)
 
+
 (** Music manager *)
 
-let load_musics()=
-  let farr=Array.make 100 "none" in
-  let d=opendir "medias/musics" in
+class music_manager=
+object
+  val mutable a=Array.make 100 "none" 
+  val mutable d=""
+
+(** load all music from dir *)
+method load_musics dir=
+  d<-dir;
+  let farr=a in
+  let d=opendir dir in
   let cf=ref false in
   let c=ref 0 in
   while !cf==false do
@@ -39,32 +47,39 @@ let load_musics()=
     c:= !c+1;
   done;      
   closedir d;
-  farr
-;;
 
-let print_musics a=
+method get_music n=a.(n)
+
+method print_musics()=
   for i=0 to (Array.length a)-1 do
     if a.(i)<>"none" then (
       print_string a.(i);print_newline();
      );
-  done;;
+  done
 
-let is_music a i=
+method is_music i=
   if a.(i)<>"none" && a.(i)<>"." && a.(i)<>".." then true else false
 
-let play_music a i=
-  let mus=music_load ("medias/musics/"^a.(i)) in
+(** play specific music in all loaded *)
+method play_music i=
+  let mus=music_load (d^"/"^a.(i)) in
 (*  music_set_volume 16; *)
   music_play mus;
   mus
 
-let play_musics a=
+(** play all music loaded *)
+method play_musics()=
   for i=0 to (Array.length a)-1 do
     if a.(i)<>"none" && a.(i)<>"." && a.(i)<>".." then (
-      let mus=music_load ("medias/musics/"^a.(i)) in
+      let mus=music_load (d^"/"^a.(i)) in
       music_play mus;
 (*      music_free mus;
       print_string a.(i);print_newline();
 *)
      );
-  done;;
+  done
+
+
+end;;
+
+

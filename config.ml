@@ -52,6 +52,8 @@ mutable music_vol:int;
 mutable lang:string;
 };;
 
+(* BULLSHIT use xml here *)
+
 class config_file=
 object 
   inherit [config] file as super

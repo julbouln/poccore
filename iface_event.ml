@@ -22,7 +22,7 @@ open Event_manager;;
 open Object;;
 open Interface;;
 
-(** GUI event manager *)
+(** GUI event parser *)
 
 let ev_iface_parser a iface curs=
   curs#move a.ex a.ey;  

@@ -19,8 +19,9 @@
 
 open Low;;
 
-(** Main audio class *)
+(** Audio subsystem *)
 
+(** Audio class *)
 class audio=
 object
   val mutable freq=0

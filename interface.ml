@@ -28,8 +28,7 @@ open Event_manager;;
 (** GUI objects class definitions *)
 
 
-
-(* parent widget *)
+(** parent widget *)
 class iface_object w h=
   object
     val mutable data=0
@@ -75,7 +74,7 @@ class iface_object w h=
 	  
   end;;
 
-(* graphic object widget *)
+(** graphic object widget *)
 class iface_graphic_object gr w h=
   object (self)
     inherit iface_object w h as super
@@ -89,14 +88,14 @@ class iface_graphic_object gr w h=
 
 
 
-(* graphic object from file widget *)
+(** graphic object from file widget *)
 class iface_graphic_file_object file w h=
   object (self)
     inherit iface_graphic_object (new graphic_scr_resized_object w h file false false) w h as super
 
   end;;
 
-(* graphic object from file widget *)
+(** graphic object from file widget *)
 class iface_graphic_colored_object file w h un uc=
   object (self)
     inherit iface_graphic_object (new graphic_object_colored w h file false false un uc) w h as super
@@ -104,7 +103,7 @@ class iface_graphic_colored_object file w h un uc=
   end;;
 
 
-(* container widget *)
+(** container widget *)
 class iface_container c=
   object (self)
     inherit iface_object 0 0 as super
@@ -147,7 +146,7 @@ class iface_container c=
   end;;
 
 
-(* vertical container widget *)
+(** vertical container widget *)
 class iface_vcontainer c=
   object (self)
     inherit iface_container c as super
@@ -167,7 +166,7 @@ let text_split s=
 
 
 
-(* text widget *)
+(** text widget *)
 class iface_text fnt color txt_s=
   object
     inherit iface_graphic_object (
@@ -208,7 +207,7 @@ class iface_text fnt color txt_s=
 
 
 
-(* label_static widget *)
+(** label_static widget *)
 class iface_label_static fnt color txt=
   object
     inherit iface_graphic_object  
@@ -226,7 +225,7 @@ class iface_label_static fnt color txt=
   end;;
 
 
-(* label_dynamic widget *)
+(** label_dynamic widget *)
 class iface_label_dynamic fnt color=
   object (self)
     inherit iface_object 0 0 as super
@@ -242,6 +241,7 @@ class iface_label_dynamic fnt color=
 
 
 (* text entry *)
+(*
 class iface_text_entry fnt color=
   object (self)
     inherit iface_object 0 0 as super
@@ -269,9 +269,9 @@ val mutable clicked=false
 	)
       )
   end;;
+*)
 
-
-(* sample button widget *)
+(** sample button widget *)
 class iface_button file w h=
   object
     inherit iface_graphic_file_object file w h as super
@@ -293,7 +293,7 @@ class iface_button file w h=
 
 
 
-(* select box widget *)
+(** select box widget (DEPRECETED) *)
 class iface_selectbox_OLD fnt e=
  object(self)
   inherit iface_vcontainer 
@@ -363,7 +363,7 @@ class iface_selectbox_OLD fnt e=
 
 end;;
 
-(* select box widget *)
+(** select box widget *)
 class iface_selectbox fnt e=
  object(self)
   inherit iface_vcontainer 
@@ -482,7 +482,7 @@ end;;
 
 
 
-(* button with label widget *)
+(** button with label widget *)
 class iface_button_with_label fnt txt file w h=
   object
     inherit iface_button file w h as super
@@ -499,7 +499,7 @@ class iface_button_with_label fnt txt file w h=
 
   end;;
 
-(* checkbox widget *)
+(** checkbox widget *)
 class iface_checkbox f fnt txt=
   object
     inherit iface_button f 20 20 as super
@@ -537,7 +537,7 @@ end;;
 
 
 
-(* volume control widget *)
+(** volume control widget *)
 class iface_volume s e w h=
   let vol=ref 1 in
   object(self)
@@ -574,7 +574,7 @@ class iface_volume s e w h=
 
 
 
-(* main iface class *)
+(** main iface class *)
 class interface bgfile w h=
   object (self)
     val mutable background=new graphic_scr_resized_object w h bgfile false false 

@@ -1,7 +1,8 @@
 open Object;;
 
-(** Anim class *)
+(** Anim subsystem *)
 
+(** Anim class *)
 class anim_object frames refresh=
 object
     val mutable current_frame=0
@@ -39,6 +40,7 @@ object
   end;;
 
 
+(** Animated graphic object *)
 class graphic_object_anim w h file frames refresh= 
 object
   val mutable anim=new anim_object frames refresh

@@ -24,34 +24,32 @@ open Object;;
 
 open Anim;;
 
+(* FIXME why so static ? *)
+
 (** Cursor class : handler of graphic cursor *)
+
+
 class cursors w h f=
   object
     val mutable g=new graphic_scr_resized_object w h f false false
 
     val mutable viseur=new graphic_object_anim 42 40 "medias/misc/viseur.png" [|0;1;2;3;4;3;4;3|] 2
-(*    val mutable g2=new graphic_scr_resized_object 42 40 "medias/misc/viseur.png" false false
-    val mutable g2anim=new game_object_anim [|0;1;2;3;4;3;4;3|] 2
-*)
+
     val mutable state="normal"
     val mutable pl=1
 
     method get_x=g#get_rect#get_x;
     method get_y=g#get_rect#get_y;
  
-    method move x y=g#move x y;viseur#move x y(*g2#move x y;*)
+    method move x y=g#move x y
     method put()=
       if state<>"on_ennemy" then
 	g#put()
       else (
 	viseur#anim();
 	viseur#put();
-(*
-	g2anim#anim();
-	g2#set_cur_tile (g2anim#get_frame);
-	g2#put();
-*)
       )
+
     method get_state=state
     method set_player p=pl<-p
     method set_state n=
@@ -64,7 +62,7 @@ class cursors w h f=
       | "left" -> g#set_cur_tile 6
       | "right" -> g#set_cur_tile 7
       | "can_attack" -> g#set_cur_tile 8
-      | "on_ennemy" -> ()(*g2#set_cur_tile 0*)
+      | "on_ennemy" -> ()
       | _ -> g#set_cur_tile 0;
 
 
