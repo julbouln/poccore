@@ -80,6 +80,7 @@ object(self)
   method virtual tag:string
   method virtual parse_attr: string->string->unit
   method virtual parse_child: string->xml_node->unit
+
   method parse (n:xml_node)= 
     n#foreach_attr self#parse_attr;
     n#foreach_child self#parse_child;

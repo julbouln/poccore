@@ -25,23 +25,28 @@ open Interface;;
 (** GUI event parser *)
 
 let ev_iface_parser a iface curs=
-  if a.etype="mouse" then (
-  curs#move a.ex a.ey;  
-  );  
-  if a.etype="mouse" && a.eval= "released" then (
-    iface#release a.ex a.ey; 
-    curs#set_state "normal";
-   );
-
-  if a.etype="mouse" && a.eval= "pressed" then (
-    iface#click a.ex a.ey; 
-    curs#set_state "clicked";
-   );
-
-  if a.etype="mouse" && a.eval= "motion" then (    
-    iface#mouseover a.ex a.ey; 
-   );;
-
+  (match a.etype with
+     | "mouse" ->
+	 curs#move a.ex a.ey;
+	 (match a.eval with
+	    | "motion" -> 
+		iface#mouseover a.ex a.ey;
+	    | "released" -> 
+		iface#release a.ex a.ey; 
+		curs#set_state "normal";
+	    | "pressed" -> 
+		iface#click a.ex a.ey; 
+		curs#set_state "clicked";
+	    | _ -> ()
+	 )
+     | "keyboard" ->
+	 (match a.eval with
+	    | "pressed" -> 
+		iface#keypress a
+	    | _ -> ()
+	 )
+     | _ -> ()
+  )
 
 
 

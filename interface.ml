@@ -35,6 +35,10 @@ open Olua;;
 (** parent widget *)
 class iface_object w h=
   object
+    val mutable id="none"
+    method set_id i=id<-i
+    method get_id=id
+
     val mutable data=0
     val mutable data1=0
     val mutable data_text=""
@@ -46,7 +50,12 @@ class iface_object w h=
     val mutable mouseout=(function()->())
 
     val mutable focused=false
+
     method set_focused f=focused<-f
+
+
+    method on_keypress (e:event)=()
+    method on_keyrelease (e:event)=()
 	
     method on_click (x : int) (y : int)=click()
     method on_release (x : int) (y : int)=release()
@@ -655,9 +664,16 @@ end;;
 
 
 (** text edit widget *)
-class iface_text_edit fnt color (te:text_edit) bw=
+class iface_text_edit fnt color bw=
   object (self)
     inherit iface_object bw (fnt#get_height) as super
+
+    val mutable te=new text_edit
+   
+    method private get_textedit=te
+
+    method on_keypress e=
+      te#parse (parse_key e.ebut) (parse_unicode e.ey)
 
     initializer
       rect<-new rectangle 0 0 (bw+12) (fnt#get_height+12)
@@ -675,8 +691,10 @@ class iface_text_edit fnt color (te:text_edit) bw=
     val mutable cur_refresh=30
     val mutable cur_c=0
 
+    method get_data_text=te#get_text;
+
     method put()=
-	self#set_data_text (te#get_text);
+      self#set_data_text (te#get_text);
 
       if showing==true then (	  
 
@@ -711,9 +729,9 @@ class iface_text_edit fnt color (te:text_edit) bw=
 
 
 (** text edit widget *)
-class iface_password_edit fnt color (te:text_edit) bw=
+class iface_password_edit fnt color bw=
   object (self)
-    inherit iface_text_edit fnt color te bw as super
+    inherit iface_text_edit fnt color bw as super
     method set_data_text t=
       let tmp=ref "" in
       for i=0 to String.length t - 1 do
@@ -729,6 +747,8 @@ exception Iface_object_not_found of string;;
 class interface bgfile w h=
   object (self)
     val mutable background=new graphic_scr_resized_object w h bgfile false false 
+    val mutable interp=new lua_interp
+    method get_interp=interp
  
     val mutable object_array=Array.make 1000 (new iface_object 32 32) 
     val mutable cur_object=1
@@ -737,6 +757,17 @@ class interface bgfile w h=
     val mutable effect=0;
     val mutable nrect=new rectangle 0 0 0 0;
     val mutable moving=false
+
+    initializer 
+      self#init_lua()
+
+
+    method init_lua()=
+      interp#set_module_val "iface" "set_focus" (OLuaVal.efunc (OLuaVal.string **->> OLuaVal.unit) self#set_focus);
+      interp#set_module_val "iface" "show_object" (OLuaVal.efunc (OLuaVal.string **->> OLuaVal.unit) self#show_object);
+      interp#set_module_val "iface" "hide_object" (OLuaVal.efunc (OLuaVal.string **->> OLuaVal.unit) self#hide_object);
+      interp#set_module_val "iface" "object_get_text" (OLuaVal.efunc (OLuaVal.string **->> OLuaVal.string) self#object_get_text);
+      
 
     val mutable focus="none"
     method set_focus f=
@@ -759,6 +790,21 @@ class interface bgfile w h=
 
 
     method get_cur_obj=cur_object
+
+      
+    method object_get_text n=
+      let o=self#get_object_char n in
+	o#get_data_text
+
+
+    method show_object n=
+      let o=self#get_object_char n in
+	o#show();
+
+    method hide_object n=
+      let o=self#get_object_char n in
+	o#hide();
+
 
     method show_all()=
       let f obj=obj#show() in
@@ -796,6 +842,7 @@ class interface bgfile w h=
       cur_object<-cur_object+1
 
     method add_object_n name obj=
+      obj#set_id name;
       Hashtbl.add object_hash name cur_object;
       object_array.(cur_object)<-obj;
       cur_object<-cur_object+1
@@ -805,33 +852,53 @@ class interface bgfile w h=
       cur_object<-cur_object-1
 
     method mouseover x y=
-      if (self#get_object_at_position x y)#is_showing==true then 
-	(self#get_object_at_position x y)#on_mouseover x y; 
+      let o=(self#get_object_at_position x y) in
+      if o#is_showing==true then 
+	(
+(*	ignore (interp#parse (o#get_id^".on_mouseover("^string_of_int x^","^string_of_int y^")")) ; *)
+	o#on_mouseover x y; 
+	);
       let n=self#get_object_num_at_position x y in
 
       let f i obj=
 	if i<> n then
          obj#on_mouseout x y in
+
+
       Array.iteri f object_array;
 
 
     method mouseout x y=
-      if (self#get_object_at_position x y)#is_showing==true then 
-	(self#get_object_at_position x y)#on_mouseout x y;
-
-      
+      let o=(self#get_object_at_position x y) in
+      if o#is_showing==true then ( 
+(*	ignore (interp#parse (o#get_id^".on_mouseout("^string_of_int x^","^string_of_int y^")")) ; *)
+	o#on_mouseout x y;
+      )
     method click x y=
-      if (self#get_object_at_position x y)#is_showing==true then ( 
-	(self#get_object_at_position x y)#on_click x y;
+      let o=(self#get_object_at_position x y) in
+      if 
+	o#is_showing==true then ( 
+	 ignore (interp#parse (o#get_id^".on_click("^string_of_int x^","^string_of_int y^")")) ;
+	o#on_click x y;
       )
 
-    method release x y=
-      if (self#get_object_at_position x y)#is_showing==true then 
-      (self#get_object_at_position x y)#on_release x y;
+    method keypress e=
+      let o=self#get_object_char self#get_focus in
+	if o#is_showing==true then (
+(*	 ignore (interp#parse (o#get_id^".on_keypress("^string_of_int x^","^string_of_int y^")")) ; *)
+	o#on_keypress e;
+	)
 
+    method release x y=
+      let o=(self#get_object_at_position x y) in
+      if o#is_showing==true then (
+	 ignore (interp#parse (o#get_id^".on_release("^string_of_int x^","^string_of_int y^")")) ;
+      o#on_release x y;
+  );
       let f i obj=
 	let ro=obj#get_release in
 	 obj#set_release (function()->());
+
 	 obj#on_release x y;
 	obj#set_release ro in	
       Array.iteri f object_array;
@@ -892,42 +959,178 @@ object
   inherit [iface_object] obj_types (new iface_object 0 0)
 end;;
 
-class iface_object_parser=
+
+class xml_font_parser=
 object
   inherit xml_parser
+
+  val mutable file="none"
+  val mutable size=0
+
+  method get_val=new font_object file size
+
+  method tag=""
+  method parse_attr k v=
+    match k with
+      | "path" -> file<-v
+      | "size" -> size<-int_of_string v
+      | _ -> ()
+  method parse_child k v=()
+
+
+end;;
+
+class iface_objects_container_parser parser=
+object
+ inherit [((string * string * iface_object) array)] xml_list_parser "iface_object" (parser) 
+end;;
+
+class iface_object_parser=
+object(self)
+  inherit xml_parser
   val mutable nm=""
+  val mutable id=""
   val mutable file=""
   val mutable w=0
   val mutable h=0
+
+  val mutable iw=0
+  val mutable ih=0
+
   val mutable x=0
   val mutable y=0
 
+  val mutable r=0
+  val mutable g=0
+  val mutable b=0
+
+  val mutable fnt=new font_object "none" 0
+  val mutable txt=""
+  val mutable show=false
+
+  val mutable container=false
+  val mutable oarr=Array.create 100 ("none","",new iface_object 0 0)
+
+  method get_oarr=oarr
+  method is_container=container
+
+  method oarr_to_arr oa=
+    let a=DynArray.create() in
+    Array.iter (fun (id,lua,o)->
+		  if id<>"none" then
+		    DynArray.add a o
+	       ) oa;
+      DynArray.to_array a
+
+  val mutable lua=""
   method tag=""
+
+
 
   method parse_attr k v=
     match k with
-      | "type" ->  nm<-k
+      | "type" ->nm<-v
+      | "id" ->id<-v
       | _ -> ()
    
   method parse_child k v=
     match k with
       | "file" -> let p=(new xml_string_parser "path") in p#parse v;file<-p#get_val    
       | "size" -> let p=(new xml_size_parser ) in p#parse v;w<-p#get_w;h<-p#get_h;
+      | "isize" -> let p=(new xml_size_parser ) in p#parse v;iw<-p#get_w;ih<-p#get_h;
       | "position" -> let p=(new xml_point_parser ) in p#parse v;x<-p#get_x;y<-p#get_y;
+      | "color" -> let p=(new xml_color_parser ) in p#parse v;r<-p#get_r;g<-p#get_g;b<-p#get_b;
+      | "font" -> let p=(new xml_font_parser ) in p#parse v;fnt<-p#get_val
+      | "text" -> let p=(new xml_string_parser "str") in p#parse v;txt<-p#get_val
+      | "lua" -> lua<-v#get_pcdata;
+      | "show" -> show<-true
+      | "container" -> let p=(new iface_objects_container_parser (fun()->new iface_object_parser)) in p#parse v;oarr<-p#get_array.(0);container<-true
+
       | _ -> ()
 
+  method get_val=
+    let o=(
+    match nm with
+      | "iface_button" -> new iface_button file (video#f_size_w w) (video#f_size_h h)
+      | "iface_button_with_label" -> new iface_button_with_label fnt txt file (video#f_size_w w) (video#f_size_h h)
+      | "iface_button_icon" -> new iface_button_icon file (video#f_size_w w) (video#f_size_h h) iw ih
+      | "iface_label_static" -> new iface_label_static fnt (r,g,b) txt
+      | "iface_label_dynamic" -> new iface_label_dynamic fnt (r,g,b)
+      | "iface_text_edit" -> new iface_text_edit fnt (r,g,b) (video#f_size_w w)
+      | "iface_password_edit" -> new iface_password_edit fnt (r,g,b) (video#f_size_w w)
+      | "iface_graphic_object" -> new iface_graphic_file_object file (video#f_size_w w) (video#f_size_h h)
+      | "iface_container_object" -> new iface_container (self#oarr_to_arr oarr)
+      | _ -> new iface_object (video#f_size_w w) (video#f_size_h h)
+    ) in
+      o#move x y;
+      if show then
+	o#show();
+      if container=true then (
+	o#move x y;(oarr)
+      )
+      else (	
+	[|(id,lua,o)|]
+      )
 end;;
 
-(*
 
-<iface_object type="button">
+class iface_objects_parser name=
+object(self)
+  inherit [((string * string * iface_object) array)] xml_list_parser name (fun()->new iface_object_parser)
+  
+  val mutable bg="none"
+  val mutable w=0
+  val mutable h=0
+
+
+  method parse_attr k v=
+    match k with
+      | "background" ->bg<-v
+      | "w" ->w<-(int_of_string v)
+      | "h" ->h<-(int_of_string v)
+      | _ -> ()
+
+  method get_val=
+    let iface=new interface bg w h in
+    let l=self#get_list in
+      List.iter (fun ol->
+		   Array.iter (fun (n,l,o)->
+				 iface#add_object_n n o;
+				 
+				 let l2=(n^"={};\n")^l in
+				   print_string l2;
+				   iface#get_interp#parse l2;()
+			      ) ol
+		) l;
+      iface
+      
+end;;
+
+
+(*
+<iface background="none" w="1024" h="768">
+<iface_object type="iface_button_with_label" id="button1">
   <file path="medias/iface/button.png"/>
   <size w="100" h="40"/>
   <position x="10" y="10"/>
-
+  <color r="0" g="0" b="0"/>
+  <font path="medias/fonts/Vera.ttf" size="8"/>
+  <text str="Ok"/>
+  <lua>
+   function button1.on_click (x,y)
+    print("ok")
+   end
+  </lua>
 </iface_object>
-
+</iface>
 *)
+
+let iface_from_xml f=
+    let iface_xml=new xml_node (Xml.parse_file f) in
+    let p=new iface_objects_parser "iface" in
+      p#parse iface_xml;
+      
+      p#get_val;;
 
 
 (* some functions *)
