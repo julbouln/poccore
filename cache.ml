@@ -85,29 +85,32 @@ object(self)
       self#add_cache_fun n o_f;
       self#set_corres n ff;
       let o=o_f() in
-	(self#simple_of o)#set_id n;
-	Weak.set cache ff (Some o);
+(*	(self#simple_of o)#set_id n; *)
+	Weak.set cache ff (Some (n,o));
     );
 
   method replace_cache n o=
     print_string ("CACHE: replace "^n^"");print_newline();
     let ff=self#get_corres n in
       self#replace_cache_fun n o;
-      Weak.set cache ff (Some (o()));
+      Weak.set cache ff (Some (n,o()));
 
   method reload_cache n=
     print_string ("CACHE: reload "^n);print_newline();
     let o=(self#get_cache_fun n)() in
     let ff=self#first_free() in
       self#set_corres n ff;
-      (self#simple_of o)#set_id n;
-      Weak.set cache ff (Some (o));
+(*      (self#simple_of o)#set_id n; *)
+      Weak.set cache ff (Some (n,o));
       o
 
   method get_cache n=
     match (Weak.get cache (self#get_corres n)) with
-      | Some v->if (self#simple_of v)#get_id=n then v else self#reload_cache n
-      | None ->self#reload_cache n
+      | Some (nn,v)->(*if (self#simple_of v)#get_id=n then*) 
+	  if nn=n then
+	    v
+	  else self#reload_cache n 
+      | None ->self#reload_cache n 
 
 
   method get_cache_entry n i=

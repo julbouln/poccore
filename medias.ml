@@ -234,7 +234,7 @@ end;;
 
 let get_font_id fnt_t=
   (match fnt_t with 
-     | FontTTF (f,s)->(f^":"^string_of_int s)
+     | FontTTF (f,s)->(f^"_"^string_of_int s)
      | FontEmbed->"font_embed");;
 
 
@@ -344,7 +344,7 @@ end;;
 class graphic_object_resized_from_file file i w h iw ih=
 object
   val fgr=new graphic_object_from_file file iw ih
-  inherit graphic_from_drawing (file^":"^string_of_int i^":resized") 
+  inherit graphic_from_drawing (file^"_"^string_of_int i^"_resized") 
     (fun()->
        let dr=(drawing_vault#get_cache_entry file i)#copy() in
 	 dr#exec_op_copy "resize" 
@@ -356,7 +356,7 @@ end;;
 
 class graphic_object_resized pdraw i fw fh=
 object
-  inherit graphic_from_drawing (pdraw^":"^string_of_int i^":resized") 
+  inherit graphic_from_drawing (pdraw^"_"^string_of_int i^"_resized") 
     (fun()->
        let dr=(drawing_vault#get_cache_entry pdraw i)#copy() in
 	 dr#exec_op_copy "resize" [
@@ -390,7 +390,7 @@ let digest_of_string_list txt=
 
 class graphic_object_text fnt_t (txt:string list) color=
 object
-  inherit graphic_from_drawing ((random_string "text:" 10)^digest_of_string_list txt)
+  inherit graphic_from_drawing ((random_string "text_" 10)^digest_of_string_list txt)
     (fun()->
 
 	 let fnt_n=get_font_id fnt_t in
@@ -423,7 +423,7 @@ class graphic_text nid fnt_t (col:color)=
 object(self)
   inherit graphic_cached_object nid
 (*  val mutable graphic=new graphic_cached_object nid *)
-  val mutable graphic=new graphic_object_text fnt_t (["text:empty"]) col;
+  val mutable graphic=new graphic_object_text fnt_t (["text_empty"]) col;
   val mutable fnt=(font_vault#get_cache_simple (get_font_id fnt_t))
  
   val mutable color=col
@@ -533,7 +533,7 @@ object(self)
 
     if t="" then (
       text<-[""];
-      graphic<-new graphic_cached_object "text:empty";
+      graphic<-new graphic_cached_object "text_empty";
     )
     else (
       text<-self#cut_string2 t;
@@ -652,13 +652,13 @@ end;;
 class graphic_pattern_file pfile=
 object
   initializer
-    drawing_vault#add_cache_from_drawing_fun (pfile^":simple") 
+    drawing_vault#add_cache_from_drawing_fun (pfile^"_simple") 
       [
 	DrawValString "load_simple";
 	DrawValString pfile
       ];
 
-  inherit graphic_pattern pfile (pfile^":simple")
+  inherit graphic_pattern pfile (pfile^"_simple")
 
 end;;
 
