@@ -361,7 +361,7 @@ end;;
 
 let add_drawing_fun_from_drawing_script n s=
   let drs=new drawing_script in
-    drs#lua_init();
+    ignore(drs#lua_init());
     drawing_vault#add_drawing_fun_from_format n TValLua
       ( fun v->
 	  match v with

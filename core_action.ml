@@ -201,6 +201,7 @@ object(self)
   method add_action n act=
 (*    print_string ("STATE_OBJECT : add action "^n);print_newline(); *)
     ignore(self#add_object (Some n) act);
+    ignore(act#lua_init()); 
     self#lua_parent_of n (act:>lua_object)
 
   method start (ve:val_ext_handler)=
@@ -260,6 +261,7 @@ object(self)
   method add_state n st=
 (*    print_string ("STATE_ACTIONS : add state "^n);print_newline(); *)
     ignore(self#add_object (Some n) st);
+    ignore(st#lua_init()); 
     self#lua_parent_of n (st:>lua_object)
 
   method request_state sn ve ave=
@@ -279,7 +281,7 @@ object(self)
     current<-sn;
     (match current with
       | Some n->
-	  (*print_string ("STATE_ACTIONS : set state "^n);print_newline();*)
+(*	  print_string ("STATE_ACTIONS : set state "^n);print_newline(); *)
 	    let o=self#get_object n in o#start ve
       | None -> ());    
 

@@ -106,7 +106,7 @@ object(self)
     
     lua#set_val (OLuaVal.String "graphics_update") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.unit) (self#graphics_update));
     
-    ignore(graphics#lua_init());
+    ignore(graphics#lua_init()); 
     self#lua_parent_of "graphics" (graphics:>lua_object);
 
     ignore(states#lua_init());    
@@ -180,8 +180,8 @@ object(self)
      (OLuaVal.efunc (OLuaVal.string **-> OLuaVal.string **-> OLuaVal.int **-> OLuaVal.int **->> OLuaVal.unit) 
 	(fun n t x y->ignore(self#add_sprite_from_type (Some n) t x y)));
    lua#set_val (OLuaVal.String "delete_sprite") (OLuaVal.efunc (OLuaVal.string **->> OLuaVal.unit) self#delete_sprite);
-   lo#lua_init()
 
+   lo#lua_init()
 
 end;;
 

@@ -160,20 +160,21 @@ end;;
 class multi_stage  (cursor:cursors)=
 object(self)
   inherit [stage] generic_object_handler3
-  inherit stage cursor
+  inherit stage cursor as super
 
   method add_stage n o=
-    o#lua_init();
-    self#lua_parent_of n (o:>lua_object);
     ignore(self#add_object (Some n) o);
-
+    ignore(o#lua_init());
+    self#lua_parent_of n (o:>lua_object);
 
   method on_load()=
+    super#on_load();
     self#foreach_object (
       fun n s-> s#on_load()
     )
 
   method on_loop()=
+    super#on_loop();
     self#foreach_object (
       fun n s-> s#on_loop()
     )
@@ -220,7 +221,7 @@ object(self)
 	Hashtbl.add stages n s;
       );
     s#set_id n;
-    s#lua_init();
+    ignore(s#lua_init());
     self#lua_parent_of n (s:>lua_object);
 
 

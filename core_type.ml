@@ -16,7 +16,8 @@ object(self)
 
       if(Hashtbl.mem objects nm)==false then (
 	let o=obj() in
-	  o#lua_init();
+	  o#set_id nm;
+	  ignore(o#lua_init()); 
 	  self#lua_parent_of nm (o:>lua_object);
 	  Hashtbl.add objects nm (o);	  
       );

@@ -223,7 +223,7 @@ object(self)
 	  fun (n,o)->
 	    let no=o() in	  	  
 	      add_obj n (no);
-	      ignore(no#lua_init());
+(*	      ignore(no#lua_init());  *)
 	) objs;
 
 
@@ -349,7 +349,7 @@ object(self)
       let o=
 	let args=args_parser#get_val in
 	let ds=text_of_val(args#get_val (`String "drawing_script")) in
-	  ignore(drs#lua_init());
+	  ignore(drs#lua_init()); 
 	  new graphic_from_drawing (random_string "dscr" 15)
 	    (fun()->
 		(drs#register ds)
@@ -438,10 +438,6 @@ Global.set xml_default_graphics_parser xml_factory_graphics_parser;;
 class xml_action_object_parser=
 object(self)
   inherit [action_lua] xml_object_parser (fun()->new action_lua)
-
-
-  method init_object o=
-    o#set_lua_script (lua);
 
 end;;
 
@@ -577,7 +573,7 @@ object(self)
     super#init_object o;
     let args=args_parser#get_val in
       o#set_lua_script (lua);
-      ignore(o#lua_init());
+(*      ignore(o#lua_init()); *)
  
   method parse_attr k v=
     match k with
@@ -620,7 +616,7 @@ object(self)
       states_parser#init_simple (o#get_states#add_state);
       o#set_props props_parser#get_val;
       o#set_lua_script (lua);
-      ignore(o#lua_init());
+(*      ignore(o#lua_init()); *)
  
   method parse_attr k v=
     match k with
@@ -659,7 +655,7 @@ object(self)
   method init (add_obj:string->(unit->sprite_object)->unit)=
     Hashtbl.iter (
       fun k v->
-      add_obj k v
+	add_obj k v
     ) super#get_hash;
 
 end;;
@@ -671,10 +667,6 @@ class xml_stage_parser=
 object (self)
   inherit [stage] xml_object_parser (fun()->new stage generic_cursor) as super
     
-
-  method parse_child k v=
-    super#parse_child k v;
-
 (** object initial init *)
   method init_object o=
     o#set_lua_script (lua);
