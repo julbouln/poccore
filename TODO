@@ -9,6 +9,6 @@
 * new objects
 - add `ListNamed (string * val_ext) list to val_ext type
 - add a non-loop anim (anim_finished)
-- add a sprite object handler with 1 graphic, n states and n properties
+- add a sprite object handler with n graphic, n states and n properties
 - add a sprite_stage to play with graphic
 - add direct change of screen

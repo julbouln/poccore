@@ -6,7 +6,7 @@ PACKS=str poclow unix extlib lua-ml xml-light unix
 
 LIBINSTALL_FILES=*.cmi *.cmx *.a poccore.cmxa
 
-SOURCES = core_generic.ml core_rect.ml core_file.ml core_timer.ml olua.ml oxml.ml oval.ml core_cache.ml core_event.ml core_font.ml core_drawing.ml binding.ml core_video.ml core_medias.ml core_graphic.ml core_anim.ml core_cursor.ml core_type.ml core_stage.ml dijkstra.ml pathfinding.ml core_action.ml core_xml.ml core_main.ml
+SOURCES = core_generic.ml core_rect.ml core_file.ml core_timer.ml olua.ml oxml.ml oval.ml core_cache.ml core_event.ml core_font.ml core_drawing.ml binding.ml core_video.ml core_medias.ml core_graphic.ml core_anim.ml core_cursor.ml core_type.ml core_stage.ml core_action.ml core_sprite.ml core_xml.ml core_main.ml
 
 RESULT  = poccore
 
