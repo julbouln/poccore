@@ -1,0 +1,25 @@
+OCAMLMAKEFILE = OCamlMakefile
+
+INCDIRS=../poclow ../extlib-1.3 ../xml-light2.1
+LIBS=poclow xml-light extLib str
+
+SOURCES = rect.ml file.ml config.ml video.ml vfs.ml object.ml music.ml event.ml anim.ml cursors.ml interface.ml iface_event.ml stage.ml network.ml dijkstra.ml pathfinding.ml oxml.ml action.ml 
+
+OCAMLOPT=ocamlopt.opt
+
+RESULT  = poccore
+
+#THREADS=yes
+
+# PREDS="str unix xml-light extLib"
+ 
+all : ncl
+
+#VERSION=0.12
+#game_version.ml: Makefile
+#	echo "let version = \""$(VERSION)"\"" > game_version.ml
+#	echo "let date = \""`date`"\"" >> game_version.ml
+
+
+
+include $(OCAMLMAKEFILE)
