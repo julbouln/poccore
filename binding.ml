@@ -218,6 +218,7 @@ object(self)
   inherit poclow_drawing_object
 
   method init w h bpp fs=
+    print_string "BINDING(poclow): init screen";print_newline();
     self#set_t (video_init w h bpp fs)
 
   method refresh()=
