@@ -1,4 +1,4 @@
-open Olua;;
+open Value_lua;;
 
 (** Type manager *)
 

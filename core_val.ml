@@ -1,9 +1,9 @@
 
 open Xml;;
 
-open Olua;;
-open Oxml;;
-open Oval;;
+open Value_lua;;
+open Value_xml;;
+open Value_val;;
 
 open Core_timer;;
 

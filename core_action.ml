@@ -1,7 +1,7 @@
 
-open Ocommon;;
-open Olua;;
-open Oval;;
+open Value_common;;
+open Value_lua;;
+open Value_val;;
 
 
 open Core_val;;

@@ -1,6 +1,6 @@
-open Oxml;;
-open Olua;;
-open Oval;;
+open Value_xml;;
+open Value_lua;;
+open Value_val;;
 
 open Core_val;;
 open Core_action;;

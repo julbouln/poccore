@@ -21,10 +21,10 @@
 open Core_rect;;
 open Core_cache;;
 
-open Ocommon;;
-open Olua;;
-open Oxml;;
-open Oval;;
+open Value_common;;
+open Value_lua;;
+open Value_xml;;
+open Value_val;;
 
 open Core_val;;
 

@@ -4,7 +4,7 @@ open Core_event;;
 open Core_font;;
 open Core_drawing;;
 
-open Oval;;
+open Value_val;;
 
 open Core_val;;
 

@@ -26,7 +26,7 @@ open Core_cursor;;
 open Binding;;
 
 
-open Olua;;
+open Value_lua;;
 
 
 (** Stage subsystem *)

@@ -19,10 +19,10 @@
 
 open Str;;
 
-open Ocommon;;
-open Oval;;
-open Olua;;
-open Oxml;;
+open Value_common;;
+open Value_val;;
+open Value_lua;;
+open Value_xml;;
 
 
 open Core_val;;

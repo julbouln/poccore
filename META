@@ -1,5 +1,5 @@
 description = "Pocengine core"
-requires = "str,poclow,unix,extlib,lua-ml,xml-light"
+requires = "poclow,pocvalue"
 version = "0.1"
 archive(byte) = "poccore.cma"
 archive(native) = "poccore.cmxa"

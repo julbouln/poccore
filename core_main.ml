@@ -4,7 +4,10 @@ open Core_val;;
 open Core_video;;
 open Core_stage;;
 
-open Olua;;
+open Value_lua;;
+open Value_val;;
+open Value_xml;;
+open Core_xml;;
 
 (** Main app part *)
 
@@ -180,9 +183,7 @@ end;;
 
 let main=new main;;
 
-open Oval;;
-open Oxml;;
-open Core_xml;;
+
 
 class xml_game_parser=
 object(self)
