@@ -18,11 +18,31 @@
 *)
 open Low;;
 open Video;;
-open Event;;
+open Event_manager;;
 open Object;;
 open Interface;;
 
 (** GUI event manager *)
+
+let ev_iface_parser a iface curs=
+  curs#move a.ex a.ey;  
+  
+  if a.etype="mouse" && a.eval= "released" then (
+    iface#release a.ex a.ey; 
+    curs#set_state "normal";
+   );
+
+  if a.etype="mouse" && a.eval= "pressed" then (
+    iface#click a.ex a.ey; 
+    curs#set_state "clicked";
+   );
+
+  if a.etype="mouse" && a.eval= "motion" then (    
+    iface#mouseover a.ex a.ey; 
+   );;
+
+
+
 
 let clear_iface_ev_stack curs iface=
 

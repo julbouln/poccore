@@ -21,6 +21,53 @@ open Video;;
 
 (** Event manager *)
 
+class event_manager =
+object(self) 
+  val mutable ev_stack=Stack.create()
+  val mutable parser=(fun e->())
+  val mutable on_loop=(fun()->())
+  val mutable on_quit=(fun()->())
+
+  method set_parser p=parser<-p
+  method get_on_loop=on_loop
+  method set_on_loop f=on_loop<-f
+  method set_on_quit f=on_quit<-f
+
+			 
+
+  method init()=
+    Callback.register "add_event" (self#add);
+    Callback.register "loop" (self#for_loop);
+    Callback.register "quit" (on_quit)
+
+  method add etype eval ebut ex ey=
+    (Stack.push {etype=etype;eval=eval;ebut=ebut;ex=ex;ey=ey} ev_stack)
+ 
+  method loop()=
+    event_loop ev_stack;
+
+  method for_loop()=
+  while Stack.length ev_stack <> 0 do
+    let a=(Stack.top ev_stack) in
+      parser a;
+    Stack.pop ev_stack;
+  done;
+    on_loop();
+
+
+  method main()=
+    let ol=self#get_on_loop in
+      self#set_on_loop ol;
+      self#loop();
+
+end;;
+
+
+let eventm=new event_manager;;
+
+
+(* FIXME : deprecated *)
+
 let ev_stack=Stack.create();;
 let ev_a=ref ev_stack;;
 let add_event etype eval ebut ex ey=(Stack.push {etype=etype;eval=eval;ebut=ebut;ex=ex;ey=ey} !ev_a);;
@@ -28,6 +75,52 @@ let add_event etype eval ebut ex ey=(Stack.push {etype=etype;eval=eval;ebut=ebut
 let cur_key=ref "none";;
 
 let release_key (k:int)=cur_key:="none";;
+
+let parse_keybut e=
+  match e.ebut with 
+    | 8 -> "backspace";
+    | 13 -> "return";
+    | 32 -> "space";
+    | 27 -> "escape";
+    | 48 -> "0";
+    | 49 -> "1";
+    | 50 -> "2";
+    | 51 -> "3";
+    | 52 -> "4";
+    | 53 -> "5";
+    | 54 -> "6";
+    | 55 -> "7";
+    | 56 -> "8";
+    | 57 -> "9";
+
+    | 97 -> "a";
+    | 98 -> "b";
+    | 99 -> "c";
+    | 100 -> "d";
+    | 101 -> "e";
+    | 102 -> "f";
+    | 103 -> "g";
+    | 104 -> "h";
+    | 105 -> "i";
+    | 106 -> "j";
+    | 107 -> "k";
+    | 108 -> "l";
+    | 109 -> "m";
+    | 110 -> "n";
+    | 111 -> "o";
+    | 112 -> "p";
+    | 113 -> "q";
+    | 114 -> "r";
+    | 115 -> "s";
+    | 116 -> "t";
+    | 117 -> "u";
+    | 118 -> "v";
+    | 119 -> "w";
+    | 120 -> "x";
+    | 121 -> "y";
+    | 122 -> "z";
+    | _->"none";;
+
 
 let parse_key k=
   match k with 
@@ -76,7 +169,7 @@ let parse_key k=
 
 Callback.register "release_key" (release_key);;
 Callback.register "parse_key" (parse_key);;
-Callback.register "add_event" (add_event);;
+(*Callback.register "add_event" (add_event);;*)
 
 let clear_stack()=
   while Stack.length !ev_a <> 0 do

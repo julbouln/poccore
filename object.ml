@@ -65,7 +65,7 @@ let tiles_load_with_mirror file w h=
 class font_object fontfile s=
   object (self)
     val mutable font=fontfile
-    val mutable size=int_of_float(get_fact_w()*.(float_of_int s))
+    val mutable size=int_of_float(video#get_fact_w()*.(float_of_int s))
     initializer 
       vfs_fonts#create_simple (fontfile ^ ":" ^ (string_of_int(size))^"pt") (font_load fontfile size)
 
@@ -110,7 +110,7 @@ class sound_object soundfiles=
 	 ) 
        )
       else (
-	let dt=(racine((carree ((vx+ !scr_w/2)/32-rect#get_x)) +. (carree ((vy+ !scr_h/2)/32-rect#get_y)))) in
+	let dt=(racine((carree ((vx+ video#get_w/2)/32-rect#get_x)) +. (carree ((vy+ video#get_h/2)/32-rect#get_y)))) in
 	let d=int_of_float ((dt/.64.0)*.255.0) in
 	channel<-sound_play (self#get_sound num);
 (*	if channel <>(-1) then 
@@ -128,7 +128,7 @@ class sound_object soundfiles=
 	 )
        )
       else (
-	let dt=(racine((carree ((vx+ !scr_w/2)/32-rect#get_x)) +. (carree ((vy+ !scr_h/2)/32-rect#get_y)))) in
+	let dt=(racine((carree ((vx+ video#get_w/2)/32-rect#get_x)) +. (carree ((vy+ video#get_h/2)/32-rect#get_y)))) in
 	let d=int_of_float ((dt/.64.0)*.255.0) in
 	channel<-sound_play (self#get_sound (randomize (Array.length sounds)));
 (*	if channel <>(-1) then 
@@ -460,7 +460,7 @@ class graphic_real_resized_object nm fw fh tile=
 
 class graphic_scr_resized_real_object nm tile=
   object
-    inherit graphic_real_resized_object nm (get_fact_w()) (get_fact_h()) tile as super
+    inherit graphic_real_resized_object nm (video#get_fact_w()) (video#get_fact_h()) tile as super
   end;;
 
 (** Graphic object class that is resized *)
@@ -483,7 +483,7 @@ class graphic_resized_object wi hi fw fh tilesfile mirror is_shaded=
 (** Graphic object class that is resized with screen factor *)
 class graphic_scr_resized_object wi hi tilesfile mirror is_shaded=
   object
-    inherit graphic_resized_object wi hi (get_fact_w()) (get_fact_h()) tilesfile mirror is_shaded as super
+    inherit graphic_resized_object wi hi (video#get_fact_w()) (video#get_fact_h()) tilesfile mirror is_shaded as super
   end;;
 
 

@@ -18,40 +18,65 @@
 *)
 
 open Low;;
-open Rect;;
-open Config;;
 
-(* FIXME : these must be in a single class *)
+(** Main video class *)
 
-let screen_tile=ref (tile_empty());;
-
-(** First loaded module *)
-
-let timeget_init t= 
-  t:=time_get();
-and
-  timeget_result s t= 
-  let t2=time_get() in
-    print_string (s^string_of_int(t2-(!t)));print_newline();;
-
+(* FIXME : need delete these *)
 let tile_w=ref 32;;
 let tile_h=ref 32;;
 
-let flip=video_update;;
-
-let scr_w=ref 800;;
-let scr_h=ref 600;;
-let fullscreen=ref false;;
-let windowed=ref false;;
 let fps=ref 30;;
 
+class video=
+object
+  val mutable width=0
+  val mutable height=0
+  val mutable def_w=0
+  val mutable def_h=0
+  val mutable depth=0
+  val mutable fullscreen=false
 
-let set_scr_w w=scr_w:=w;;
-let set_scr_h h=scr_h:=h;;
-let set_fps f=fps:=f;;
+  method init w h bpp fs=
+    width<-w;
+    height<-h;
+    depth<-bpp;
+    fullscreen<-fs;
+    video_init width height depth fullscreen
 
-let get_fact_w()=(float_of_int !scr_w)/.800.0;;
-let get_fact_h()=(float_of_int !scr_h)/.600.0;;
+  method initialized=
+    is_video
 
-let f_size_w w=let f=(float_of_int !scr_w)/.800.0 in int_of_float(f*.(float_of_int w));;
-let f_size_h h=let f=(float_of_int !scr_h)/.600.0 in int_of_float(f*.(float_of_int h));;
+  method set_def_size w h=def_w<-w;def_h<-h
+
+  method get_w=width
+  method get_h=height
+  method get_fs=fullscreen
+  method get_d=depth
+
+  method f_size_w w=let f=(float_of_int width)/.(float_of_int def_w) in int_of_float(f*.(float_of_int w))
+  method f_size_h h=let f=(float_of_int height)/.(float_of_int def_h) in int_of_float(f*.(float_of_int h))
+		      
+  method get_fact_w()=(float_of_int width)/.(float_of_int def_w)
+  method get_fact_h()=(float_of_int height)/.(float_of_int def_h)
+
+  method set_caption s=
+    wm_set_caption s
+
+  method flip=
+    video_update    
+
+  method blank=
+    video_blank_screen
+
+  method get_tile=
+    video_surface_get
+
+  method set_clip x y w h=
+    video_set_clip x y w h
+  
+
+
+end;;
+
+(** We declare a global video class since we have only one video screen ! *)
+let video=new video;;

@@ -3,7 +3,7 @@ OCAMLMAKEFILE = OCamlMakefile
 INCDIRS=../poclow ../extlib-1.3 ../xml-light2.1
 LIBS=poclow xml-light extLib str
 
-SOURCES = rect.ml file.ml config.ml video.ml vfs.ml object.ml music.ml event.ml anim.ml cursors.ml interface.ml iface_event.ml stage.ml network.ml dijkstra.ml pathfinding.ml oxml.ml action.ml 
+SOURCES = rect.ml file.ml dir.ml config.ml video.ml audio.ml event_manager.ml vfs.ml object.ml music.ml anim.ml cursors.ml interface.ml iface_event.ml stage.ml network.ml dijkstra.ml pathfinding.ml oxml.ml action.ml 
 
 OCAMLOPT=ocamlopt.opt
 

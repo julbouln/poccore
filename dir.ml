@@ -16,19 +16,26 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
-(** Generic file manipulation *)
+open Unix;;
+open DynArray;;
 
-(* Sample ocaml type<->file interface *)
-class ['a] file=
+class dir di=
 object
-  method save filename (data:'a)=
-    let oc = open_out_bin filename in
-      Marshal.to_channel oc data [];
-      close_out oc;
-  method load filename=
-    let ic=open_in_bin filename in
-    let a=Marshal.from_channel ic in
-      close_in ic;
-      (a:'a);
-end;;
+  val mutable farr=DynArray.create() 
+  val mutable d=opendir di
 
+  initializer
+    let cf=ref false in
+    let c=ref 0 in
+      while !cf==false do
+	(try 
+	   let f=(readdir d) in
+	     DynArray.add farr f;
+	 with
+	   | End_of_file -> cf:=true);		
+	
+	c:= !c+1;
+      done; 
+      closedir d;
+     
+end;;

@@ -16,19 +16,25 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
-(** Generic file manipulation *)
 
-(* Sample ocaml type<->file interface *)
-class ['a] file=
+open Low;;
+
+class audio f c=
 object
-  method save filename (data:'a)=
-    let oc = open_out_bin filename in
-      Marshal.to_channel oc data [];
-      close_out oc;
-  method load filename=
-    let ic=open_in_bin filename in
-    let a=Marshal.from_channel ic in
-      close_in ic;
-      (a:'a);
+  val mutable freq=f
+  val mutable chans=c
+		      		      
+  method init()=
+    audio_init freq chans;
+
+  method initialized=
+    is_audio
+
+  method set_audio_vol vol=
+    audio_set_volume vol
+
+  method set_music_vol vol=
+    let i=music_set_volume vol in ()
+
 end;;
 

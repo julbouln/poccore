@@ -17,9 +17,9 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
-open File;;
+(** Config file manipulator *)
 
-(* FIXME : see in bfr11 repository for that *)
+open File;;
 
 type config={
 (* FIXME: video_opt must be an array *)
@@ -52,7 +52,30 @@ mutable music_vol:int;
 mutable lang:string;
 };;
 
+class config_file=
+object 
+  inherit [config] file as super
+  method load f=
+  if (Sys.file_exists f) then super#load f
+  else 
+ (
+  {
+    video_opt1=1;
+    video_opt2=1;
+    game_opt1=1;
+    game_opt2=1;
+    game_opt3=1;
+    screen_size=1;
+    audio_vol=16;
+    music_vol=16;
+    lang="en";
+  }
+)
 
+end;;
+
+(* FIXME : deprecated *)
+(*
 let load_config configfile=
 if (Sys.file_exists configfile) then (load_file configfile)
 else (
@@ -68,7 +91,7 @@ else (
     lang="en";
   }
 );;
-
+*)
 
 
 

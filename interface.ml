@@ -23,7 +23,7 @@ open Low;;
 open Video;;
 open Object;;
 open Music;;
-open Event;;
+open Event_manager;;
 
 (** GUI objects class definitions *)
 
@@ -543,16 +543,16 @@ class iface_volume s e w h=
   object(self)
     inherit iface_graphic_object 
 	(new graphic_dyn_object (random_string "iface_volume" 16) s (function k->(
-	  tile_box (f_size_w w) ((f_size_h h)+3*k) (if k< !vol then (255,255,255) else (127,127,127))
+	  tile_box (video#f_size_w w) ((video#f_size_h h)+3*k) (if k< !vol then (255,255,255) else (127,127,127))
 	  )))
 	w h as super
     initializer
-      graphic#get_rect#set_size (((f_size_w w)+e)*(s+2)) ((f_size_h h)+(s*3))
+      graphic#get_rect#set_size (((video#f_size_w w)+e)*(s+2)) ((video#f_size_h h)+(s*3))
 
     method on_click x y=
       let px=(x - graphic#get_rect#get_x) and 
 	  py=(y - graphic#get_rect#get_y) in
-      vol:=(px)/((f_size_w w)+e) + 1 ;
+      vol:=(px)/((video#f_size_w w)+e) + 1 ;
       click()
     method set_data v=vol:=v
     method get_data= !vol
@@ -563,7 +563,7 @@ class iface_volume s e w h=
 
 	for i=0 to s do 
 	  graphic#set_cur_tile i;
-	  graphic#move ((i*((f_size_w w)+e))+x) (y - (i*3) + s*3);
+	  graphic#move ((i*((video#f_size_w w)+e))+x) (y - (i*3) + s*3);
 	  graphic#put();
 	done;
 	graphic#move x y;
