@@ -220,7 +220,7 @@ object(self)
     method create_from_func k f=      
       if(Hashtbl.mem datas k)==false then 
 	(
-      	 if k<>"none" && is_video()==true then 
+      	 if k<>"none" && k<>"none:colored" && is_video()==true then 
 	   (
 	 (*   let t=f() in
 
@@ -236,7 +236,7 @@ object(self)
 	)
     method create k d=      
       if(Hashtbl.mem datas k)==false then (
-	if k<>"none" && is_video()==true then (
+	if k<>"none" && k<>"none:colored" && is_video()==true then (
 	  super#create k d;
 (*	  self#add_rpos k;  *)
 
