@@ -340,10 +340,10 @@ object(self)
       graphic<-new graphic_object_text fnt_t (self#get_text) self#get_color;
     );
 
-    print_string "taille: ";
+(*    print_string "taille: ";
     print_int (List.length (self#get_text));
     print_newline();
-    
+*)  
 
 (*      new graphic_dyn_object (id^"/text") (List.length self#get_text)
       (function k-> (

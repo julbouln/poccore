@@ -45,9 +45,7 @@ object (self)
 (** what to do when first load stage *)
   method on_load()=()
 (** what to do on each frame *)
-  method on_loop()=
-    curs#put();    
-    video#flip();
+  method on_loop()=()
 
 (** what to do when quit stage *)
   method on_quit()=()
