@@ -17,6 +17,8 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
+open Str;;
+
 open Generic;;
 open Rect;;
 open Video;;
@@ -343,6 +345,25 @@ object
 end;;
 
 
+
+(** utf8 *)
+class utf8=
+object(self)
+  val mutable str=""
+
+  method set v=str<-v
+  method get=str
+
+  method length=UTF8.length str
+  method sub p l=
+    String.sub str (self#byte_get p) ((self#byte_get (p+l))-(self#byte_get p))
+
+  method byte_get n=UTF8.nth str n
+  method byte_length=String.length str
+
+end;;
+
+
 let digest_of_string_list txt=
   (Digest.to_hex(Digest.string (String.concat "" txt)));;
 
@@ -372,6 +393,164 @@ object
 	     ) (Array.of_list txt)
     )
 end;;
+
+
+
+(* FIXME : go in poccore *)
+(** graphic text object *)
+class graphic_text nid fnt_t (col:color)=
+object(self)
+  inherit graphic_cached_object nid
+(*  val mutable graphic=new graphic_cached_object nid *)
+  val mutable graphic=new graphic_object_text fnt_t (["text:empty"]) col;
+  val mutable fnt=(font_vault#get_cache_simple (get_font_id fnt_t))
+ 
+  val mutable color=col
+  method get_color=color
+  method set_color c=color<-c
+
+  val mutable lines=1
+  method set_lines l=lines<-l
+  method get_lines=lines
+
+
+  val mutable max_size=100
+  method set_max_size s=max_size<-s
+  method get_max_size=max_size
+
+  val mutable text=[""]
+  method get_text=text
+
+
+  method lines_size (l:int)=
+    let si=ref 0 in
+    let i=ref 0 in
+    List.iter (
+      fun s->
+	let utf=new utf8 in
+	  utf#set s;
+	if !i<l then
+	  si:= !si+utf#length;
+	i:= !i+1;
+    ) text;
+      !si
+
+  method line_of_pos (p:int)=
+    let si=ref 0 in
+    let l=ref 0 in
+    let i=ref 0 in
+    List.iter (
+      fun s->
+	let utf=new utf8 in
+	  utf#set s;
+	  if p> !si && p<= !si+utf#length then
+	    l:= !i;
+	  
+	  si:= !si+utf#length;
+	  i:= !i+1;
+    ) text;
+      !l
+
+
+
+  (* NEW cut_string *)
+  method private cut_string2 is=
+    let nlist=(Str.split_delim (regexp "[\n]+") is) in
+
+    let a=DynArray.create() in      
+    let cl=ref 0 in
+      List.iter (
+	fun s->
+	  let utf=new utf8 in
+	    utf#set s;
+	    let cp=ref 0 and
+		lp=ref 0 and
+		cs=ref 0 and
+
+		str=ref "" in
+	      
+	      
+	      while !cl<lines && !cp<utf#length do
+		while !cs<max_size && !cp<utf#length do
+		  (
+		    str:= (utf#sub !lp (!cp- !lp));
+		    let (cw,ch)=fnt#sizeof_text (!str) in 
+		      cs:=cw;
+		      cp:= !cp+1;
+		  )
+		done;
+		str:= (utf#sub !lp (!cp- !lp));
+		DynArray.add a !str;
+		cl:= !cl+1;
+		lp:= !cp;
+		cs:=0;
+	      done;
+
+      ) nlist;
+
+      DynArray.to_list a 
+	
+  (* OLD cut_string *)	  
+  method private cut_string s=
+    (*    text<-split_delim (regexp "[\n]+") s; *)
+    let a=DynArray.create() in
+    let ss=UTF8.length s/max_size in
+      for i=0 to ss do
+
+	let md=UTF8.length s - (i*max_size) in
+	let l=if md>=max_size then max_size else md in
+	let cs=UTF8.nth s (i*max_size) and
+	    ce=UTF8.nth s ((i*max_size) + l) in
+	    let ns=String.sub s cs (ce-cs) in
+	      if String.length ns>0 then
+		DynArray.add a ns
+      done;
+      DynArray.to_list a
+	
+
+  method set_text t=
+
+    if t="" then (
+      text<-[""];
+      graphic<-new graphic_cached_object "text:empty";
+    )
+    else (
+      text<-self#cut_string2 t;
+      graphic<-new graphic_object_text fnt_t (self#get_text) self#get_color;
+    );
+
+    print_string "taille: ";
+    print_int (List.length (self#get_text));
+    print_newline();
+    
+
+(*      new graphic_dyn_object (id^"/text") (List.length self#get_text)
+      (function k-> (
+	 fnt#create_text (List.nth self#get_text k) self#get_color
+       ));
+*)
+    let cw=ref 0 and
+      ch=ref 0 in
+      for i=0 to (List.length (self#get_text))-1 do
+	let pos=fnt#sizeof_text (List.nth (self#get_text) i) in
+	  if !cw<(fst pos) then
+	    cw:=(fst pos);
+	  ch:=!ch + (snd pos);
+      done;
+      rect#set_size (!cw) (!ch);
+      
+
+  method put()=
+    for i=0 to (List.length self#get_text)-1 do
+      graphic#move (rect#get_x) (rect#get_y+(i*fnt#get_height));
+      graphic#set_cur_drawing i;
+      graphic#put();	
+      
+    done;
+
+end;;
+
+
 
 
 (** special graphic pattern resize with 9 tiles *)
