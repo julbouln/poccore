@@ -63,6 +63,8 @@ class graphic_object=
 
     method lua_init()=
       lua#set_val (OLuaVal.String "move") (OLuaVal.efunc (OLuaVal.int **-> OLuaVal.int **->> OLuaVal.unit) self#move);
+      lua#set_val (OLuaVal.String "get_x") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.int) (fun()->rect#get_x));
+      lua#set_val (OLuaVal.String "get_y") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.int) (fun()->rect#get_y));
       lua#set_val (OLuaVal.String "get_w") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.int) (fun()->rect#get_w));
       lua#set_val (OLuaVal.String "get_h") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.int) (fun()->rect#get_h));
       lua#set_val (OLuaVal.String "set_cur_drawing") (OLuaVal.efunc (OLuaVal.int **->> OLuaVal.unit) self#set_cur_drawing);
@@ -238,7 +240,7 @@ object(self)
   method get_lines=lines
 
 
-  val mutable max_size=100
+  val mutable max_size=1000
   method set_max_size s=max_size<-s
   method get_max_size=max_size
 
