@@ -28,10 +28,12 @@ open Anim;;
 (** Cursor class : handler of graphic cursor *)
 
 
-class cursors w h f=
+class cursors w h (fc:string option)=
   object
-    val mutable g=new graphic_object_from_file f w h
-
+    val mutable g=
+      match fc with
+	| Some f->video#hide_cursor();new graphic_object_from_file f w h
+	| None ->video#show_cursor(); new graphic_cached_object "cursor"
 (*    val mutable viseur=new graphic_object_anim 42 40 "medias/misc/viseur.png" [|0;1;2;3;4;3;4;3|] 2
 *)
     val mutable state="normal"
@@ -40,9 +42,12 @@ class cursors w h f=
     method get_x=g#get_rect#get_x;
     method get_y=g#get_rect#get_y;
  
-    method move x y=g#move x y
+    method move x y=
+      g#move x y
     method put()=
-      g#put()
+      match fc with
+	| Some v-> g#put()
+	| None -> ()
 (*      if state<>"on_ennemy" then
 	g#put()
       else (
@@ -53,7 +58,7 @@ class cursors w h f=
     method get_state=state
     method set_player p=pl<-p
     method set_state n=
-      state<-n;      
+      state<-n;            
       match n with
       | "normal" -> g#set_cur_drawing (if pl=1 then 0 else 2)
       | "clicked" -> g#set_cur_drawing (if pl=1 then 1 else 3)

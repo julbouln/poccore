@@ -24,25 +24,25 @@ object(self)
   method add_object (id:string option) (o:'a)=
     let nid=
       (match id with
-	 | Some nid->nid
+	 | Some nid->(nid)
 	 | None ->("object#"^string_of_int (Oo.id o)))
        in
       o#set_id nid;
       Hashtbl.add objs nid o;nid
 
   method replace_object id o=
-    Hashtbl.replace objs id o
+    Hashtbl.replace objs (id) o
 
   method is_object id=
-    Hashtbl.mem objs id
+    Hashtbl.mem objs (id)
 
   method get_object id=
     (try
-       Hashtbl.find objs id
+       Hashtbl.find objs (id)
      with Not_found -> raise (Object_not_found id))
 
   method delete_object id=
-    Hashtbl.remove objs id
+    Hashtbl.remove objs (id)
 
   method rename_object id nid=
     let o=self#get_object id in

@@ -104,7 +104,12 @@ object
   method set_clip x y w h=
     screen#set_clip x y w h 
 (*    video_set_clip x y w h *)
-  
+
+  method show_cursor()=
+    screen#show_cursor();
+
+  method hide_cursor()=
+    screen#hide_cursor();
 
 
 end;;

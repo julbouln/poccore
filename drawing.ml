@@ -43,13 +43,16 @@ type color=(int*int*int);;
 type ('t) draw_op_val=
   | DrawValInt of int
   | DrawValString of string
+
   | DrawValPosition of (int*int)
   | DrawValSize of (int*int)
   | DrawValSizeFloat of (float*float)
   | DrawValRectangle of rectangle
   | DrawValColor of color
+
   | DrawValT of 't
   | DrawValTArray of 't array
+
   | DrawValList of ('t) draw_op_val list
   | DrawValNil;;
 
@@ -206,6 +209,8 @@ object
   method virtual refresh: unit -> unit    
   method virtual set_caption: string->string->unit
   method virtual set_clip: int->int->int->int->unit
+  method virtual show_cursor:unit->unit
+  method virtual hide_cursor:unit->unit
 
 end;;
 
@@ -335,8 +340,6 @@ end;;
 
 (* xml & lua test *)
 (*
-
-
 
  <drawing_object id="test" fun="load_multiple">
   <values>

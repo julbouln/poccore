@@ -257,10 +257,8 @@ class graphic_cached_object nid=
 
     initializer
       self#set_id nid
-
-
 	
-(* FIXME: must be get_drawing and return drawing_object *)
+    (* FIXME: must be get_drawing and return drawing_object *)
     val mutable cur_drawing=0
 
     method get_drawing n=
@@ -270,18 +268,7 @@ class graphic_cached_object nid=
     method get_cur_drawing=cur_drawing
     method get_drawings_size=(Array.length (drawing_vault#get_cache id))
 
-(* DEPRECATED *)
-(*    val mutable cur_tile=0
-
-    method get_tile n=
-      (drawing_vault#get_cache_entry id n)#get_t
-      
-    method set_cur_tile c=cur_tile<-c
-    method get_cur_tile=cur_tile
-    method get_tiles_size=(Array.length (drawing_vault#get_cache id))
-*)
-
-(** canvas *)
+    (** canvas *)
 
     method move x y=
       rect#set_position x y 
@@ -289,7 +276,6 @@ class graphic_cached_object nid=
     method put() =      
       let t=self#get_drawing cur_drawing in
 	video#get_drawing#compose t rect#get_x rect#get_y
-(*	tile_put t rect#get_x rect#get_y; *)
 
   end;;
 
@@ -338,7 +324,10 @@ object
   inherit graphic_from_drawing (file^":"^string_of_int i^":resized") 
     (fun()->
        let dr=(drawing_vault#get_cache_entry file i)#copy() in
-	 dr#exec_op_copy "resize" [DrawValSizeFloat(((float_of_int w)/.(float_of_int iw)),((float_of_int h)/.(float_of_int ih)))]	 
+	 dr#exec_op_copy "resize" 
+	   [
+	     DrawValSizeFloat(((float_of_int w)/.(float_of_int iw)),((float_of_int h)/.(float_of_int ih)))
+	   ]	 
     )
 end;;
 
@@ -347,7 +336,9 @@ object
   inherit graphic_from_drawing (pdraw^":"^string_of_int i^":resized") 
     (fun()->
        let dr=(drawing_vault#get_cache_entry pdraw i)#copy() in
-	 dr#exec_op_copy "resize" [DrawValSizeFloat(fw,fh)]	 
+	 dr#exec_op_copy "resize" [
+	   DrawValSizeFloat(fw,fh)
+	 ]	 
     )
 end;;
 
@@ -371,7 +362,12 @@ object
 	     (
 	       fun tx->
 		 let  dr=drawing_vault#new_drawing() in
-		   dr#exec_op_create "create_text" [DrawValString fnt_n;DrawValString tx;DrawValColor color];
+		   dr#exec_op_create "create_text" 
+		     [
+		       DrawValString fnt_n;
+		       DrawValString tx;
+		       DrawValColor color
+		     ];
 		   dr
 	     ) (Array.of_list txt)
     )
