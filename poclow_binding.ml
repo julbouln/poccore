@@ -232,6 +232,10 @@ object(self)
   method new_drawing_screen()=new poclow_drawing_screen
 
   method cache_file_save f dl=
+    (* if no cache dir, create it *)
+    if Sys.file_exists "cache"=false then
+      Unix.mkdir "cache" 0o700;
+
     Array.iteri (
       fun i d->
 	let fn=(digest_of_string f^"_"^string_of_int i^".bmp") in
