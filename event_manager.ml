@@ -72,6 +72,7 @@ type key_type=
 | KeyDown
 | KeyRight
 | KeyLeft
+| KeyShift
 | KeyChar of string
 | KeyUnknow;;
 
@@ -85,6 +86,12 @@ let parse_key k=
     | 274 -> KeyDown
     | 275 -> KeyRight
     | 276 -> KeyLeft
+
+    | 304 -> KeyShift
+
+    | 33 -> KeyChar "!";
+    | 44 -> KeyChar ",";
+
     | 48 -> KeyChar "0"
     | 49 -> KeyChar "1";
     | 50 -> KeyChar "2";
@@ -95,6 +102,9 @@ let parse_key k=
     | 55 -> KeyChar "7";
     | 56 -> KeyChar "8";
     | 57 -> KeyChar "9";
+
+    | 58 -> KeyChar ":";
+    | 61 -> KeyChar "=";
 
     | 97 -> KeyChar "a";
     | 98 -> KeyChar "b";

@@ -501,7 +501,6 @@ class iface_button_with_label fnt txt file w h=
   end;;
 
 
-
 class iface_button_icon icon w h iw ih=
   object
     inherit iface_button icon w h as super
@@ -590,7 +589,73 @@ class iface_volume s e w h=
   end;;
 
 
+(* will be in Poccore.Interface *)
 
+class text_edit=
+object(self)
+  val mutable text=""
+  method get_text=text
+
+
+  method add_char c=
+    text<-String.concat "" [text;c];
+  method del_last_char()=
+    if (String.length text > 0) then
+      text<-String.sub text 0 (String.length text - 1);
+ 
+
+  method set_text t=text<-t
+
+  method parse c=
+    match c with
+      | KeySpace ->self#add_char " "
+      | KeyChar ch->self#add_char ch
+      | KeyBackspace ->self#del_last_char()
+      | _ ->()
+
+
+end;;
+
+
+(** text edit widget *)
+class iface_text_edit fnt color (te:text_edit) bw=
+  object (self)
+    inherit iface_object bw (fnt#get_height) as super
+
+    method put()=
+	self#set_data_text (te#get_text);
+
+      if showing==true then (	  
+	  let t=tile_rect (bw+12) (fnt#get_height + 12) (0,0,0) in
+	    tile_put t (rect#get_x-6) (rect#get_y-6);
+	    tile_free t;
+	  let bg=tile_box (bw+10) (fnt#get_height + 10) (200,200,200) in
+	    tile_put bg (rect#get_x-5) (rect#get_y-5);
+	    tile_free bg;
+	if te#get_text<>"" then(
+	  let tmp=fnt#create_text data_text color in 
+	  let w=tile_get_w tmp and
+	    h=tile_get_h tmp in
+            rect#set_size (w) (h);
+	    tile_put tmp (rect#get_x) (rect#get_y);
+	    tile_free tmp      
+	)
+      )
+  end;;
+
+
+(** text edit widget *)
+class iface_password_edit fnt color (te:text_edit) bw=
+  object (self)
+    inherit iface_text_edit fnt color te bw as super
+    method set_data_text t=
+      let tmp=ref "" in
+      for i=0 to String.length t - 1 do
+	tmp:=String.concat "" [!tmp;"*"];
+      done;
+      data_text<- !tmp;
+
+  end;;
 
 (** main iface class *)
 class interface bgfile w h=
