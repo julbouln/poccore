@@ -170,9 +170,8 @@ class iface_vcontainer c=
     method move x y=
       super#move x y;
       self#foreachi (
-      let f i obj=
+      fun i obj->
 	obj#move x (y+ (obj#get_rect#get_h*i))
-      in f
      )
   end;;
 
@@ -980,7 +979,6 @@ class iface_password_edit fnt color bw=
   object (self)
     inherit iface_text_edit fnt color bw as super
       
-
     method set_data_text t=
       let tmp=ref "" in
       for i=0 to String.length t - 1 do
@@ -989,6 +987,100 @@ class iface_password_edit fnt color bw=
       data_text<- !tmp;
 
   end;;
+
+class iface_dialog w h bg fnt text (bl:(string*iface_object) list)  (el:(string*iface_object*iface_object) list)=
+object(self)
+  inherit iface_graphic_file_object bg w h as super
+
+  initializer
+    List.iter (
+      fun (n,o)->
+	self#add_button n o;
+    ) bl;
+
+    List.iter (
+      fun (n,o,e)->
+	self#add_entry n o e;
+    ) el;
+
+
+  val mutable lab=new iface_label_static fnt (0,0,0) text
+  val mutable buttons=Hashtbl.create 2
+  val mutable entries=Hashtbl.create 2
+  
+  method add_button (n:string) (b:iface_object)=
+    Hashtbl.add buttons n b
+  
+  method add_entry (n:string) (lb:iface_object) (ent:iface_object)=
+    Hashtbl.add entries n (lb,ent)
+
+  method put()=
+    super#put();
+    lab#put();
+(*    Hashtbl.iter (
+      fun k o->
+	o#put();
+    ) buttons;
+*)  
+    Hashtbl.iter (
+      fun k (l,e)->
+	l#put();
+	e#put();
+    ) entries;    
+
+  method show()=
+    super#show();
+    lab#show();
+    
+    Hashtbl.iter (
+      fun k o->
+	o#show();
+    ) buttons;
+
+    Hashtbl.iter (
+      fun k (l,e)->
+	l#show();
+	e#show();
+    ) entries;
+
+  method hide()=
+    super#hide();
+    lab#hide();
+    
+    Hashtbl.iter (
+      fun k o->
+	o#hide();
+    ) buttons;
+
+    Hashtbl.iter (
+      fun k (l,e)->
+	l#hide();
+	e#hide();
+    ) entries;
+
+
+  method move x y=
+    super#move x y;
+    lab#move (x+16) (y+16);
+
+    let n=ref 0 in  
+      Hashtbl.iter (
+	fun k o->
+	  o#move (x+ (!n * o#get_rect#get_w) + 16) (y+(h -o#get_rect#get_h-16)) ;
+	  n:= !n + 1;
+      ) buttons;
+
+      let n=ref 0 in  
+	Hashtbl.iter (
+	  fun k (l,e)->
+	    l#move (x + 16) (y+(!n * e#get_rect#get_h)+lab#get_rect#get_h + 32) ; 
+	    e#move (x + l#get_rect#get_w + 16 + 64) (y+(!n * e#get_rect#get_h) + lab#get_rect#get_h + 32) ;
+	    n:= !n + 1;
+	) entries;
+
+
+
+end;;
 
 exception Iface_object_not_found of string;;
 
