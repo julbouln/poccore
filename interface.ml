@@ -673,7 +673,7 @@ class iface_text_edit fnt color (te:text_edit) bw=
             rect#set_size (w) (h);
 	    tile_put tmp (rect#get_x) (rect#get_y);
 	    tile_free tmp;
-	    
+      );	    
 	    if cur_c>cur_refresh/2 then (
 	      let cu=tile_rect 1 (fnt#get_height + 4) (0,0,0) in
 	      let (cw,ch)=(fnt#sizeof_text (Str.string_before te#get_text te#get_cur_utf_pos)) in 
@@ -684,7 +684,7 @@ class iface_text_edit fnt color (te:text_edit) bw=
 	    else cur_c<-cur_c+1
 
 	)
-      )
+
   end;;
 
 
