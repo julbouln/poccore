@@ -17,6 +17,7 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 (** Generic file manipulation *)
+open Unix;;
 
 (* Sample ocaml type<->file interface *)
 class ['a] file=
@@ -31,4 +32,34 @@ object
       close_in ic;
       (a:'a);
 end;;
+
+(* FIXME : go in poccore *)
+class dir rd=
+object
+
+  val mutable farr=Array.make 100 "none" 
+  val mutable dir=rd
+
+  method foreach_file f=
+    let d v=if v<>"none" then f v in
+    Array.iter d farr
+
+  method load()=
+    let d=opendir dir in
+    let cf=ref false in
+    let c=ref 0 in
+      while !cf==false do
+	(try 
+      let f=(readdir d) in
+	farr.(!c)<-f;
+	 with
+	   | End_of_file -> cf:=true);		
+	
+	c:= !c+1;
+      done;      
+      closedir d;
+
+
+end;;
+
 

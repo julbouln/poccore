@@ -220,20 +220,33 @@ class sound_object soundfiles=
 
 (** {2 Graphic part} *)
 
+exception Vfs_not_found of string;;
+
 (** Graphic object class parent *)
 class graphic_generic_object id=
   object (self)
     val mutable tiles=id
+
+
     val mutable rect=new rectangle 0 0 0 0
+
+    val mutable layer=0
+    method set_layer l=layer<-l
+    method get_layer=layer
 	
     val mutable cur_tile=0
 	
-   method get_rpos=vfs_tiles#get_rpos tiles
+
+
+   method get_rpos=(try
+		      vfs_tiles#get_rpos tiles 
+		    with _ -> raise (Vfs_not_found tiles)) 
+
 
     method get_tile n=
-      vfs_tiles#get_one tiles n
+      (try vfs_tiles#get_one tiles n with _ -> raise (Vfs_not_found tiles)) 
     method get_tile_shaded n=
-      vfs_tiles#get_one (tiles^":shaded") n
+      (try vfs_tiles#get_one (tiles^":shaded") n with _ -> raise (Vfs_not_found tiles)) 
     method get_id=id
 
 

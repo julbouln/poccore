@@ -380,6 +380,7 @@ class iface_selectbox_OLD fnt e=
 
 end;;
 
+
 (** select box widget *)
 class iface_selectbox fnt e=
  object(self)
@@ -488,6 +489,111 @@ class iface_selectbox fnt e=
        tile_free fg;
 
      cur_g#put()
+
+end;;
+
+
+(** select box widget *)
+class iface_menulist fnt ol=
+ object(self)
+  inherit iface_vcontainer ol as super
+
+   val mutable clicked=false
+   val mutable first_x=0
+   val mutable first_y=0
+   val mutable last=0
+   val mutable w=0
+   val mutable h=0
+       
+   initializer
+     self#set_entry 0;
+     self#reset_size();
+     w<-rect#get_w;
+     h<-rect#get_h;
+     rect#set_size w content.(0)#get_rect#get_h
+
+   method private set_entry i=
+     if i <> (-1) then (
+
+(*       cur_g#set_data_text e.(i); *)
+
+(*       let t=ref (-1) in
+	 self#foreachi (
+	   let f j obj=
+	     if first_x = obj#get_rect#get_x &&
+	       first_y = obj#get_rect#get_y then
+	       t:=j
+	   in f
+	 );
+*)
+	
+(*	   content.(cur_entry)#move (content.(i)#get_rect#get_x) (content.(i)#get_rect#get_y);  
+       content.(i)#move (first_x) (first_y);
+       cur_entry<-(i);*)
+     );     
+
+
+   method on_click x y=
+     if clicked==false then (
+       clicked<-true;			       
+       rect#set_size w h
+     )
+     else (
+       super#on_click x y;
+       let t=ref (-1) in
+	 self#foreachi (
+	   let f i obj=
+	     if x > obj#get_rect#get_x 
+	       && x < (obj#get_rect#get_w + obj#get_rect#get_x) 
+	       && y > obj#get_rect#get_y 
+	       && y < (obj#get_rect#get_h + obj#get_rect#get_y) 
+	     then
+	       t:=i
+	   in f
+	 );
+	 self#set_entry !t;
+	 clicked<-false;	   	 
+	 rect#set_size w content.(0)#get_rect#get_h 
+     );
+     
+   method on_release x y=()
+
+   
+(*   method set_data d=self#set_entry d 
+   method get_data=cur_entry *)
+
+   method get_rect=rect
+
+   method move x y=
+     first_x<-x;
+     first_y<-y;
+     super#move x y;
+     
+   method show()=
+     super#show();
+   
+   method hide()=
+     super#hide();
+   
+   method put()=
+     
+     if clicked==true then (
+     let bg=tile_box (w+10) h (55,55,55) in
+       tile_put bg (first_x-5) first_y;
+       tile_free bg;
+     let fg=tile_rect (w+10) h (127,127,127) in
+       tile_put fg (first_x-5) first_y;
+       tile_free fg;
+
+       super#put();
+     );
+     let bg=tile_box (w+10) content.(0)#get_rect#get_h (63,63,63) in
+       tile_put bg (first_x-5) first_y;
+       tile_free bg;
+     let fg=tile_rect (w+10) content.(0)#get_rect#get_h (127,127,127) in
+       tile_put fg (first_x-5) first_y;
+       tile_free fg;
+
 
 end;;
 
@@ -607,10 +713,28 @@ class iface_volume s e w h=
 
 (* will be in Poccore.Interface *)
 
+class utf8=
+object(self)
+  val mutable str=""
+
+  method set v=str<-v
+  method get=str
+
+  method length=UTF8.length str
+  method sub p l=String.sub str (self#byte_get p) (self#byte_get l)
+
+  method byte_get n=UTF8.nth str n
+  method byte_length=String.length str
+
+end;;
+
+
 class text_edit=
 object(self)
   val mutable text=""
   method get_text=text
+
+  val mutable utf=new utf8
 
   method utf_length=UTF8.length text
 
@@ -663,28 +787,130 @@ object(self)
 end;;
 
 
+exception Text_error of string;;
+
+class text id fnt=
+object(self)
+  val mutable graphic=new graphic_generic_object id
+
+
+  val mutable id=id
+  method set_id i=id<-i
+
+  method move x y=graphic#move x y
+  method get_rect=graphic#get_rect
+
+
+  val mutable max_size=16
+  method set_max_size s=max_size<-s
+  method get_max_size=max_size
+
+  val mutable text=[""]
+  method get_text=text
+
+  method private cut_string s=
+    let a=DynArray.create() in
+    let ss=UTF8.length s/max_size in
+      for i=0 to ss do
+
+	let md=UTF8.length s - (i*max_size) in
+	let l=if md>=max_size then max_size else md in
+	let cs=UTF8.nth s (i*max_size) and
+	    ce=UTF8.nth s ((i*max_size) + l) in
+	  try 
+	    let ns=String.sub s cs (ce-cs)
+in
+	      if String.length ns>0 then
+		DynArray.add a ns
+	  with Invalid_argument x -> (raise (Text_error "cut_string"));
+      done;
+      DynArray.to_list a
+	
+
+  method set_text t=
+(*    text<-split_delim (regexp "[\n\t]+") t; *)
+    text<-[""];
+    text<-self#cut_string t;
+
+    graphic<-
+    new graphic_dyn_object (id^"/text") (List.length self#get_text)
+      (function k-> (
+	 fnt#create_text (List.nth self#get_text k) self#get_color
+       ));
+
+    let cw=ref 0 and
+      ch=ref 0 in
+      for i=0 to (List.length (self#get_text))-1 do
+	let pos=fnt#sizeof_text (List.nth (self#get_text) i) in
+	  if !cw<(fst pos) then
+	    cw:=(fst pos);
+	  ch:=!ch + (snd pos);
+      done;
+      graphic#get_rect#set_size (!cw) (!ch);
+      
+  val mutable color=(0,0,0)
+  method get_color=color
+  method set_color c=color<-c
+
+
+  method put()=
+    for i=0 to (List.length self#get_text)-1 do
+      let ty=(graphic#get_rect#get_y) in
+	graphic#set_cur_tile i;
+	graphic#move (graphic#get_rect#get_x) (ty+(i*fnt#get_height));
+	graphic#put();	
+	graphic#move (graphic#get_rect#get_x) (ty);
+    done;
+
+end;;
+
+
 (** text edit widget *)
-class iface_text_edit fnt color bw=
+class iface_text_edit_box fnt color bw il=
   object (self)
     inherit iface_object bw (fnt#get_height) as super
 
+    val mutable lines=il
+    method private set_lines l=lines<-l
+    method private get_lines=lines
+
+    val mutable text=new text "text_edit" fnt
     val mutable te=new text_edit
    
     method private get_textedit=te
 
     method on_keypress e=
-      te#parse (parse_key e.ebut) (parse_unicode e.ey)
+      (match (parse_key e.ebut) with
+      | KeyBackspace -> te#parse (parse_key e.ebut) (parse_unicode e.ey)
+      | KeyReturn -> te#parse (parse_key e.ebut) (parse_unicode e.ey)
+      | KeyShift -> ()
+      | KeyUp -> te#parse (parse_key e.ebut) (parse_unicode e.ey)
+      | KeyDown -> te#parse (parse_key e.ebut) (parse_unicode e.ey)
+      | KeyLeft -> te#parse (parse_key e.ebut) (parse_unicode e.ey)
+      | KeyRight -> te#parse (parse_key e.ebut) (parse_unicode e.ey)
+      | _ -> 
+	  if UTF8.length te#get_text< lines*text#get_max_size then
+	te#parse (parse_key e.ebut) (parse_unicode e.ey));
+
+      self#set_data_text (te#get_text); 
+
+      text#set_text (data_text);
+
+
+
 
     initializer
+      text#set_max_size (bw/8);
       rect<-new rectangle 0 0 (bw+12) (fnt#get_height+12)
 
-    method move x y=rect#set_position (x-6) (y-6)
+    method move x y=
+  
+      rect#set_position (x-6) (y-6)
 
 
-  method on_click x y=
-    let rx=x-self#get_rect#get_x  in
-(*      print_int rx;print_newline(); *)
-      click()
+    method on_click x y=
+      let rx=x-self#get_rect#get_x  in
+	click()
 
 
 
@@ -693,30 +919,45 @@ class iface_text_edit fnt color bw=
 
     method get_data_text=te#get_text;
 
+    method private auto_lines()=
+      let l=List.length text#get_text in
+	if l<>0 then
+	  lines<-l;
+
     method put()=
-      self#set_data_text (te#get_text);
 
       if showing==true then (	  
-
-	  let t=tile_rect (bw+12) (fnt#get_height + 12) (0,0,0) in
+	rect#set_size (bw+12) ((fnt#get_height*lines)+12);
+	  let t=tile_rect (bw+12) ((fnt#get_height*lines)+12) (0,0,0) in
 	    tile_put t (rect#get_x) (rect#get_y);
 	    tile_free t;
-	  let bg=tile_box (bw+10) (fnt#get_height + 10) (200,200,200) in
+	  let bg=tile_box (bw+10) ((fnt#get_height*lines)+10) (200,200,200) in
 	    tile_put bg (rect#get_x+1) (rect#get_y+1);
 	    tile_free bg;
 	if te#get_text<>"" then(
-	  let tmp=fnt#create_text data_text color in 
-	  let w=tile_get_w tmp and
-	    h=tile_get_h tmp in
-            (*rect#set_size (w+12) (h+12);*)
-	    tile_put tmp (rect#get_x+6) (rect#get_y+6);
-	    tile_free tmp;
+
+	  text#move (rect#get_x+6) (rect#get_y+6);
+	  text#set_id self#get_id;
+
+	  text#put()
       );	    
 	if focused  then (
 	    if cur_c>cur_refresh/2 then (
 	      let cu=tile_rect 1 (fnt#get_height + 4) (0,0,0) in
-	      let (cw,ch)=(fnt#sizeof_text (Str.string_before data_text te#get_cur_utf_pos)) in 
-		tile_put cu (rect#get_x + cw+6) (rect#get_y-2+6);
+	      let cline=te#get_cur_pos/text#get_max_size in
+	      let mline=(te#get_cur_pos - (cline*text#get_max_size)) in
+	      let tt=
+		let r=try List.nth text#get_text (cline) with Failure x->""  in
+		  if r<>"" then
+		    try 
+		      let u=(UTF8.nth r mline) in
+			if u>0 then
+			  String.sub r 0 u
+			else ""
+		    with Invalid_argument x -> (raise (Text_error ("put:"^string_of_int mline)));
+		  else "" in
+	      let (cw,ch)=fnt#sizeof_text tt in
+		tile_put cu (rect#get_x + cw +6) (rect#get_y-2+6 + ch*(cline));
 		tile_free cu;
 	    );
 	    if cur_c=cur_refresh then cur_c<-0
@@ -728,10 +969,17 @@ class iface_text_edit fnt color bw=
   end;;
 
 
+class iface_text_edit fnt color bw=
+object
+  inherit iface_text_edit_box fnt color bw 1 as super
+end
+
 (** text edit widget *)
 class iface_password_edit fnt color bw=
   object (self)
     inherit iface_text_edit fnt color bw as super
+      
+
     method set_data_text t=
       let tmp=ref "" in
       for i=0 to String.length t - 1 do
@@ -1065,8 +1313,9 @@ object(self)
       o#move x y;
       if show then
 	o#show();
+      o#move (video#f_size_w x) (video#f_size_h y);
       if container=true then (
-	o#move x y;(oarr)
+	(oarr)
       )
       else (	
 	[|(id,lua,o)|]
