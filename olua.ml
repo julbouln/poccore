@@ -72,7 +72,7 @@ method register_vals_module m=
 		
 method parse e= I.dostring interp e
 method init_object (o:lua_object)=
-  self#parse (o#lua_block());
+  self#parse (o#lua_block())
 
 end;;
 
