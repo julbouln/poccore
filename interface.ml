@@ -72,6 +72,16 @@ object(self)
     method on_mouseout (x : int) (y : int)=mouseout()
 
 
+    method append_click c=
+      let oclick=click in
+      let nclick()=oclick();c() in
+	click<- nclick;
+
+    method prepend_click (c:unit->unit)=
+      let oclick=click in
+      let nclick()=c();oclick() in
+	click<- nclick;
+
     method set_click c=click<-c
     method set_release r=release<-r
 
