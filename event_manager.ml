@@ -63,55 +63,66 @@ end;;
 
 let eventm=new event_manager;;
 
+type key_type=
+| KeyBackspace
+| KeyReturn
+| KeySpace
+| KeyEchap
+| KeyUp
+| KeyDown
+| KeyRight
+| KeyLeft
+| KeyChar of string
+| KeyUnknow;;
 
 let parse_key k=
   match k with 
-    | 8 -> "backspace";
-    | 13 -> "return";
-    | 32 -> "space";
-    | 27 -> "echap";
-    | 273 -> "up";
-    | 274 -> "down";
-    | 275 -> "right";
-    | 276 -> "left";
-    | 48 -> "0";
-    | 49 -> "1";
-    | 50 -> "2";
-    | 51 -> "3";
-    | 52 -> "4";
-    | 53 -> "5";
-    | 54 -> "6";
-    | 55 -> "7";
-    | 56 -> "8";
-    | 57 -> "9";
+    | 8 -> KeyBackspace
+    | 13 -> KeyReturn
+    | 32 -> KeySpace
+    | 27 -> KeyEchap
+    | 273 -> KeyUp
+    | 274 -> KeyDown
+    | 275 -> KeyRight
+    | 276 -> KeyLeft
+    | 48 -> KeyChar "0"
+    | 49 -> KeyChar "1";
+    | 50 -> KeyChar "2";
+    | 51 -> KeyChar "3";
+    | 52 -> KeyChar "4";
+    | 53 -> KeyChar "5";
+    | 54 -> KeyChar "6";
+    | 55 -> KeyChar "7";
+    | 56 -> KeyChar "8";
+    | 57 -> KeyChar "9";
 
-    | 97 -> "a";
-    | 98 -> "b";
-    | 99 -> "c";
-    | 100 -> "d";
-    | 101 -> "e";
-    | 102 -> "f";
-    | 103 -> "g";
-    | 104 -> "h";
-    | 105 -> "i";
-    | 106 -> "j";
-    | 107 -> "k";
-    | 108 -> "l";
-    | 109 -> "m";
-    | 110 -> "n";
-    | 111 -> "o";
-    | 112 -> "p";
-    | 113 -> "q";
-    | 114 -> "r";
-    | 115 -> "s";
-    | 116 -> "t";
-    | 117 -> "u";
-    | 118 -> "v";
-    | 119 -> "w";
-    | 120 -> "x";
-    | 121 -> "y";
-    | 122 -> "z";
-    | _->"other";;
+    | 97 -> KeyChar "a";
+    | 98 -> KeyChar "b";
+    | 99 -> KeyChar "c";
+    | 100 -> KeyChar "d";
+    | 101 -> KeyChar "e";
+    | 102 -> KeyChar "f";
+    | 103 -> KeyChar "g";
+    | 104 -> KeyChar "h";
+    | 105 -> KeyChar "i";
+    | 106 -> KeyChar "j";
+    | 107 -> KeyChar "k";
+    | 108 -> KeyChar "l";
+    | 109 -> KeyChar "m";
+    | 110 -> KeyChar "n";
+    | 111 -> KeyChar "o";
+    | 112 -> KeyChar "p";
+    | 113 -> KeyChar "q";
+    | 114 -> KeyChar "r";
+    | 115 -> KeyChar "s";
+    | 116 -> KeyChar "t";
+    | 117 -> KeyChar "u";
+    | 118 -> KeyChar "v";
+    | 119 -> KeyChar "w";
+    | 120 -> KeyChar "x";
+    | 121 -> KeyChar "y";
+    | 122 -> KeyChar "z";
+    | _->KeyUnknow;;
 
 (* FIXME : deprecated *)
 (*
