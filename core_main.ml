@@ -1,6 +1,6 @@
 
 open Core_timer;;
-
+open Core_val;;
 open Core_video;;
 open Core_stage;;
 

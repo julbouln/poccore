@@ -1,7 +1,8 @@
+open Ocommon;;
 open Olua;;
 open Oval;;
 
-open Core_generic;;
+open Core_val;;
 open Core_rect;;
 open Core_medias;;
 open Core_graphic;;

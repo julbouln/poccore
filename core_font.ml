@@ -1,4 +1,4 @@
-open Core_generic;;
+open Ocommon;;
 open Core_cache;;
 
 (** Font management *)

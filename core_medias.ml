@@ -19,11 +19,13 @@
 
 open Str;;
 
+open Ocommon;;
 open Oval;;
 open Olua;;
 open Oxml;;
 
-open Core_generic;;
+
+open Core_val;;
 open Core_rect;;
 open Core_video;;
 

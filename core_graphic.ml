@@ -1,12 +1,12 @@
 open Str;;
 
-open Core_generic;;
 open Core_rect;;
 open Core_video;;
 open Core_medias;;
 open Core_font;;
 open Core_drawing;;
 
+open Ocommon;;
 open Oval;;
 open Olua;;
 

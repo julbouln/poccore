@@ -1,8 +1,5 @@
 
-
-(** Generic core objects *)
-
-type color=(int*int*int);;
+(** common useful funcs *)
 
 Random.self_init();;
 
@@ -10,6 +7,7 @@ Random.self_init();;
 let randomize n= 
  (Random.int n)
 
+(** Generic core objects *)
 
 (** the most lowlevel object *)
 exception Object_id_not_set;;

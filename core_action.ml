@@ -1,9 +1,10 @@
 
-
+open Ocommon;;
 open Olua;;
 open Oval;;
 
-open Core_generic;;
+
+open Core_val;;
 open Core_anim;;
 open Core_rect;;
 

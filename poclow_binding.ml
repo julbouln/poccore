@@ -6,6 +6,7 @@ open Core_drawing;;
 
 open Oval;;
 
+open Core_val;;
 
 (** poclow binding *)
 

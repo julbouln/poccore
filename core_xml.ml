@@ -2,6 +2,7 @@ open Oxml;;
 open Olua;;
 open Oval;;
 
+open Core_val;;
 open Core_action;;
 open Core_graphic;;
 open Core_medias;;
