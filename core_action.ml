@@ -96,6 +96,7 @@ class action_lua=
 object(self)
   inherit action_object as super
 
+
   method on_start ev=
     ignore(lua#exec_val_fun (OLuaVal.String "on_start") [OLuaVal.Table ev#to_lua#to_table])
   method on_loop()=

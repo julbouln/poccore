@@ -31,8 +31,10 @@ open Binding;;
 
 open Value_lua;;
 
-let rec usleep sec = ignore (Unix.select [] [] [] sec);;
-
+let rec usleep sec = 
+  (try 
+     ignore (Unix.select [] [] [] sec)
+   with Unix.Unix_error _ -> ());;
 class frame_limiter=
 object(self)
 
