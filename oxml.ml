@@ -21,7 +21,6 @@ open Unix;;
 open Xml;;
 open XmlParser;;
 
-open Low;;
 
 (** Xml parse in an object way *)
 

@@ -1,4 +1,4 @@
-
+type color=(int*int*int);;
 
 (** the most lowlevel object *)
 class generic_object=

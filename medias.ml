@@ -17,14 +17,15 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
-open Low;;
-
 open Generic;;
 open Rect;;
 open Video;;
-open Vfs;;
 
+open Font;;
 open Drawing;;
+
+open Binding;;
+
 open Oxml;;
 
 let medias_dir=(Filename.dirname(Sys.executable_name));;
@@ -36,7 +37,7 @@ Random.self_init();;
 (** {2 General function (FIXME: must fall in another file)} *)
 
 (** get random number *)
-let randomize n=
+let randomize n= 
  (Random.int n)
 
 let carree x=float_of_int(x*x);;
@@ -52,191 +53,6 @@ let random_string p s=
   done;
   str;;
 
-
-(** Load an unit tile of 5 directions and make mirrors to have 8 directions *)
-let tiles_load_with_mirror5 file w h=
-  let t=tiles_load_with_mirror_space file w h in
-  let mirror_unit v m =
-    (
-     let k=ref 0 
-     in
-     (
-      for i=v*((Array.length (t))/8) to (v+1)*(((Array.length (t))/8))-1 do
-	(t).(((Array.length (t))/8)*m + !k)<-tile_mirror((t).(i));
-	k:= !k + 1;
-      done;
-     );
-    )
-  in
-  mirror_unit 3 5;
-  mirror_unit 2 6;
-  mirror_unit 1 7;
-  for i=0 to (Array.length (t))-1 do
-	tile_set_alpha t.(i) 255 255 255;
-
-  done;
-  t 
-;;
-
-
-(** Load an unit tile of 5 directions and make mirrors to have 8 directions *)
-let tiles_load_with_mirror3 file w h=
-  let t=tiles_load_with_mirror_space3 file w h in
-  let mirror_unit v m =
-    (
-     let k=ref 0 
-     in
-     (
-      for i=v*((Array.length (t))/8) to (v+1)*(((Array.length (t))/8))-1 do
-	(t).(((Array.length (t))/8)*m + !k)<-tile_mirror((t).(i));
-	k:= !k + 1;
-      done;
-     );
-    )
-  and
-    copy_unit v m =
-    (
-     let k=ref 0 
-     in
-     (
-      for i=v*((Array.length (t))/8) to (v+1)*(((Array.length (t))/8))-1 do
-	(t).(((Array.length (t))/8)*m + !k)<-tile_copy((t).(i));
-	k:= !k + 1;
-      done;
-     );
-    )
-  in
-copy_unit 2 4;
-copy_unit 1 2;
-mirror_unit 2 6;
-
-  for i=0 to (Array.length (t))-1 do
-	tile_set_alpha t.(i) 255 255 255;
-
-  done;
-  t 
-;;
-
-let tiles_load_with_mirror file w h=
-  let t=tile_load file in
-  let aw=tile_get_w t and
-      ah=tile_get_h t in
-    if aw/w = 5 then
-      tiles_load_with_mirror5 file w h
-    else
-      tiles_load_with_mirror3 file w h
-;;
-
-(** {2 Font part} *)
-
-(** Font object class *)
-class font_object fontfile s=
-  object (self)
-    val mutable font=fontfile
-    val mutable size=(*int_of_float(video#get_fact_w()*.(float_of_int s))*)s
-    initializer 
-      if fontfile<>"none" then
-	vfs_fonts#create_simple (fontfile ^ ":" ^ (string_of_int(size))^"pt") (font_load fontfile size)
-
-    method get_size=size
-    method get_height=
-      if fontfile<>"none" then
-	font_height (vfs_fonts#get_simple (font ^ ":" ^ string_of_int(size)^"pt"))
-      else 
-	(
-	  8
-	)
-
-    method sizeof_text txt=
-      if fontfile<>"none" then     
-	font_sizeof (vfs_fonts#get_simple (font ^ ":" ^ string_of_int(size)^"pt")) txt
-      else
-	(
-	  (String.length txt*8,8);
-	)
-
-    method get_font=
-      if fontfile<>"none" then
-	vfs_fonts#get_simple (font ^ ":" ^ string_of_int(size)^"pt")
-      else font_empty()
-
-    method create_text txt color =
-      if fontfile<>"none" then
-	tile_text (vfs_fonts#get_simple (font ^ ":" ^ string_of_int(size)^"pt")) txt color
-      else
-	(
-	  let tmp=tile_box (String.length txt*8) 8 (255,255,255) in
-	    tile_set_alpha tmp 255 255 255;
-	    tile_string tmp (0,0) txt color; 
-	    tmp
-	)
-(*	tile_empty() *)
-(*	tile_string txt color *)
-  end;;
-
-
-(** {2 Sound part} *)
-
-(** Sound object class *)
-class sound_object soundfiles=
-  object (self)
-    initializer       
-      for i=0 to (Array.length soundfiles)-1 do	
-	vfs_sounds#create_simple_from_func (soundfiles.(i)) (function()->(sound_load soundfiles.(i))) 
-      done;
-    val mutable rect=new rectangle 0 0 0 0
-    val mutable distance=0
-    val mutable direction=0
-    val mutable angle=0
-    val mutable sounds=soundfiles
-    val mutable channel=(-1)
-    val mutable is_playing=false
-
-    method get_sound i=
-      vfs_sounds#get_simple (sounds.(i))
-
-    method move x y=rect#set_position x y;
-
-    method play_simple num=
-      channel<-sound_play (self#get_sound num);
-
-    method play (vx:int) (vy:int) num=      
-      if channel <>(-1) then (
-	if (sound_playing channel)==false then (
-	  is_playing<-false;
-	  channel<-(-1);
-	 ) 
-       )
-      else (
-	let dt=(racine((carree ((vx+ video#get_w/2)/32-rect#get_x)) +. (carree ((vy+ video#get_h/2)/32-rect#get_y)))) in
-	let d=int_of_float ((dt/.64.0)*.255.0) in
-	channel<-sound_play (self#get_sound num);
-(*	if channel <>(-1) then 
-	  sound_position channel d 0;
-*)	 
-	is_playing<-true
-       )	  
-
-    method play_random (vx:int) (vy:int)=
-      if (sounds.(0)<>"none") then (
-      if channel <>(-1) then (
-	if (sound_playing channel)==false then (
-	  is_playing<-false;
-	  channel<-(-1);
-	 )
-       )
-      else (
-	let dt=(racine((carree ((vx+ video#get_w/2)/32-rect#get_x)) +. (carree ((vy+ video#get_h/2)/32-rect#get_y)))) in
-	let d=int_of_float ((dt/.64.0)*.255.0) in
-	channel<-sound_play (self#get_sound (randomize (Array.length sounds)));
-(*	if channel <>(-1) then 
-	  sound_position channel d 0;
-*)
-	is_playing<-true
-       )	  
-      )
-	  
-  end;;
 
 
 
@@ -263,356 +79,6 @@ object
     print_string (" * layer: "^string_of_int layer);print_newline();
 end;;
 
-
-
-(** Graphic object class parent *)
-class graphic_generic_object nid=
-  object (self)
-    inherit canvas_object
-
-    initializer
-      self#set_id nid
-
-    val mutable cur_tile=0
-	
-    method get_rpos=
-	 vfs_tiles#get_rpos id
-
-    method get_tile n=
-	vfs_tiles#get_one id n
-
-      
-    method set_cur_tile c=cur_tile<-c
-    method get_cur_tile=cur_tile
-    method get_tiles_size=(Array.length (vfs_tiles#get id))
-
-    method move x y=
-      rect#set_position x y 
-
-    method put() =      
-      let t=self#get_tile cur_tile in
-	tile_put t rect#get_x rect#get_y;
-	vfs_tiles#free_dyn id t
-
-
-(* DEPRECATED *)
-
-    method put_to dest = 
-      let t=self#get_tile cur_tile in
-      tile_put_to t dest rect#get_x rect#get_y;
-      vfs_tiles#free_dyn id t
-
-
-    method resize fw fh=
-      rect#set_size (int_of_float(fw*.(float_of_int rect#get_w))) (int_of_float(fh*.(float_of_int rect#get_h)));
-      let ts=(vfs_tiles#get id) in
-      for i=0 to (self#get_tiles_size)-1 do
-	ts.(i)<-(tile_resize (self#get_tile i) fw fh); 
-      done;
-
-
-    method put_shaded ()=
-      let shaded=(self#get_tile_shaded cur_tile) in      
-(*      tile_set_alpha shaded 127 127 127; *)
-      tile_put shaded rect#get_x rect#get_y;
-      vfs_tiles#free_dyn (id^":shaded") shaded
-
-    method put_shaded_to dest=
-      let shaded=(self#get_tile_shaded cur_tile) in      
-(*      tile_set_alpha shaded 127 127 127; *)
-      tile_put_to shaded dest rect#get_x rect#get_y;
-      vfs_tiles#free_dyn (id^":shaded") shaded
-      
-
-    method get_tile_shaded n=
-      vfs_tiles#get_one (id^":shaded") n
-
-
-  end;;
-
-
-(** Dyn graphic object class *)
-class graphic_dyn_object n s f=
-  object (self)
-    inherit graphic_generic_object n as super 
-    initializer
-      vfs_tiles#create_dyn_func id s f;
-  end;;
-
-
-
-
-
-(** Graphic object class from a tile *)
-class graphic_real_object nm tile=
-  object (self)
-(* FIXME : need test *)
-    inherit graphic_generic_object nm as super 
-    initializer
-      rect#set_size (tile_get_w tile) (tile_get_h tile);
-      vfs_tiles#create_simple id tile;
-      
-  end;;
-
-(** Graphic object class from a file with simple entry *)
-class graphic_simple_object tilefile=
-  object (self)
-  inherit graphic_generic_object tilefile 
-    initializer
-      vfs_tiles#create_simple_from_func tilefile (function()->(
-	let t=tile_load tilefile in tile_set_alpha t 255 255 255;t;
-       ));
-      let t=vfs_tiles#get_simple (tilefile) in
-      rect#set_size (tile_get_w t) (tile_get_h t);
-
-  end;;
-
-class graphic_simple_from_func tilefile f=
-  object (self)
-  inherit graphic_generic_object tilefile 
-    initializer
-      vfs_tiles#create_simple_from_func tilefile f;
-      let t=vfs_tiles#get_simple (tilefile) in
-      rect#set_size (tile_get_w t) (tile_get_h t);
-
-  end;;
-
-(** Graphic object class from a file with simple entry *)
-class graphic_from_func tilefile func=
-  object (self)
-  inherit graphic_generic_object tilefile 
-    initializer
-      vfs_tiles#create_from_func tilefile (func);
-
-      let t=vfs_tiles#get_simple (tilefile) in
-      rect#set_size (tile_get_w t) (tile_get_h t);
-
-  end;;
-
-
-
-(** Graphic object class from a file with multiple entries*)
-class graphic_object_alpha wi hi tilesfile mirror is_shaded alpha=
-object (self)
-  inherit graphic_generic_object tilesfile as super
-
-  initializer
-    rect#set_size (wi) (hi);
-    if mirror==false then  (
-      vfs_tiles#create_from_func tilesfile (
-	function()->(
-	  
-	  let t=tiles_load tilesfile wi hi in
-	    if alpha then (
-	      for i=0 to (Array.length (t))-1 do
-		tile_set_alpha t.(i) 255 255 255; 
-	      done;
-	    );
-	    t
-
-       ));
-      if is_shaded=true then
-	(
-	 vfs_tiles#create_from_func (tilesfile^":shaded") (function()->(
-	   let t=tiles_load tilesfile wi hi in
-	   let t_s=Array.make (Array.length (t)) (tile_empty()) in
-	   for i=0 to (Array.length (t))-1 do
-	     let tl=(	      
-	       let ta=tile_resize t.(i) 0.25 0.25 in
-	       let tb=tile_resize ta 4.0 4.0 in
-	       let tc=tile_shade tb in 
-	       tile_free ta;
-	       tile_free tb;
-	       tile_free t.(i); 
-		tc
-	      )in
-	     t_s.(i)<-tl;
-	   done;	
-	   t_s
-	  )))
-
-     )
-    else 
-      if tilesfile<>"none" then
-	vfs_tiles#create_from_func tilesfile (function()->(tiles_load_with_mirror tilesfile wi hi));
-
-
-end;;
-
-(** Graphic object class from a file with multiple entries*)
-class graphic_object wi hi tilesfile mirror is_shaded =
-object (self)
-  inherit graphic_generic_object tilesfile as super
-
-  initializer
-    rect#set_size (wi) (hi);
-    if mirror==false then  (
-      vfs_tiles#create_from_func tilesfile (function()->(
-					      
-	let t=tiles_load tilesfile wi hi in
-	for i=0 to (Array.length (t))-1 do
-	  tile_set_alpha t.(i) 255 255 255; 
-	done;
-	  t
-
-       ));
-      if is_shaded=true then
-	(
-	 vfs_tiles#create_from_func (tilesfile^":shaded") (function()->(
-	   let t=tiles_load tilesfile wi hi in
-	   let t_s=Array.make (Array.length (t)) (tile_empty()) in
-	   for i=0 to (Array.length (t))-1 do
-	     let tl=(	      
-	       let ta=tile_resize t.(i) 0.25 0.25 in
-	       let tb=tile_resize ta 4.0 4.0 in
-	       let tc=tile_shade tb in 
-	       tile_free ta;
-	       tile_free tb;
-	       tile_free t.(i); 
-		tc
-	      )in
-	     t_s.(i)<-tl;
-	   done;	
-	   t_s
-	  )))
-
-     )
-    else 
-      if tilesfile<>"none" then
-	vfs_tiles#create_from_func tilesfile (function()->(tiles_load_with_mirror tilesfile wi hi));
-
-
-end;;
-
-
-
-
-class v_color=
-object
-  val mutable colors=Hashtbl.create 2
-
-  method add_vcolor (vc:color) (c:color array)=
-    Hashtbl.add colors vc c
-
-  method color_change t n=
-    let rt=ref t in
-    Hashtbl.iter
-      (fun k v->
-	 let tr=tile_color_change !rt k v.(n) in	 
-	   tile_free !rt;
-	   rt:=tr
-      ) colors;
-      !rt
-	
-  method vcolor_foreach f=
-    Hashtbl.iter f colors
-      
-
-end;;
-
-(* bfr compat *)
-class unit_color=
-object
-  inherit v_color
-end;;
-
-class graphic_object_colored wi hi tilesfile mirror is_shaded (uc:unit_color) (un:int)=
-object (self)
-  inherit graphic_generic_object (tilesfile^":colored") as super
-
-  initializer
-    rect#set_size (wi) (hi);
-    if mirror==false then  (
-      vfs_tiles#create_from_func (tilesfile^":colored") (function()->(
-	let t=tiles_load tilesfile wi hi in
-	for i=0 to (Array.length (t))-1 do
-	      t.(i)<-uc#color_change t.(i) un;
-	      tile_set_alpha t.(i) 255 255 255;
-	done;
-	t
-       ));
-      if is_shaded=true then
-	(
-	 vfs_tiles#create_from_func (tilesfile^":colored:shaded") (function()->(
-	   let t=tiles_load tilesfile wi hi in
-	   let t_s=Array.make (Array.length (t)) (tile_empty()) in
-	   for i=0 to (Array.length (t))-1 do
-	     let tl=(	      
-	       t.(i)<-uc#color_change t.(i) un;
-	       let ta=tile_resize t.(i) 0.25 0.25 in
-	       let tb=tile_resize ta 4.0 4.0 in
-	       let tc=tile_shade tb in 
-	       tile_free ta;
-	       tile_free tb;
-	       tile_free t.(i); 
-		tc
-	      )in
-	     t_s.(i)<-tl;
-	   done;	
-	   t_s
-	  )))
-
-     )
-    else 
-      if tilesfile<>"none" then
-	vfs_tiles#create_from_func (tilesfile^":colored") (
-	  function()->(
-	    let t=tiles_load_with_mirror tilesfile wi hi in
-	      for i=0 to (Array.length (t))-1 do
-
-	      t.(i)<-uc#color_change t.(i) un;
-		  tile_set_alpha t.(i) 255 255 255; 
-		  
-	      done;
-	      t
-));
-
-
-
-end;;
-
-
-
-let resized_objs=let a=Hashtbl.create 2 in Hashtbl.add a "none" false;a;;
-
-class graphic_real_resized_object nm fw fh tile=
-  object
-    inherit graphic_real_object nm tile as super
-    initializer
-      if (fw<>1.0 || fh<>1.0) && (Hashtbl.mem resized_objs nm)==false  then (
-	super#resize fw fh;
-	Hashtbl.add resized_objs nm true;
-       )
-  end;;
-
-
-class graphic_scr_resized_real_object nm tile=
-  object
-    inherit graphic_real_resized_object nm (video#get_fact_w()) (video#get_fact_h()) tile as super
-  end;;
-
-(** Graphic object class that is resized *)
-class graphic_resized_object wi hi fw fh tilesfile mirror is_shaded=
-  object
-    inherit graphic_object wi hi tilesfile mirror is_shaded as super
-    initializer
-      if tilesfile<>"none" then	
-	if (fw<>1.0 || fh<>1.0) then (
-	  if (Hashtbl.mem resized_objs tilesfile)==false  then (	  
-	    super#resize fw fh;
-	    Hashtbl.add resized_objs tilesfile true;
-	   ) else (
-	    rect#set_size (int_of_float(fw*.(float_of_int rect#get_w))) (int_of_float(fh*.(float_of_int rect#get_h)));
-
-	   )
-	 )
-  end;;
-
-(** Graphic object class that is resized with screen factor *)
-class graphic_scr_resized_object wi hi tilesfile mirror is_shaded=
-  object
-    inherit graphic_resized_object wi hi (video#get_fact_w()) (video#get_fact_h()) tilesfile mirror is_shaded as super
-  end;;
 
 
 class canvas_NEW =
@@ -725,82 +191,50 @@ object(self)
 
 end;;
 
-let white_border t=
-
-  let w=tile_get_w t and
-      h=tile_get_h t in
-  let white=(255,255,255) in
-  let t2=tile_copy t in
-    for x=0 to w-1 do
-      for y=0 to h-1 do
-	let border=(200,200,200) in
-	let color=tile_getpixel t x y in 
-	  if color=white then
-	    (
-	      let res=ref false in
-		for i=(-1) to 1 do
-		  for j=(-1) to 1 do
-		    if (i<>0 or j<>0) then
-		      if (x+i)>0 && (x+i)<w && (y+j)>0 && (y+j)<h then  
-			(
-			  let c=tile_getpixel t (x+i) (y+j) in 
-			
-			    if c<>border && c<>white then 
-			      res:=true
-			)
-			  
-		  done;
-		done;
-		if !res then 
-		  tile_putpixel t2 border x y  
-		    
-	    )
-      done;
-    done;
-    tile_free t;
-    t2
-
-(** white border around tile *)
-class graphic_white_border tilesfile w h=
+class v_color=
 object
-  inherit graphic_from_func (tilesfile^"/white_border") 
-    (fun()->
-	 let t=tile_load tilesfile in
-	 let t2=white_border t in
-	 let ta=tile_split t2 w h in
-	   for i=0 to (Array.length (ta))-1 do
-	     tile_set_alpha ta.(i) 255 255 255; 
-	   done;
-	   ta
-    )
+  val mutable colors=Hashtbl.create 2
 
-    as super
-    
-  val mutable gr=new graphic_object w h tilesfile false false
-    
-  val mutable over=false
-  method set_over o=over<-o
+  method add_vcolor (vc:color) (c:color array)=
+    Hashtbl.add colors vc c
 
-  method move x y=
-    super#move x y;
-    gr#move x y;
+(*  method color_change t n=
+    let rt=ref t in
+    Hashtbl.iter
+      (fun k v->
+	 let tr=tile_color_change !rt k v.(n) in	 
+	   tile_free !rt;
+	   rt:=tr
+      ) colors;
+      !rt
+*)
+  method vcolor_foreach f=
+    Hashtbl.iter f colors
+      
 
-  method put()=
-    if over then
-      super#put()
-    else
-      gr#put()
-  
 end;;
-
-class graphic_generic_white_border id=
-object
-  inherit graphic_generic_object id
-  method set_over (v:bool)=()
-end;;
-
 
 (* NEW : use drawing_vault *)
+
+let get_font_id fnt_t=
+  (match fnt_t with 
+     | FontTTF (f,s)->(f^":"^string_of_int s)
+     | FontEmbed->"font_embed");;
+
+
+class font_ttf f s=
+object
+  val mutable font_t=FontTTF(f,s)
+  method get_font_t=font_t
+
+  initializer
+    font_vault#add_cache (get_font_id font_t) (
+      fun()->
+	let fnt=font_vault#new_font() in
+	  fnt#load font_t;
+	  [|fnt|]
+    );
+end;;
 
 (** Graphic object class parent *)
 class graphic_cached_object nid=
@@ -810,26 +244,38 @@ class graphic_cached_object nid=
     initializer
       self#set_id nid
 
-    val mutable cur_tile=0
-	
-(*    method get_rpos=
-      vfs_tiles#get_rpos id
-*)
 
+	
 (* FIXME: must be get_drawing and return drawing_object *)
+    val mutable cur_drawing=0
+
+    method get_drawing n=
+      (drawing_vault#get_cache_entry id n)
+
+    method set_cur_drawing c=cur_drawing<-c
+    method get_cur_drawing=cur_drawing
+    method get_drawings_size=(Array.length (drawing_vault#get_cache id))
+
+(* DEPRECATED *)
+(*    val mutable cur_tile=0
+
     method get_tile n=
       (drawing_vault#get_cache_entry id n)#get_t
       
     method set_cur_tile c=cur_tile<-c
     method get_cur_tile=cur_tile
     method get_tiles_size=(Array.length (drawing_vault#get_cache id))
+*)
+
+(** canvas *)
 
     method move x y=
       rect#set_position x y 
 
     method put() =      
-      let t=self#get_tile cur_tile in
-	tile_put t rect#get_x rect#get_y;
+      let t=self#get_drawing cur_drawing in
+	video#get_drawing#compose t rect#get_x rect#get_y
+(*	tile_put t rect#get_x rect#get_y; *)
 
   end;;
 
@@ -851,10 +297,12 @@ object
   initializer
     drawing_vault#add_cache_from_drawing_fun n dfn args;
 
-  let dra=drawing_vault#get_cache_simple n in
-  rect#set_size (dra#get_w) (dra#get_h);
+    let dra=drawing_vault#get_cache_simple n in
+      rect#set_size (dra#get_w) (dra#get_h);
 
 end;;
+
+
 
 class graphic_object_from_file file w h=
 object(self)
@@ -868,10 +316,52 @@ object(self)
 end;;
 
 
+
+
+class graphic_object_resized_from_file file i w h iw ih=
+object
+  val fgr=new graphic_object_from_file file iw ih
+  inherit graphic_from_drawing (file^":"^string_of_int i^":resized") 
+    (fun()->
+       let dr=(drawing_vault#get_cache file).(i)#copy() in
+	 dr#exec_op_copy "resize" [DrawValSizeFloat(((float_of_int w)/.(float_of_int iw)),((float_of_int h)/.(float_of_int ih)))]	 
+    )
+end;;
+
+class graphic_object_resized pdraw i fw fh=
+object
+  inherit graphic_from_drawing (pdraw^":"^string_of_int i^":resized") 
+    (fun()->
+       let dr=(drawing_vault#get_cache pdraw).(i)#copy() in
+	 dr#exec_op_copy "resize" [DrawValSizeFloat(fw,fh)]	 
+    )
+end;;
+
+
+class graphic_object_text fnt_t txt color=
+object
+  inherit graphic_from_drawing txt 
+    (fun()->
+
+	 let  dr=drawing_vault#new_drawing() in
+	 let fnt_n=get_font_id fnt_t in
+		font_vault#add_cache (fnt_n) (
+		  fun()->
+		  let fnt=font_vault#new_font() in
+		    fnt#load fnt_t;
+		    [|fnt|]
+		);
+		dr#exec_op_create "create_text" [DrawValString fnt_n;DrawValString txt;DrawValColor color];
+       [|dr|]
+    )
+
+end;;
+
+
 (** special graphic pattern resize with 9 tiles *)
 class graphic_pattern pid pdrawid=
 object(self)
-  inherit graphic_generic_object pid as super
+  inherit graphic_cached_object pid as super
 
   val mutable gr=new graphic_cached_object pid
 
@@ -925,15 +415,15 @@ object(self)
       for i=0 to cw do
 	for j=0 to ch do
 	  (match (i,j) with
-	     | (0,0) -> gr#set_cur_tile 0
-	     | (0,ih) when ih=ch ->gr#set_cur_tile 2
-	     | (0,_) ->gr#set_cur_tile 1
-	     | (iw,0) when iw=cw -> gr#set_cur_tile 6
-	     | (_,0) ->gr#set_cur_tile 3
-	     | (iw,ih) when iw=cw && ih=ch -> gr#set_cur_tile 8
-	     | (_,ih) when ih=ch ->gr#set_cur_tile 5
-	     | (iw,_) when iw=cw ->gr#set_cur_tile 7
-	     | (_,_) ->gr#set_cur_tile 4
+	     | (0,0) -> gr#set_cur_drawing 0
+	     | (0,ih) when ih=ch ->gr#set_cur_drawing 2
+	     | (0,_) ->gr#set_cur_drawing 1
+	     | (iw,0) when iw=cw -> gr#set_cur_drawing 6
+	     | (_,0) ->gr#set_cur_drawing 3
+	     | (iw,ih) when iw=cw && ih=ch -> gr#set_cur_drawing 8
+	     | (_,ih) when ih=ch ->gr#set_cur_drawing 5
+	     | (iw,_) when iw=cw ->gr#set_cur_drawing 7
+	     | (_,_) ->gr#set_cur_drawing 4
 	  );
 	  gr#move (rect#get_x + (i*crect#get_w)) (rect#get_y + (j*crect#get_h));
 	  gr#put();
@@ -961,14 +451,17 @@ class xml_font_parser=
 object
   inherit xml_parser
 
-  val mutable file="none"
+  val mutable file=None
   val mutable size=0
 
-  method get_val=new font_object file size
-
+(*  method get_val=new font_object file size *)
+  method get_val=
+    match file with
+      | Some v->FontTTF (v,size)
+      | None->FontEmbed
   method parse_attr k v=
     match k with
-      | "path" -> file<-v
+      | "path" -> file<-(Some v)
       | "size" -> size<-int_of_string v
       | _ -> ()
   method parse_child k v=()
@@ -976,7 +469,7 @@ object
 
 end;;
 
-
+(*
 (** xml tile parser : <tile path="tilefile"/> *)
 class xml_tile_parser=
 object
@@ -995,7 +488,7 @@ object
 
 
 end;;
-
+*)
 
 
 (** v_color parser stuff *)
@@ -1037,7 +530,7 @@ let v_color_from_xml f=
   let colfile=new xml_node (Xml.parse_file f) in
   let colparser=new xml_v_colors_parser in    
     colparser#parse colfile;
-  let uc=new unit_color in
+  let uc=new v_color in
     List.iter (
       fun v->(	
 	uc#add_vcolor (fst v) (snd v) 
@@ -1045,3 +538,4 @@ let v_color_from_xml f=
     )
       colparser#get_vcolors;
   uc
+

@@ -1,4 +1,3 @@
-open Low;;
 (*open Fr;;*)
 open Locale;;
 open Config;;
@@ -67,9 +66,9 @@ object(self)
     else (info#get_cmd^".conf")
 
 
-  val mutable screen_tile=(tile_empty())
+(*  val mutable screen_tile=(tile_empty())
   method screen_tile=screen_tile
-
+*)
   val mutable scr_w=800
   val mutable scr_h=600
 
@@ -132,24 +131,24 @@ object(self)
     
 
   method medias_init()=
-    all_init();
+
     
     if !windowed=true then fullscreen:=false;
     
-    screen_tile<-video#init (scr_w) (scr_h) (depth) (!fullscreen);
+    video#init (scr_w) (scr_h) (depth) (!fullscreen);
     video#set_def_size 800 600;
     
-    audio#init 44100 2 ;
+(*    audio#init 44100 2 ; *)
     
-    wm_set_caption ( info#get_name^" "^info#get_version) icon;
+    video#set_caption ( info#get_name^" "^info#get_version) icon;
     (*"medias/misc/bfr_rebel.xpm"; *)
     
-    audio#set_audio_vol ((self#this_config.audio_vol*128)/16);
+(*    audio#set_audio_vol ((self#this_config.audio_vol*128)/16);
     audio#set_music_vol ((self#this_config.music_vol*128)/16);
     
   frame_init();
   frame_set(fps);
-  
+*)
 
 end;;
 

@@ -17,7 +17,8 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
-open Low;;
+open Drawing;;
+open Binding;;
 
 (** Video subsystem *)
 (** The global video class provide some interaction with the video screen like init or refresh it.
@@ -34,6 +35,7 @@ let fps=ref 30;;
 (** Video class *)
 class video=
 object
+  val mutable screen=drawing_vault#new_drawing_screen()
   val mutable width=0
   val mutable height=0
   val mutable def_w=0
@@ -47,11 +49,13 @@ object
     height<-h;
     depth<-bpp;
     fullscreen<-fs;    
-    video_init width height depth fullscreen
+    screen#init width height depth fullscreen
+(*    video_init width height depth fullscreen *)
 
 (** get if video screen is initialized *)
-  method initialized=
+(*  method initialized=
     is_video
+*)
 
 (** set the default size *)
   method set_def_size w h=def_w<-w;def_h<-h
@@ -76,24 +80,30 @@ object
   method get_fact_h()=(float_of_int height)/.(float_of_int def_h)
 
 (** set title of screen *)
-  method set_caption s=
-    wm_set_caption s
+  method set_caption s i=
+    screen#set_caption s i
+(*    wm_set_caption s *)
 
 (** refresh screen *)
   method flip=
-    video_update    
+    screen#refresh
+(*    video_update    *)
 
 (** blank the screen *)
   method blank=
-    video_blank_screen
+    screen#blank
+(*    video_blank_screen *)
 
 (** get video screen tile *)
-  method get_tile=
+  method get_drawing=
+    screen
+(*  method get_tile=
     video_surface_get
-
+*)
 (** set video screen clip *)
   method set_clip x y w h=
-    video_set_clip x y w h
+    screen#set_clip x y w h 
+(*    video_set_clip x y w h *)
   
 
 

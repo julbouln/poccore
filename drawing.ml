@@ -191,7 +191,10 @@ object
   inherit ['t] drawing_object
 
   method virtual init :int->int->int->bool->unit
+  method virtual blank: unit->unit
   method virtual refresh: unit -> unit    
+  method virtual set_caption: string->string->unit
+  method virtual set_clip: int->int->int->int->unit
 
 end;;
 
@@ -200,6 +203,7 @@ object(self)
   val mutable drs=Hashtbl.create 2
 
   method virtual new_drawing : unit -> ('t) drawing_object
+  method virtual new_drawing_screen : unit -> ('t) drawing_screen
 
   method add_drawing_fun (n:string) (o:('t) draw_op_val list->('t) drawing_object array)=
     print_string ("DRAWING_HANDLER: add drawing fun "^n);print_newline();
@@ -233,8 +237,9 @@ object(self)
 
   (* link between cache & handler *)
   method add_cache_from_drawing_fun (n:string) (dfn:string) (args:('t) draw_op_val list)=
-    let drl=(fun()->self#exec_drawing_fun dfn args) in
-      self#add_cache n drl;
+    if self#is_cache_fun dfn=false then 
+      let drl=(fun()->self#exec_drawing_fun dfn args) in    
+	self#add_cache n drl;
 
   initializer
     (** generic drawing creation functions *)
@@ -286,135 +291,3 @@ object(self)
 
 end;;
 
-(** poclow binding *)
-
-
-
-open Low;;
-
-(** poclow drawing *)
-class poclow_drawing_object=
-object(self)
-  inherit [tile] drawing_object
-  val mutable t=None
-  method get_t=
-    match t with
-      | Some v->v
-      | None -> raise Drawing_not_initialized;
-  method set_t nt=t<-(Some nt)
-
-  method get_w=tile_get_w self#get_t
-  method get_h=tile_get_h self#get_t    
-
-  method new_t nt=
-    let nd=new poclow_drawing_object in
-      nd#set_t (nt);
-      nd
-
-  method create w h c=self#set_t (tile_box w h c)
-  method copy()=
-    self#new_t (tile_copy self#get_t)
-
-  method put_pixel x y c=tile_putpixel self#get_t c x y
-  method get_pixel x y=tile_getpixel self#get_t x y
-
-  method compose dr x y=tile_put_to dr#get_t self#get_t x y
-
-(* xml & lua test *)
-(*
-
- <drawing_object id="test" fun="load_multiple">
-  <values>
-   <val_string str="medias/test.png"/> 
-   <val_size w="32" h="32"/>
-   <val_color r="255" g="255" b="255"/>
-  </values>
-  <script>
-   i=0;
-   while i<test.size do
-    test[i].set_alpha(255,255,255);
-    i=i+1;
-   end;
-  </script>
- </drawing_object>
-  
-*)
-
-  initializer
-
-(** create ops *)
-
-    self#add_op "load" DrawTypeCreate (
-      fun ovl->
-	let f=(get_draw_op_string ovl 0) in
-	print_string ("DRAWING_OBJECT: load "^f);print_newline();
-	DrawValT (tile_load f);
-    );
-
-(** copy ops *)
-
-    self#add_op "mirror" DrawTypeCopy (
-      fun ovl->
-	DrawValT (tile_mirror self#get_t);
-    );
-
-    self#add_op "split" DrawTypeCopy (
-      fun ovl->
-	let (w,h)=get_draw_op_size ovl 0 in
-	DrawValTArray (tile_split self#get_t w h);
-    );
-
-    self#add_op "resize" DrawTypeCopy (
-      fun ovl->
-	let (w,h)=get_draw_op_size_float ovl 0 in
-	DrawValT (tile_resize self#get_t w h);
-    );
-
-(** write op *)
-
-    self#add_op "set_alpha" DrawTypeWrite (
-      fun ovl->
-	let (r,g,b)=get_draw_op_color ovl 0 in
-	  (tile_set_alpha self#get_t r g b);
-	  DrawValNil;
-    );
-
-    self#add_op "line" DrawTypeWrite (
-      fun ovl->
-	let p1=get_draw_op_position ovl 0 and
-	    p2=get_draw_op_position ovl 1 and
-	    col=get_draw_op_color ovl 2 in
-	  
-	  (tile_line self#get_t p1 p2 col);
-	  DrawValNil;
-    );
-
-(** read ops *)
-    self#add_op "get_rpos" DrawTypeRead (
-      fun ovl->
-	let rcol=(get_draw_op_color ovl 0) in
-	let (x1,y1,x2,y2)=tile_refresh_pos self#get_t in
-	  DrawValRectangle (new rectangle x1 y1 x2 y2)
-    );
-
-end;;
-
-class poclow_drawing_screen=
-object(self)
-  inherit [tile] drawing_screen
-  inherit poclow_drawing_object
-
-  method init w h bpp fs=
-    self#set_t (video_init w h bpp fs)
-
-  method refresh()=
-    video_update()
-end;;
-
-class poclow_drawing_vault s=
-object(self)
-  inherit [tile] drawing_vault s
-  method new_drawing()=new poclow_drawing_object
-end;;
-
-let drawing_vault=new poclow_drawing_vault 1000;;

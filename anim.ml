@@ -42,7 +42,7 @@ object
 
 
 (** Animated graphic object *)
-class graphic_with_anim (graph:graphic_generic_object) frames refresh= 
+class graphic_with_anim (graph:graphic_cached_object) frames refresh= 
 object
   val mutable anim=new anim_object frames refresh
 
@@ -50,7 +50,7 @@ object
 
   method move x y=graph#move x y
   method anim()=anim#anim();
-  method put()=graph#set_cur_tile(anim#get_frame);graph#put();
+  method put()=graph#set_cur_drawing(anim#get_frame);graph#put();
 
 end;;
 
@@ -58,13 +58,13 @@ end;;
 class graphic_object_anim w h file frames refresh= 
 object
   val mutable anim=new anim_object frames refresh
-  val mutable graph=new graphic_scr_resized_object w h file false false
+  val mutable graph=new graphic_object_from_file file w h
 
   method get_anim=anim
 
   method move x y=graph#move x y
   method anim()=anim#anim();
-  method put()=graph#set_cur_tile(anim#get_frame);graph#put();
+  method put()=graph#set_cur_drawing(anim#get_frame);graph#put();
 
 end;;
 
@@ -72,12 +72,12 @@ end;;
 class graphic_generic_object_anim id frames refresh= 
 object
   val mutable anim=new anim_object frames refresh
-  val mutable graph=new graphic_generic_object id
+  val mutable graph=new graphic_cached_object id
 
   method get_anim=anim
 
   method move x y=graph#move x y
   method anim()=anim#anim();
-  method put()=graph#set_cur_tile(anim#get_frame);graph#put();
+  method put()=graph#set_cur_drawing(anim#get_frame);graph#put();
 
 end;;

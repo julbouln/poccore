@@ -23,6 +23,8 @@ open Video;;
 
 open Unix;;
 
+(** DEPRECATED *)
+
 (** Pseudo VFS system *)
 
 (** For not load multiple time the same data. 

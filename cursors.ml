@@ -17,7 +17,6 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
-open Low;;
 open Rect;;
 open Video;;
 open Medias;;
@@ -31,10 +30,10 @@ open Anim;;
 
 class cursors w h f=
   object
-    val mutable g=new graphic_scr_resized_object w h f false false
+    val mutable g=new graphic_object_from_file f w h
 
-    val mutable viseur=new graphic_object_anim 42 40 "medias/misc/viseur.png" [|0;1;2;3;4;3;4;3|] 2
-
+(*    val mutable viseur=new graphic_object_anim 42 40 "medias/misc/viseur.png" [|0;1;2;3;4;3;4;3|] 2
+*)
     val mutable state="normal"
     val mutable pl=1
 
@@ -43,27 +42,28 @@ class cursors w h f=
  
     method move x y=g#move x y
     method put()=
-      if state<>"on_ennemy" then
+      g#put()
+(*      if state<>"on_ennemy" then
 	g#put()
       else (
 	viseur#anim();
 	viseur#put();
       )
-
+*)
     method get_state=state
     method set_player p=pl<-p
     method set_state n=
       state<-n;      
       match n with
-      | "normal" -> g#set_cur_tile (if pl=1 then 0 else 2)
-      | "clicked" -> g#set_cur_tile (if pl=1 then 1 else 3)
-      | "bottom" -> g#set_cur_tile 4
-      | "top" -> g#set_cur_tile 5
-      | "left" -> g#set_cur_tile 6
-      | "right" -> g#set_cur_tile 7
-      | "can_attack" -> g#set_cur_tile 8
+      | "normal" -> g#set_cur_drawing (if pl=1 then 0 else 2)
+      | "clicked" -> g#set_cur_drawing (if pl=1 then 1 else 3)
+      | "bottom" -> g#set_cur_drawing 4
+      | "top" -> g#set_cur_drawing 5
+      | "left" -> g#set_cur_drawing 6
+      | "right" -> g#set_cur_drawing 7
+      | "can_attack" -> g#set_cur_drawing 8
       | "on_ennemy" -> ()
-      | _ -> g#set_cur_tile 0;
+      | _ -> g#set_cur_drawing 0;
 
 
   end;;
