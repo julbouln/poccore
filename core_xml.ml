@@ -54,7 +54,7 @@ parser must have : get_type, get_id and get_val with get_val#get_lua
    
 *)
 
-class ['pt,'t] xml_parser_container otag (gen_parser:unit->'pt)=
+class ['pt,'t] xml_container_parser otag (gen_parser:unit->'pt)=
 object(self)
   inherit xml_parser
 
@@ -127,7 +127,6 @@ object (self)
     args_parser#parse_child k v;
     match k with
       | "script" -> lua<-v#get_pcdata;
-
       | _ -> ()
 
 (** object initial init *)
@@ -146,35 +145,6 @@ object (self)
 
 end;;
 
-
-(*
- <graphic_object type="graphic_from_file">
-  <args>
-   <val_string name="filename" value="filename.png"/>
-   <val_size name="size" w="wsize" h="hsize"/>
-  </args>
-  <script>
-   function self.on_update()
-    obj=self.parent;
-    self.move(obj.get_pixel_x,obj.get_pixel_y)
-   end
-  </script>
- </graphic_object>
-
-is equal to
-
- <graphic_object type="graphic_from_drawing_fun">
-  <position x="0" y="0"/>
-  <args>
-   <val_string value="with_alpha"/>
-   <val_color r="255" g="255" b="255"/>
-   <val_string value="load_multiple"/>
-   <val_string value="filename.png"/>
-   <val_size w="wsize" h="hsize"/>   
-  </args>
- </graphic_object>  
-*)
-
 class xml_graphic_object_parser=
 object (self)
   inherit [graphic_object] xml_object_parser (fun()->new graphic_object) as super
@@ -186,13 +156,10 @@ object (self)
 (** object initial init *)
   method init_object o=
     o#set_lua_script(lua);
-      let args=args_parser#get_val in
+    let args=args_parser#get_val in
       if args#is_val (`String "layer") then
 	o#set_layer (int_of_val(args#get_val (`String "layer")));
-(*    o#set_layer layer;
-    o#move x y;
-*)
-
+      
 end;;
 
 class xml_graphic_from_file_parser=
@@ -289,7 +256,7 @@ end;;
 
 class xml_graphics_parser=
 object(self)
-  inherit [xml_graphic_object_parser,graphic_object] xml_parser_container "graphic_object" (fun()->new xml_graphic_object_parser)
+  inherit [xml_graphic_object_parser,graphic_object] xml_container_parser "graphic_object" (fun()->new xml_graphic_object_parser)
 
 end;;
 
@@ -389,7 +356,7 @@ end;;
 
 class xml_actions_parser=
 object(self)
-  inherit [xml_action_object_parser,action_lua] xml_parser_container "action_object" (fun()->new xml_action_object_parser)
+  inherit [xml_action_object_parser,action_lua] xml_container_parser "action_object" (fun()->new xml_action_object_parser)
 
   val mutable id=""
   method get_id=id
@@ -426,7 +393,7 @@ Global.set xml_default_actions_parser xml_factory_actions_parser;;
 
 class xml_state_actions_parser=
 object(self)
-  inherit [xml_actions_parser,state_object] xml_parser_container "state_object" (fun()->(Global.get xml_default_actions_parser)())
+  inherit [xml_actions_parser,state_object] xml_container_parser "state_object" (fun()->(Global.get xml_default_actions_parser)())
 
   initializer
     self#parser_add "unique" (fun()->(Global.get xml_default_actions_parser)())
@@ -461,7 +428,7 @@ end;;
 
 class xml_stages_parser=
 object(self)
-  inherit [xml_stage_parser,stage] xml_parser_container "stage" (fun()->new xml_stage_parser)
+  inherit [xml_stage_parser,stage] xml_container_parser "stage" (fun()->new xml_stage_parser)
 end;;
 
 
