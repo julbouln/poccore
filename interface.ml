@@ -1175,6 +1175,409 @@ object(self)
 
 end;;
 
+
+(** special graphic rezise with 9 tiles *)
+class iface_rgraphic_object file iw ih=
+object(self)
+  inherit iface_object iw ih as super
+
+  val mutable gen=new graphic_simple_from_func (file^"/gen") (fun()->tile_load file)
+  val mutable gr=new graphic_generic_object file
+
+  val mutable crect=new rectangle 0 0 0 0
+
+  val mutable w=iw
+  val mutable h=ih
+
+  method resize nw nh=
+    w<-nw;h<-nh;
+    self#init();
+
+  method private init()=
+    crect#set_size (gen#get_rect#get_w/3) (gen#get_rect#get_h/3);
+    gr<-new graphic_object (crect#get_w) (crect#get_h) file false false;
+    
+  initializer
+    self#init()
+(*
+
+036
+147
+258
+
+*)
+  method move x y=
+    super#move x y;
+    gr#move x y;
+
+  method put()=
+    if self#is_showing then (
+      let cw=w/crect#get_w and
+	  ch=h/crect#get_h in    
+	for i=0 to cw do
+	  for j=0 to ch do
+	    (match (i,j) with
+	       | (0,0) -> gr#set_cur_tile 0
+	       | (0,ih) when ih=ch ->gr#set_cur_tile 2
+	       | (0,_) ->gr#set_cur_tile 1
+	       | (iw,0) when iw=cw -> gr#set_cur_tile 6
+	       | (_,0) ->gr#set_cur_tile 3
+	       | (iw,ih) when iw=cw && ih=ch -> gr#set_cur_tile 8
+	       | (_,ih) when ih=ch ->gr#set_cur_tile 5
+	       | (iw,_) when iw=cw ->gr#set_cur_tile 7
+	       | (_,_) ->gr#set_cur_tile 4
+	    );
+	    gr#move (rect#get_x + (i*crect#get_w)) (rect#get_y + (j*crect#get_h));
+	    gr#put();
+	  done
+	done
+    )
+end;; 
+
+
+(** IFACE MENU *)
+
+type iface_menu_t=
+  | Menu of (iface_object * iface_menu_t list)
+  | MenuEntry of (iface_object);;
+
+
+type iface_menu_position=
+  | MenuRight
+  | MenuBottom;;
+
+class iface_menu (pos:iface_menu_position) (mt:iface_object*iface_menu_t list) (parent:(iface_object*iface_menu_t list) option)=
+object(self)
+  val mutable tobj=(fst mt)
+
+(*  val mutable tfond=new iface_rgraphic_object "medias/iface/motif_editor.png" 0 0 *)
+  val mutable fond=new iface_rgraphic_object "medias/iface/motif_editor.png" 0 0
+	
+  inherit iface_vcontainer
+    (
+      let a=DynArray.create() in
+	List.iter ( fun v->
+		      (match v with
+			 | Menu (o,tl)->
+			     DynArray.add a (new iface_menu MenuRight (o,tl) (Some mt):>iface_object)
+			 | MenuEntry o ->DynArray.add a o
+		      );
+
+		  ) (snd mt);
+	DynArray.to_array a    
+    ) as super
+
+  method show()=
+(*    tfond#show(); *)
+    tobj#show();
+  
+  
+  method hide()=
+(*    tfond#hide(); *)
+    tobj#hide();
+    fond#hide();
+    super#hide()
+
+  method put()=
+    fond#put();
+(*    tfond#put(); *)
+    tobj#put();
+    super#put();
+
+  method is_showing=tobj#is_showing
+
+  val mutable rrect=new rectangle 0 0 0 0
+
+  method get_vrect=
+    self#reset_size();
+    vrect
+
+  method get_rect=
+    self#reset_size();
+    rrect
+
+  method private parse_tree nd f=
+    let rec parse_tree_t t f=
+    List.iter (
+      fun v->
+	match v with
+	  | Menu (o,tl)->f false o;parse_tree_t tl f;	      
+	  | MenuEntry o -> f true o
+    ) t in
+      parse_tree_t nd f
+
+
+  method is_last()=
+    let r=ref false in
+      self#parse_tree (snd mt) (fun nr o->r:=nr);
+      !r
+
+  method private pos_position x y=
+    match pos with
+      | MenuRight -> ((x+tobj#get_rect#get_w+32),y)
+      | MenuBottom ->(x,(y+tobj#get_rect#get_h));
+
+  method private pos_size w h=
+    match pos with
+      | MenuRight -> ((w+tobj#get_rect#get_w+32),h)
+      | MenuBottom ->(h,(h+tobj#get_rect#get_h));
+
+  method move x y=
+    let (nx,ny)=self#pos_position x y in
+      fond#move (nx) (ny);
+      super#move (nx+8) (ny+8);
+(*    tfond#move x y; *)
+      tobj#move (x) (y);
+      rrect#set_position x y;
+      vrect#set_position x y;
+    
+  method close()=
+    fond#hide();
+    super#hide();
+    
+
+  method reset_size()=
+    super#reset_size();
+    rrect#set_size (tobj#get_rect#get_w) (tobj#get_rect#get_h);
+(*(rect#get_h+tobj#get_rect#get_h + 8 + 16);*)
+
+    let (rnw,rnh)=self#pos_size rect#get_w rect#get_h in
+    rect#set_size (rnw) (rnh);
+
+    let (vnw,vnh)=self#pos_size vrect#get_w vrect#get_h in
+    vrect#set_size (vnw) (vnh);
+
+    fond#resize (rrect#get_w+64) (rect#get_h+16);
+
+  method private init()=
+    self#reset_size();
+    print_int rect#get_w;print_newline();
+    print_int rect#get_h;print_newline();
+    fond#resize (rect#get_w) (rect#get_h+16); 
+(*    tfond#resize (tobj#get_rect#get_w+16) (tobj#get_rect#get_h);	*)
+
+  method init_tree()=
+    self#parse_tree (snd mt) (
+      fun r o->
+	if r then
+	  o#append_click self#close
+    );
+				
+  method get_parent=
+    match parent with
+      | Some (o,tl)->o
+      | None->new iface_object 0 0
+
+  method init_parent()=
+    (
+      match parent with
+	| Some v->
+	    let (o,tl)=v in
+	      o#append_click self#close
+	| None->()
+	    
+    );
+
+  initializer
+    self#init();
+(*    self#init_parent(); *)
+    self#init_tree(); 
+
+
+  method is_tobj x y=
+    x > tobj#get_rect#get_x 
+    && x < (tobj#get_rect#get_w + tobj#get_rect#get_x) 
+    && y > tobj#get_rect#get_y 
+    && y < (tobj#get_rect#get_h + tobj#get_rect#get_y) 
+
+
+      
+  method on_click x y=
+
+
+   if self#is_tobj x y then 
+      (
+	if super#is_showing then
+	  (
+	    fond#hide();
+	    super#hide()
+	  )
+	else
+	  (
+	    fond#show();
+	    super#show()
+	  )
+      );
+
+
+    if self#is_showing then (
+      tobj#on_click x y;
+(*      super#on_click x y; *)
+   );
+
+ 
+    if super#is_showing then ( 
+      self#foreachi (
+	(fun i obj->
+	   if x > obj#get_vrect#get_x 
+	     && x < (obj#get_vrect#get_w + obj#get_vrect#get_x) 
+	     && y > obj#get_vrect#get_y 
+	     && y < (obj#get_vrect#get_h + obj#get_vrect#get_y) 
+	   then (
+	     obj#on_click x y;
+	   )
+	));
+    );    
+
+
+
+    print_string "IFACE : menu click";print_newline();
+
+
+(*    click();	     *)
+
+
+(*    super#on_click x y; *)
+
+(* show hide menu with mouse click *)
+ 
+
+(*  method on_mouseout x y=
+    super#on_mouseout x y;
+*)
+
+end;;
+
+
+
+class ['a] iface_tool (r:'a) fnt label f w h=
+object(self)
+  inherit iface_button_icon f 32 32 w h as super
+  val mutable lab=new iface_label_static fnt (0,0,0) label
+
+  val mutable rval=r
+  method get_rval=rval
+
+  method get_rect=
+    self#reset_size();
+    rect
+
+  method get_vrect=
+    self#reset_size();
+    rect
+
+
+
+  method private reset_size()=
+    rect#set_size (32+lab#get_rect#get_w) (32);
+
+
+  method show()=
+    super#show();
+    lab#show();
+
+  method hide()=
+    super#hide();
+    lab#hide();
+
+  method move x y=
+    super#move (x+8) (y+8);
+    lab#move (x+36+8) (y+8);
+
+  method put()=
+    super#put();
+    lab#put();
+end;;
+
+
+
+class iface_menubar c=
+object(self)
+  inherit iface_hcontainer (
+    
+    let a=DynArray.create() in
+	List.iter ( fun v->
+		      (match v with
+			 | Menu (o,tl)->DynArray.add a (new iface_menu MenuBottom (o,tl) None :>iface_object)
+			 | _ -> ()
+			     
+		      );
+		      
+		  ) c;
+	DynArray.to_array a        
+    ) as super
+
+  initializer
+    self#reset_size();
+    
+  method on_click x y=    
+    super#on_click x y;
+    if super#is_showing then (
+      self#foreachi (
+	(fun i obj->
+	   if x > obj#get_vrect#get_x 
+	     && x < (obj#get_vrect#get_w + obj#get_vrect#get_x) 
+	     && y > obj#get_vrect#get_y 
+	     && y < (obj#get_vrect#get_h + obj#get_vrect#get_y) 
+	   then (
+	     obj#on_click x y;
+	   )
+	));
+    );    
+
+
+end;;
+
+
+
+class virtual ['a] iface_toolbox (iv:'a) (c:('a) iface_tool array) =
+object(self)
+  inherit iface_vcontainer c as super
+  val mutable selected=new graphic_real_object "selected" (tile_rect 32 32 (255,0,0))
+
+  method move_selected x y=selected#move x y
+
+  val mutable current_val=iv 
+  method get_current=current_val
+  method set_current i=
+       let o=c.(i) in
+	 current_val<-o#get_rval;
+	 self#move_selected o#get_rect#get_x o#get_rect#get_y
+  initializer 
+    selected#move (-32) (-32);
+    self#reset_size();
+
+  method get_vrect=rect
+  method on_click x y=
+    print_string "IFACE : toolbox click";print_newline();
+    let t=ref (-1) in
+      self#foreachi (
+	let f i obj=
+	  if x > obj#get_vrect#get_x 
+	    && x < (obj#get_vrect#get_w + obj#get_vrect#get_x) 
+	    && y > obj#get_vrect#get_y 
+	    && y < (obj#get_vrect#get_h + obj#get_vrect#get_y) 
+	  then
+	    t:=i
+	in f
+      );
+      if (!t)<>(-1) then
+	self#set_current !t;
+
+    super#on_click x y;
+
+	
+  method move x y=
+    super#move x y;
+    
+  method put()=
+    super#put();
+    if self#is_showing then
+      selected#put();
+
+end;;
+
+
 exception Iface_object_not_found of string;;
 
 (** main iface class *)
