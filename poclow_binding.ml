@@ -235,9 +235,11 @@ object(self)
     Array.iteri (
       fun i d->
 	let fn=(digest_of_string f^"_"^string_of_int i^".bmp") in
-	  d#exec_op_write "unset_alpha" [];
-	  tile_save_bmp (d#get_t) ("cache/"^fn);
-	  d#exec_op_write "set_alpha" [DrawValColor (255,255,255)];
+	  if Sys.file_exists fn=false then (
+	    d#exec_op_write "unset_alpha" [];
+	    tile_save_bmp (d#get_t) ("cache/"^fn);
+	    d#exec_op_write "set_alpha" [DrawValColor (255,255,255)];
+	  )
     ) dl;
 
   method cache_file_load f=
