@@ -60,6 +60,10 @@ object(self)
   val mutable interp=new lua_interp
   val mutable vals=Luahash.create (fun a b->a=b) 2
     
+  method del_val k=
+    Luahash.remove vals (k);
+    self#update_interp();
+
   method set_val k (v:OLuaVal.value)=
     Luahash.replace vals ~key:(k) ~data:v;
     self#update_interp();

@@ -689,7 +689,6 @@ object (self)
 
 
   method parse_child k v=
-    print_string "parse stage";print_newline();
     super#parse_child k v;
 
 (** object initial init *)
@@ -724,7 +723,6 @@ let xml_default_stages_parser=
     gl;;
 
 let stages_init_from_xml f=
-  print_string "parse stages";print_newline();
   let stages_file=new xml_node (Xml.parse_file f) in
   let p=(Global.get xml_default_stages_parser)() in
     p#parse stages_file;

@@ -113,7 +113,12 @@ class action_anim frs r=
 object(self)
   inherit action_lua as al
   inherit anim_object frs r
+
   method on_loop()=self#anim();al#on_loop();
+
+  method on_stop()=
+   self#set_current 0;
+    al#on_stop();
 
   method lua_init()=
     lua#set_val (OLuaVal.String "get_frame") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.int) (fun()->self#get_frame));
@@ -200,6 +205,8 @@ object(self)
 
   val mutable current=None
 
+  method get_state=current
+
   method add_state n st=
     print_string ("STATE_ACTIONS : add state "^n);print_newline();
     ignore(self#add_object (Some n) st);
@@ -221,6 +228,14 @@ object(self)
 
 
   method lua_init()=
+    lua#set_val (OLuaVal.String "get_state") 
+      (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.value) 
+	 (fun()->
+	    match self#get_state with
+	      | Some s->OLuaVal.String s
+	      | None->OLuaVal.Nil
+	 )
+);
     lua#set_val (OLuaVal.String "set_state") 
       (OLuaVal.efunc (OLuaVal.string **-> OLuaVal.table **->> OLuaVal.unit) 
 	 (fun n v->
