@@ -13,7 +13,31 @@ module OLuaVal = I.Value
 let ( **-> ) = OLuaVal. ( **-> )
 let ( **->> ) x y = x **-> OLuaVal.result y
 
-(** lua class *)
+(** lua classes *)
+
+class lua_object=
+object
+  val mutable lmod=""
+  method set_mod t=lmod<-t
+  method get_mod=lmod
+
+  val mutable funcs=Hashtbl.create 2
+  method add_function (nm:string) (args:string) (block:string)=
+    Hashtbl.add funcs nm 
+      ("function "^ 
+(if lmod<>"" then (lmod^".") else "") ^nm^" ("^args^")\n"^block^"\nend")
+
+  method get_function nm=Hashtbl.find funcs nm
+    
+  method lua_block()=
+    (if lmod<>"" then (lmod^"={};\n") else "")^(
+      let fcs=ref "" in
+      Hashtbl.iter (fun k f-> fcs:= !fcs^f^"\n") funcs;
+	!fcs
+    )
+
+end;;
+
 class lua_interp=
 object(self)
 val mutable vals=DynArray.create();
@@ -47,8 +71,14 @@ method register_vals_module m=
  DynArray.clear vals;
 		
 method parse e= I.dostring interp e
+method init_object (o:lua_object)=
+  self#parse (o#lua_block());
+
 end;;
 
+
+
+(*
 let test=new lua_interp in
 test#set_module_val "Test" "test" (OLuaVal.efunc (OLuaVal.string **->> OLuaVal.string) Sys.getenv);
 test#set_module_val "Test" "test2" (OLuaVal.efunc (OLuaVal.string **->> OLuaVal.string) (fun v->v));
@@ -56,7 +86,7 @@ test#set_global_val  "a" (OLuaVal.String "bla2");
 let a=(test#get_val "a") in
 print_string (OLuaVal.to_string a);
 
-(*
+
 test#parse "
 function test3 () 
 print (\"test3\") 
