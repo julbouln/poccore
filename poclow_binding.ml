@@ -89,14 +89,14 @@ object(self)
       fun ovl->
 	let f=(get_draw_op_string ovl 0) in
 	print_string ("DRAWING_OBJECT: load "^f);print_newline();
-	DrawValT (tile_load f);
+	DrawResultT (tile_load f);
     );
 
     self#add_op "rect" DrawTypeCreate (
       fun ovl->
 	let (w,h)=(get_draw_op_size ovl 0) in
 	let col=(get_draw_op_color ovl 1) in
-	DrawValT (tile_rect w h col);
+	DrawResultT (tile_rect w h col);
     );
 
     self#add_op "create_text" DrawTypeCreate (
@@ -106,7 +106,7 @@ object(self)
 	    color=(get_draw_op_color ovl 2) in
 	let fnt=(font_vault#get_cache_simple fnt_n) in
 
-	  DrawValT
+	  DrawResultT
 	    (match fnt#get_font_type with
 	       | FontTTF f->
 		   tile_text fnt#get_f txt color
@@ -120,26 +120,26 @@ object(self)
 
     self#add_op "mirror" DrawTypeCopy (
       fun ovl->
-	DrawValT (tile_mirror self#get_t);
+	DrawResultT (tile_mirror self#get_t);
     );
 
     self#add_op "split" DrawTypeCopy (
       fun ovl->
 	let (w,h)=get_draw_op_size ovl 0 in
-	DrawValTArray (tile_split self#get_t w h);
+	DrawResultTArray (tile_split self#get_t w h);
     );
 
     self#add_op "resize" DrawTypeCopy (
       fun ovl->
 	let (w,h)=get_draw_op_size_float ovl 0 in
-	DrawValT (tile_resize self#get_t w h);
+	DrawResultT (tile_resize self#get_t w h);
     );
 
     self#add_op "color_change" DrawTypeCopy (
       fun ovl->      
       let col1=get_draw_op_color ovl 0 and
 	  col2=get_draw_op_color ovl 1 in
-	DrawValT (tile_color_change self#get_t col1 col2)
+	DrawResultT (tile_color_change self#get_t col1 col2)
     );
 
 
@@ -149,7 +149,7 @@ object(self)
       fun ovl->
 	let (r,g,b)=get_draw_op_color ovl 0 in
 	  (tile_set_alpha self#get_t r g b);
-	  DrawValNil;
+	  DrawResultUnit();
     );
 
     self#add_op "line" DrawTypeWrite (
@@ -159,7 +159,7 @@ object(self)
 	    col=get_draw_op_color ovl 2 in
 	  
 	  (tile_line self#get_t p1 p2 col);
-	  DrawValNil;
+	  DrawResultUnit();
     );
 
     self#add_op "rectangle" DrawTypeWrite (
@@ -169,15 +169,16 @@ object(self)
 	    col=get_draw_op_color ovl 2 in
 	  
 	  (tile_rectangle self#get_t p1 p2 col);
-	  DrawValNil;
+	  DrawResultUnit();
     );
 
-(** read pos *)
+(** read op *)
+
     self#add_op "get_rpos" DrawTypeRead (
       fun ovl->
 	let rcol=(get_draw_op_color ovl 0) in
 	let (x1,y1,x2,y2)=tile_refresh_pos self#get_t in
-	  DrawValRectangle (new rectangle x1 y1 x2 y2)
+	  DrawResultVal(DrawValRectangle (new rectangle x1 y1 x2 y2))
     );
 
 end;;
