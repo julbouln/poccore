@@ -690,7 +690,7 @@ class iface_text_edit fnt color (te:text_edit) bw=
 	    tile_put tmp (rect#get_x+6) (rect#get_y+6);
 	    tile_free tmp;
       );	    
-	if focused then (
+	if focused  then (
 	    if cur_c>cur_refresh/2 then (
 	      let cu=tile_rect 1 (fnt#get_height + 4) (0,0,0) in
 	      let (cw,ch)=(fnt#sizeof_text (Str.string_before data_text te#get_cur_utf_pos)) in 
@@ -817,8 +817,9 @@ class interface bgfile w h=
 
       
     method click x y=
-      if (self#get_object_at_position x y)#is_showing==true then 
-      (self#get_object_at_position x y)#on_click x y;
+      if (self#get_object_at_position x y)#is_showing==true then ( 
+	(self#get_object_at_position x y)#on_click x y;
+      )
 
     method release x y=
       if (self#get_object_at_position x y)#is_showing==true then 
@@ -874,9 +875,11 @@ class interface bgfile w h=
 
 	if focus<> "none" then (
 	  let fo=self#get_object_char focus in
+	    if fo#is_showing then (
 	  let t=tile_rect (fo#get_rect#get_w+2) (fo#get_rect#get_h+2) (0,0,0) in
 	    tile_put t (fo#get_rect#get_x-1) (fo#get_rect#get_y-1);
 	    tile_free t;
+	    )
 	)
   end;;
 
