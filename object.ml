@@ -49,7 +49,7 @@ let random_string p s=
 
 
 (** Load an unit tile of 5 directions and make mirrors to have 8 directions *)
-let tiles_load_with_mirror file w h=
+let tiles_load_with_mirror5 file w h=
   let t=tiles_load_with_mirror_space file w h in
   let mirror_unit v m =
     (
@@ -73,6 +73,54 @@ let tiles_load_with_mirror file w h=
   t 
 ;;
 
+
+(** Load an unit tile of 5 directions and make mirrors to have 8 directions *)
+let tiles_load_with_mirror3 file w h=
+  let t=tiles_load_with_mirror_space3 file w h in
+  let mirror_unit v m =
+    (
+     let k=ref 0 
+     in
+     (
+      for i=v*((Array.length (t))/8) to (v+1)*(((Array.length (t))/8))-1 do
+	(t).(((Array.length (t))/8)*m + !k)<-tile_mirror((t).(i));
+	k:= !k + 1;
+      done;
+     );
+    )
+  and
+    copy_unit v m =
+    (
+     let k=ref 0 
+     in
+     (
+      for i=v*((Array.length (t))/8) to (v+1)*(((Array.length (t))/8))-1 do
+	(t).(((Array.length (t))/8)*m + !k)<-tile_copy((t).(i));
+	k:= !k + 1;
+      done;
+     );
+    )
+  in
+copy_unit 2 4;
+copy_unit 1 2;
+mirror_unit 2 6;
+
+  for i=0 to (Array.length (t))-1 do
+	tile_set_alpha t.(i) 255 255 255;
+
+  done;
+  t 
+;;
+
+let tiles_load_with_mirror file w h=
+  let t=tile_load file in
+  let aw=tile_get_w t and
+      ah=tile_get_h t in
+    if aw/w = 5 then
+      tiles_load_with_mirror5 file w h
+    else
+      tiles_load_with_mirror3 file w h
+;;
 
 (** {2 Font part} *)
 
