@@ -190,13 +190,17 @@ object(self)
   inherit xml_parser
   val mutable info_parser=new xml_val_ext_list_parser "infos"
   val mutable args_parser=new xml_val_ext_list_parser "args"
+  val mutable stages_parser=(Global.get xml_default_stages_parser)()
+ 
   
   method parse_attr k v=()
 
   method parse_child k v=
     info_parser#parse_child k v;
     args_parser#parse_child k v;
-
+    match k with
+      | "stages" -> stages_parser#parse v
+      | _ -> ()
 
   method init()=
     (* infos *)
@@ -238,9 +242,12 @@ object(self)
 *)
     main#parse_args();
     main#medias_init();
-    if args_parser#get_val#is_val (`String "stages") then (
+(*    if args_parser#get_val#is_val (`String "stages") then (
       stages_init_from_xml (string_of_val (args_parser#get_val#get_val (`String "stages")));
     );
+*)
+    stages_parser#init_simple stages#stage_add;
+    ignore(stages#lua_init());
 
     if args_parser#get_val#is_val (`String "stage_start") then (
       stages#stage_load (string_of_val (args_parser#get_val#get_val (`String "stage_start")));
