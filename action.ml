@@ -135,7 +135,8 @@ object
 (*    let t={h=0;m=1;s=0;f=0} in *)
 (*    let t=time_of_val (ve#get_val (`String "interval")) in *)
     let t=time_of_val (ve#get_val (`Int 0)) in
-      time#add_task t (fun()->al#on_loop());
+      if time#is_task t=false then
+	time#add_task t (fun()->al#on_loop());
       time#start();
 
   method on_loop()=

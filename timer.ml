@@ -28,6 +28,9 @@ object(self)
   val mutable tasks=Hashtbl.create 2
   method add_task (t:time) (f:unit->unit)=
     Hashtbl.add tasks (self#from_time t) f
+  method is_task (t)=
+    Hashtbl.mem tasks (self#from_time t)
+
   method del_task (t:time)=
     Hashtbl.remove tasks (self#from_time t)
       

@@ -21,6 +21,9 @@ object(self)
 val mutable vals=DynArray.create();
 val mutable interp=I.mk()
 
+initializer
+  self#set_global_val "randomize" (OLuaVal.efunc (OLuaVal.int **->> OLuaVal.int) randomize)
+
 method set_global_val n f=
 self#add_val n f;
 self#register_vals_global()

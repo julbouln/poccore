@@ -1,5 +1,11 @@
 type color=(int*int*int);;
 
+Random.self_init();;
+(** get random number *)
+let randomize n= 
+ (Random.int n)
+
+
 (** the most lowlevel object *)
 exception Object_id_not_set;;
 

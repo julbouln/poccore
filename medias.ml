@@ -36,13 +36,9 @@ let medias_dir=(Filename.dirname(Sys.executable_name));;
 
 (** Media objects *)
 
-Random.self_init();;
 
 (** {2 General function (FIXME: must fall in another file)} *)
 
-(** get random number *)
-let randomize n= 
- (Random.int n)
 
 let carree x=float_of_int(x*x);;
 let racine x=(sqrt x);;

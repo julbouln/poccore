@@ -418,7 +418,7 @@ object(self)
 	let (nm,vh,l)=mt in
 	let args=args_parser#get_val in
 	  args#merge vh;
-	new graphic_from_drawing_fun id (args#to_list())
+	new graphic_from_drawing_fun_fmt (ValList (args#to_list()))
       in
 	self#init_object o;
 	o	  
