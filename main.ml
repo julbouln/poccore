@@ -1,11 +1,10 @@
-(*open Fr;;*)
-open Locale;;
 open Config;;
 open Video;;
-open Audio;;
 open Olua;;
 
 open Stage;;
+
+let n s=s;;
 
 class info=
 object(self)
@@ -43,17 +42,10 @@ object(self)
 end;;
 
 
-(*
-let set_lang l=this_config.lang<-l;;
-let n e=(Hashtbl.find locales this_config.lang)#get e;;
-*)
 
 class game_args=
 object
 end;;
-
-
-let n e=(Hashtbl.find locales "en")#get e;;
 
 
 class main=
@@ -74,8 +66,10 @@ object(self)
 (*  val mutable screen_tile=(tile_empty())
   method screen_tile=screen_tile
 *)
-  val mutable scr_w=800
-  val mutable scr_h=600
+  (* video part *)
+      
+  val mutable scr_w=640
+  val mutable scr_h=480
 
   method scr_w=scr_w
   method scr_h=scr_h
@@ -85,8 +79,8 @@ object(self)
 
   val mutable fullscreen=ref false
   val mutable windowed=ref false
-  val mutable fps=32
-  val mutable depth=16
+  val mutable fps=30
+  val mutable depth=0
  
   val mutable autosync=ref false
   method get_autosync= !autosync
@@ -96,12 +90,31 @@ object(self)
   method set_scr_w w=scr_w<-w
   method set_scr_h h=scr_h<-h
   method set_fps f=fps<-f
+
+  val mutable def_w=640
+  val mutable def_h=480
+
+(** set the default size *)
+  method set_def_size w h=def_w<-w;def_h<-h
+
+
+(** calculate the width size from the ratio *)
+  method f_size_w w=let f=(float_of_int scr_w)/.(float_of_int def_w) in int_of_float(f*.(float_of_int w))
+(** calculate the height size from the ratio *)
+  method f_size_h h=let f=(float_of_int scr_h)/.(float_of_int def_h) in int_of_float(f*.(float_of_int h))
+
+(** get the width ratio from default width and real width *)		      
+  method get_fact_w()=(float_of_int scr_w)/.(float_of_int def_w)
+(** get the height ratio from default height and real height *)
+  method get_fact_h()=(float_of_int scr_h)/.(float_of_int def_h)
+
     
   val mutable conf=new config_file
     
   method set_lang l=self#this_config.lang<-l
   method this_config=conf#load self#configfile
   method save_config()=conf#save self#configfile self#this_config
+
   
   initializer
     at_exit (self#save_config);
@@ -136,12 +149,9 @@ object(self)
     
 
   method medias_init()=
-
-    
     if !windowed=true then fullscreen:=false;
     
     video#init (scr_w) (scr_h) (depth) (!fullscreen);
-    video#set_def_size 800 600;
     
 (*    audio#init 44100 2 ; *)
     
@@ -179,6 +189,7 @@ object(self)
 
 
   method init()=
+    (* infos *)
     if info_parser#get_val#is_val (`String "cmd") then
       main#info#set_cmd (string_of_val (info_parser#get_val#get_val (`String "cmd")));
     if info_parser#get_val#is_val (`String "name") then
@@ -186,6 +197,7 @@ object(self)
     if info_parser#get_val#is_val (`String "version") then
       main#info#set_version (string_of_val (info_parser#get_val#get_val (`String "version")));
 
+    (* video *)
     if args_parser#get_val#is_val (`String "video_size") then (
       let (w,h)=(size_of_val (args_parser#get_val#get_val (`String "video_size"))) in
 	main#set_scr_w w;
@@ -193,8 +205,18 @@ object(self)
     );
     if args_parser#get_val#is_val (`String "video_default_size") then (
     let (dw,dh)=(size_of_val (args_parser#get_val#get_val (`String "video_default_size"))) in
-      video#set_def_size dw dh;
+      main#set_def_size dw dh;
     );
+
+    if args_parser#get_val#is_val (`String "video_depth") then
+      main#set_depth (int_of_val (args_parser#get_val#get_val (`String "video_depth")));
+
+    if args_parser#get_val#is_val (`String "video_fullscreen") then
+      main#set_fs (bool_of_val (args_parser#get_val#get_val (`String "video_fullscreen")));
+
+
+    (* others *)
+(*
     if args_parser#get_val#is_val (`String "parse_args") then (
     if (bool_of_val (args_parser#get_val#get_val (`String "parse_args"))) then
       main#parse_args();
@@ -203,6 +225,9 @@ object(self)
       if (bool_of_val (args_parser#get_val#get_val (`String "medias_init"))) then
 	main#medias_init();
     );
+*)
+    main#parse_args();
+    main#medias_init();
     if args_parser#get_val#is_val (`String "stages") then (
       stages_init_from_xml (string_of_val (args_parser#get_val#get_val (`String "stages")));
     );

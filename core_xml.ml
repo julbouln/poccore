@@ -1,3 +1,5 @@
+open Core_global;;
+
 open Oxml;;
 open Oval;;
 open Action;;
@@ -5,6 +7,20 @@ open Graphic;;
 
 
 open Stage;;
+
+(** globals *)
+
+(** global default graphics parser, can be overided *)
+let xml_default_graphics_parser=
+  Global.empty("xml_default_graphics_parser");;
+
+(** global default actions parser, can be overided *)
+let xml_default_actions_parser=
+  Global.empty("xml_default_actions_parser");;
+
+(** global default stages parser, can be overided *)
+let xml_default_stages_parser=
+  Global.empty("xml_default_stages_parser");;
 
 (** Core xml part *)
 
@@ -225,11 +241,9 @@ let xml_factory_graphics_parser()=
     p#parser_add "graphic_from_drawing_fun" (fun()->new xml_graphic_from_drawing_fun_parser);
     p;;
 
-(** global default graphics parser, can be overided *)
-let xml_default_graphics_parser=
-  let gl=Global.empty("xml_default_graphics_parser") in
-    Global.set gl xml_factory_graphics_parser;
-    gl;;
+
+Global.set xml_default_graphics_parser xml_factory_graphics_parser;;
+
 
 
 class xml_action_object_parser=
@@ -342,11 +356,7 @@ let xml_factory_actions_parser()=
     p#parser_add "action_intime" (fun()->new xml_action_intime_parser);
     p;;
 
-(** global default actions parser, can be overided *)
-let xml_default_actions_parser=
-  let gl=Global.empty("xml_default_actions_parser") in
-    Global.set gl xml_factory_actions_parser;
-    gl;;
+Global.set xml_default_actions_parser xml_factory_actions_parser;;
   
 
 class xml_state_actions_parser=
@@ -395,11 +405,8 @@ let xml_factory_stages_parser()=
     p#parser_add "stage" (fun()->new xml_stage_parser);
     p;;
 
-(** global default actions parser, can be overided *)
-let xml_default_stages_parser=
-  let gl=Global.empty("xml_default_stages_parser") in
-    Global.set gl xml_factory_stages_parser;
-    gl;;
+
+Global.set xml_default_stages_parser xml_factory_stages_parser;;
 
 let stages_init_from_xml f=
   let stages_file=new xml_node (Xml.parse_file f) in
