@@ -682,3 +682,80 @@ object(self)
 
 
 end;;
+
+let white_border t=
+
+  let w=tile_get_w t and
+      h=tile_get_h t in
+  let white=(255,255,255) in
+  let t2=tile_copy t in
+    for x=0 to w-1 do
+      for y=0 to h-1 do
+	let border=(200,200,200) in
+	let color=tile_getpixel t x y in 
+	  if color=white then
+	    (
+	      let res=ref false in
+		for i=(-1) to 1 do
+		  for j=(-1) to 1 do
+		    if (i<>0 or j<>0) then
+		      if (x+i)>0 && (x+i)<w && (y+j)>0 && (y+j)<h then  
+			(
+			  let c=tile_getpixel t (x+i) (y+j) in 
+			
+			    if c<>border && c<>white then 
+			      res:=true
+			)
+			  
+		  done;
+		done;
+		if !res then 
+		  tile_putpixel t2 border x y  
+		    
+	    )
+      done;
+    done;
+    tile_free t;
+    t2
+
+
+
+
+
+class graphic_white_border tilesfile w h=
+object
+  inherit graphic_from_func (tilesfile^"/white_border") 
+    (fun()->
+	 let t=tile_load tilesfile in
+	 let t2=white_border t in
+	 let ta=tile_split t2 w h in
+	   for i=0 to (Array.length (ta))-1 do
+	     tile_set_alpha ta.(i) 255 255 255; 
+	   done;
+	   ta
+    )
+
+    as super
+    
+  val mutable gr=new graphic_object w h tilesfile false false
+    
+  val mutable over=false
+  method set_over o=over<-o
+
+  method move x y=
+    super#move x y;
+    gr#move x y;
+
+  method put()=
+    if over then
+      super#put()
+    else
+      gr#put()
+  
+end;;
+
+class graphic_generic_white_border id=
+object
+  inherit graphic_generic_object id
+  method set_over (v:bool)=()
+end;;

@@ -42,6 +42,19 @@ object
 
 
 (** Animated graphic object *)
+class graphic_with_anim (graph:graphic_generic_object) frames refresh= 
+object
+  val mutable anim=new anim_object frames refresh
+
+  method get_anim=anim
+
+  method move x y=graph#move x y
+  method anim()=anim#anim();
+  method put()=graph#set_cur_tile(anim#get_frame);graph#put();
+
+end;;
+
+(** Animated graphic object *)
 class graphic_object_anim w h file frames refresh= 
 object
   val mutable anim=new anim_object frames refresh
