@@ -20,8 +20,6 @@
 
 (** Rectangle class *)
 
-(* from pocengine *)
-
 (** rectangle class x y w h *)
 class rectangle (x:int) (y:int) (w:int) (h:int)=
 object(self)
