@@ -500,6 +500,23 @@ class iface_button_with_label fnt txt file w h=
 
   end;;
 
+
+
+class iface_button_icon icon w h iw ih=
+  object
+    inherit iface_button icon w h as super
+    val mutable ic=new graphic_real_resized_object (icon^":resized") ((float_of_int w)/.(float_of_int iw)) ((float_of_int h)/.(float_of_int ih)) (tiles_load icon iw ih).(0)
+
+    method put()=
+(*      super#put(); *)
+      if showing==true then 
+	(
+	 ic#move (graphic#get_rect#get_x) (graphic#get_rect#get_y);
+	 ic#put();
+	)
+
+  end;;
+
 (** checkbox widget *)
 class iface_checkbox f fnt txt=
   object
@@ -579,7 +596,7 @@ class iface_volume s e w h=
 class interface bgfile w h=
   object (self)
     val mutable background=new graphic_scr_resized_object w h bgfile false false 
-
+ 
     val mutable object_array=Array.make 1000 (new iface_object 32 32) 
     val mutable cur_object=1
     val mutable object_hash=let a =Hashtbl.create 2 in Hashtbl.add a "none" 0;a
