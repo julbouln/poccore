@@ -1,6 +1,6 @@
 open Object;;
 
-class object_anim frames refresh=
+class anim_object frames refresh=
 object
     val mutable current_frame=0
     val mutable current_refresh=0
@@ -39,7 +39,7 @@ object
 
 class graphic_object_anim w h file frames refresh= 
 object
-  val mutable anim=new object_anim frames refresh
+  val mutable anim=new anim_object frames refresh
   val mutable graph=new graphic_scr_resized_object w h file false false
 
   method move x y=graph#move x y

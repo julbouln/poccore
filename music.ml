@@ -19,6 +19,8 @@
 open Low;;
 open Unix;;
 
+(* FIXME : use class here : music_manager *)
+
 (** Music manager *)
 
 let load_musics()=

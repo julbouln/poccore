@@ -19,6 +19,8 @@
 
 open File;;
 
+(* FIXME : see in bfr11 repository for that *)
+
 type config={
 (* FIXME: video_opt must be an array *)
 (* shadow *)

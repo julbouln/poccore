@@ -71,7 +71,7 @@ end;;
 
 (* >8 *)
 
-class game_object_action=
+class action_object=
   object (self)
     val mutable acting=false
 
@@ -107,11 +107,10 @@ class game_object_action=
 
 
 
-
-class game_object_state n f r =
+class state_object n f r =
   object
-    inherit object_anim f r
-    inherit game_object_action 
+    inherit anim_object f r
+    inherit action_object
 
     val mutable name=n
     method get_name=name
@@ -126,12 +125,11 @@ class game_object_state n f r =
 
 exception State_not_found of string
 
-
-class game_object_state_manager=
+class state_object_manager=
 object(self)
   val mutable states=
     let a=Hashtbl.create 2 in
-      Hashtbl.add a "none" (new game_object_state "none" [|0|] 12 );
+      Hashtbl.add a "none" (new state_object "none" [|0|] 12 );
       a
  
   val mutable stack_states=Stack.create()
@@ -148,7 +146,7 @@ object(self)
   method set_cur_state s=cur_state<-s
   method get_cur_state=cur_state 
 
-  method add_state (s:game_object_state)=
+  method add_state (s:state_object)=
     Hashtbl.add states s#get_name s
   method get_state n=
     if Hashtbl.mem states n then

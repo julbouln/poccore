@@ -21,6 +21,8 @@ open Low;;
 open Rect;;
 open Config;;
 
+(* FIXME : these must be in a single class *)
+
 let screen_tile=ref (tile_empty());;
 
 (** First loaded module *)
@@ -31,6 +33,7 @@ and
   timeget_result s t= 
   let t2=time_get() in
     print_string (s^string_of_int(t2-(!t)));print_newline();;
+
 let tile_w=ref 32;;
 let tile_h=ref 32;;
 
