@@ -48,7 +48,9 @@ object(self)
   method add_cache_fun n (o:unit->('ct) array)=
     if Hashtbl.mem cache_f n=false then
       Hashtbl.add cache_f n o
-
+(*    else
+      Hashtbl.replace cache_f n o
+*)
   method replace_cache_fun n (o:unit->('ct) array)=
     if Hashtbl.mem cache_f n then
       Hashtbl.replace cache_f n o

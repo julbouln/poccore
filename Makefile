@@ -1,5 +1,7 @@
 OCAMLMAKEFILE = OCamlMakefile
 
+BINDING=poclow_binding.ml
+
 INCDIRS=../poclow ../extlib-1.3 ../xml-light2.1 ../lua-ml
 LIBS=poclow xml-light extLib str unix lua-std
 
@@ -13,7 +15,12 @@ RESULT  = poccore
 
 # PREDS="str unix xml-light extLib"
  
-all : ncl
+all : binding.ml ncl
+
+binding.ml:
+	cp $(BINDING) binding.ml
+
+
 
 #VERSION=0.12
 #game_version.ml: Makefile

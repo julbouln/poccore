@@ -5,6 +5,7 @@ open Font;;
 open Drawing;;
 
 (** poclow binding *)
+
 open Low;;
 
 (** poclow font *)
@@ -12,13 +13,6 @@ open Low;;
 class poclow_font_object=
 object(self)
   inherit [font] font_object
-  val mutable f=None
-  method get_f=
-    match f with
-      | Some v->v
-      | None -> raise Font_not_initialized;
-  method set_f (nt:font)=f<-(Some nt)
-
 
   val mutable font_type=FontEmbed
   method get_font_type=font_type
@@ -47,24 +41,6 @@ object(self)
 	      font_sizeof self#get_f txt
 	  | FontEmbed -> (String.length txt*8,8);
 
-(*
-    method get_font=
-      match font with
-	| FontTTF f->
-	    (Some (vfs_fonts#get_simple (font ^ ":" ^ string_of_int(size)^"pt")))
-	| FontEmbed -> None
-*)
-(*
-    method create_text txt color =
-      match font with
-	| FontTTF f->
-	    tile_text (vfs_fonts#get_simple (font ^ ":" ^ string_of_int(size)^"pt")) txt color
-	| FontEmbed ->
-	  let tmp=tile_box (String.length txt*8) 8 (255,255,255) in
-	    tile_set_alpha tmp 255 255 255;
-	    tile_string tmp (0,0) txt color; 
-	    tmp
-*)
   end;;
 
 
@@ -75,6 +51,8 @@ object(self)
   method new_font()=new poclow_font_object
 end;;
 
+
+(* the font vault *)
 let font_vault=new font_vault 100;;
 
 
@@ -84,12 +62,6 @@ let font_vault=new font_vault 100;;
 class poclow_drawing_object=
 object(self)
   inherit [tile] drawing_object
-  val mutable t=None
-  method get_t=
-    match t with
-      | Some v->v
-      | None -> raise Drawing_not_initialized;
-  method set_t nt=t<-(Some nt)
 
   method get_w=tile_get_w self#get_t
   method get_h=tile_get_h self#get_t    
@@ -246,38 +218,9 @@ object(self)
   method new_drawing()=new poclow_drawing_object
   method new_drawing_screen()=new poclow_drawing_screen
 
-  initializer
-    (* FIXME : must be in drawing.ml and use dr#exec_op_copy "color_change" *)
-    self#add_drawing_fun "with_color_change"
-      (
-	fun vl->
-	  let col1_l=get_draw_op_list vl (0) and
-	      col2_l=get_draw_op_list vl (1) and
-	      par=get_draw_op_string vl 2 in
-	  let drl=self#exec_drawing_fun par (snd (ExtList.List.split_nth 3 vl)) in
-	    Array.map (
-	      fun dr->
-		let ndr=self#new_drawing() in
-		let i=ref 0 in
-		  List.iter (
-		    fun c1->
-		      let col1=get_draw_op_color col1_l !i and
-			  col2=get_draw_op_color col2_l !i in
-			(try
-			   ndr#set_t (tile_color_change ndr#get_t col1 col2);
-			 with Drawing_not_initialized ->
-			   ndr#set_t (tile_color_change dr#get_t col1 col2)
-			);
-			i:= !i+1;
-		  ) col1_l;
-		  ndr
-	    ) drl;    
-      )
-
-
-
 end;;
 
+(* the drawing vault *)
 let drawing_vault=new poclow_drawing_vault 10000;;
 
 
@@ -416,5 +359,6 @@ object(self)
 end;;
 
 
+(* the event manager *)
 let eventm=new poclow_event_manager;;
 

@@ -144,6 +144,14 @@ object(self)
   inherit generic_object
   inherit ['t] draw_ops
 
+  val mutable t=None
+  method get_t=
+    match t with
+      | Some v->v
+      | None -> raise Drawing_not_initialized;
+  method set_t (nt:'t)=t<-(Some nt)
+
+
   method exec_op n args=
     let (op_t,op)=self#get_op n in
     let r=op args in
@@ -305,6 +313,44 @@ object(self)
 	    drl
       );
 
+    self#add_drawing_fun "with_border"
+      (
+	fun vl->
+	  let col=get_draw_op_color vl (0) and
+	      par=get_draw_op_string vl 1 in	      
+	  let drl=self#exec_drawing_fun par (snd (ExtList.List.split_nth 2 vl)) in
+	    Array.map (
+	      fun idr->
+		let dr=idr#copy() in
+		let w=dr#get_w and
+		    h=dr#get_h in
+		for x=0 to w-1 do
+		  for y=0 to h-1 do
+		    let p=dr#get_pixel x y in
+		      if p=(255,255,255) then 
+			(
+			  let res=ref false in
+			    for i=(-1) to 1 do
+			      for j=(-1) to 1 do
+				if (i<>0 or j<>0) then
+				  if (x+i)>0 && (x+i)<w && (y+j)>0 && (y+j)<h then  
+				    (
+				      let c=idr#get_pixel (x+i) (y+j) in 	
+					if c<>col && c<>(255,255,255) then 
+					  res:=true
+				    )				    
+			      done;
+			    done;
+			    if !res then 
+			      dr#put_pixel x y col
+				
+			)
+		  done;
+		done;
+		  dr
+	    ) drl;
+      );
+
 
 
     self#add_drawing_fun "with_mirror3"
@@ -332,6 +378,33 @@ object(self)
 	      ndrl
 
   );
+
+    self#add_drawing_fun "with_color_change"
+      (
+	fun vl->
+	  let col1_l=get_draw_op_list vl (0) and
+	      col2_l=get_draw_op_list vl (1) and
+	      par=get_draw_op_string vl 2 in
+	  let drl=self#exec_drawing_fun par (snd (ExtList.List.split_nth 3 vl)) in
+	    Array.map (
+	      fun dr->
+		let ndr=self#new_drawing() in
+		let i=ref 0 in
+		  List.iter (
+		    fun c1->
+		      let col1=get_draw_op_color col1_l !i and
+			  col2=get_draw_op_color col2_l !i in
+			(try
+			   ndr#set_t ((ndr#exec_op_copy "color_change" [DrawValColor col1;DrawValColor col2]).(0)#get_t)
+			 with Drawing_not_initialized ->
+			   ndr#set_t ((dr#exec_op_copy "color_change" [DrawValColor col1;DrawValColor col2]).(0)#get_t)
+			);
+			i:= !i+1;
+		  ) col1_l;
+		  ndr
+	    ) drl;    
+      )
+
 
 
 

@@ -12,6 +12,15 @@ exception Font_not_initialized;;
 class virtual ['t] font_object=
 object
   inherit generic_object
+
+  val mutable f=None
+  method get_f=
+    match f with
+      | Some v->v
+      | None -> raise Font_not_initialized;
+  method set_f (nt:'t)=f<-(Some nt)
+
+
   method virtual get_f: 't
   method virtual set_f: 't->unit  
 
