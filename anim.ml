@@ -67,3 +67,17 @@ object
   method put()=graph#set_cur_tile(anim#get_frame);graph#put();
 
 end;;
+
+
+class graphic_generic_object_anim id frames refresh= 
+object
+  val mutable anim=new anim_object frames refresh
+  val mutable graph=new graphic_generic_object id
+
+  method get_anim=anim
+
+  method move x y=graph#move x y
+  method anim()=anim#anim();
+  method put()=graph#set_cur_tile(anim#get_frame);graph#put();
+
+end;;
