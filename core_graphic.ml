@@ -28,6 +28,8 @@ class graphic_object=
     inherit lua_object as lo
 
 
+    val mutable update_fun=fun l->[OLuaVal.Nil]
+
     val mutable showing=true
     method show()=showing<-true
     method hide()=showing<-false
@@ -61,6 +63,9 @@ class graphic_object=
       )
 
 
+    method on_update()=
+      ignore(update_fun [OLuaVal.Nil])
+
     method lua_init()=
       lua#set_val (OLuaVal.String "move") (OLuaVal.efunc (OLuaVal.int **-> OLuaVal.int **->> OLuaVal.unit) self#move);
       lua#set_val (OLuaVal.String "get_x") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.int) (fun()->rect#get_x));
@@ -74,6 +79,8 @@ class graphic_object=
       lua#set_val (OLuaVal.String "hide") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.unit) self#hide);
 
       lo#lua_init();
+      update_fun<-lua#get_fun (OLuaVal.String "on_update");
+
   end;;
 
 

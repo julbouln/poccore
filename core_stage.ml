@@ -90,15 +90,19 @@ object (self)
   val mutable initialized=false
   val curs=cursor
 
+  val mutable load_fun=fun l->[OLuaVal.Nil]
+  val mutable loop_fun=fun l->[OLuaVal.Nil]
+
 (** {2 Virtual part} *)
 
 
 (** what to do when first load stage *)
   method on_load()=
-    ignore(lua#exec_val_fun (OLuaVal.String "on_load") [OLuaVal.Nil]);
+    ignore(load_fun [OLuaVal.Nil])
+
 (** what to do on each frame *)
   method on_loop()=
-    ignore(lua#exec_val_fun (OLuaVal.String "on_loop") [OLuaVal.Nil]);
+    ignore(loop_fun [OLuaVal.Nil])
 
 (** what to do when quit stage *)
   method on_quit()=()
@@ -168,7 +172,9 @@ object (self)
   method lua_init()=
     lua#set_val (OLuaVal.String "on_load") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.unit) (fun()->()));
     lua#set_val (OLuaVal.String "on_loop") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.unit) (fun()->()));
-    super#lua_init()
+    super#lua_init();
+    load_fun<-lua#get_fun (OLuaVal.String "on_load");
+    loop_fun<-lua#get_fun (OLuaVal.String "on_loop");
 
 end;;
 

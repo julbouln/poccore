@@ -92,7 +92,7 @@ end;;
 *)
 
 (** action from lua func definition *)
-class action_lua=
+class action_lua2=
 object(self)
   inherit action_object as super
 
@@ -112,6 +112,38 @@ object(self)
     super#lua_init();
 
 end;;
+
+(* keep lua fun instead of find *)
+(** action from lua func definition *)
+class action_lua=
+object(self)
+  inherit action_object as super
+
+  val mutable start_fun=fun l->[OLuaVal.Nil]
+  val mutable loop_fun=fun l->[OLuaVal.Nil]
+  val mutable stop_fun=fun l->[OLuaVal.Nil]
+
+  method on_start ev=
+    ignore(start_fun [OLuaVal.Table ev#to_lua#to_table])
+  method on_loop()=
+    ignore(loop_fun [OLuaVal.Nil])
+  method on_stop()=
+    ignore(stop_fun [OLuaVal.Nil])
+
+  method lua_init()=
+    lua#set_val (OLuaVal.String "on_start") (OLuaVal.efunc (OLuaVal.table **->> OLuaVal.unit) (fun ev->()));
+    lua#set_val (OLuaVal.String "on_loop") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.unit) (fun()->()));
+    lua#set_val (OLuaVal.String "on_stop") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.unit) (fun()->()));
+
+    super#lua_init();
+    start_fun<-lua#get_fun (OLuaVal.String "on_start");
+    loop_fun<-lua#get_fun (OLuaVal.String "on_loop");
+    stop_fun<-lua#get_fun (OLuaVal.String "on_stop");
+
+end;;
+
+
+
 
 (** action with anim capabilities and lua func definition *)
 class action_anim frs r=

@@ -28,7 +28,7 @@ object(self)
   method graphics_update()=
     self#foreach_object (
       fun k v->
-	ignore(v#get_lua#exec_val_fun (OLuaVal.String "on_update") [OLuaVal.Nil];)
+	v#on_update();
     );
   
   method graphics_register reg=
