@@ -93,7 +93,7 @@ class iface_object w h=
 (** graphic object widget *)
 class iface_graphic_object gr w h=
   object (self)
-    inherit iface_object w h as super
+    inherit iface_object (gr#get_rect#get_w) (gr#get_rect#get_h) as super
     val mutable graphic=gr
     method move x y=super#move x y;graphic#move x y
     method put()=

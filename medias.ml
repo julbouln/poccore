@@ -602,7 +602,7 @@ object(self)
   method del_obj (od:graphic_generic_object)=
   RefList.filter
     ( fun o->
-	  if o#get_rect#get_x=od#get_rect#get_x 
+	if o#get_rect#get_x=od#get_rect#get_x 
 	  && o#get_rect#get_y=od#get_rect#get_y
 	then false else true
     )
