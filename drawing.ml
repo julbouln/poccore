@@ -389,6 +389,13 @@ object(self)
 	  DrawValNil;
     );
 
+(** read ops *)
+    self#add_op "get_rpos" DrawTypeRead (
+      fun ovl->
+	let rcol=(get_draw_op_color ovl 0) in
+	let (x1,y1,x2,y2)=tile_refresh_pos self#get_t in
+	  DrawValRectangle (new rectangle x1 y1 x2 y2)
+    );
 
 end;;
 
