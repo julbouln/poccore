@@ -44,30 +44,3 @@ let ev_iface_parser a iface curs=
 
 
 
-let clear_iface_ev_stack curs iface=
-
-(* to work with ocmal-3.0.4 *)
-while Stack.length !ev_a <> 0 do
-(* while Stack.is_empty !ev_a == false do *)
-  let a=(Stack.top !ev_a) in
-
-  curs#move a.ex a.ey;  
-  
-  if a.etype="mouse" && a.eval= "released" then (
-    iface#release a.ex a.ey; 
-    curs#set_state "normal";
-   );
-
-  if a.etype="mouse" && a.eval= "pressed" then (
-    iface#click a.ex a.ey; 
-    curs#set_state "clicked";
-   );
-
-  if a.etype="mouse" && a.eval= "motion" then (    
-    iface#mouseover a.ex a.ey; 
-   );
-
-
-  Stack.pop !ev_a;
-
-done;;

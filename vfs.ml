@@ -21,7 +21,11 @@ open Low;;
 open Rect;;
 open Video;;
 
-(** Pseudo VFS system - for not load multiple time the same data. 
+
+
+(** Pseudo VFS system *)
+
+(** For not load multiple time the same data. 
  VFS permit to have many object with the same C data ref. 
  We have 2 types of entry : dynamic or static,
  - dynamic are generated each time we need the tile (function()->tile array)

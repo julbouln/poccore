@@ -19,6 +19,8 @@
 open Unix;;
 open DynArray;;
 
+(** OUTDATED ? *)
+
 class dir di=
 object
   val mutable farr=DynArray.create() 

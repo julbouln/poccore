@@ -24,7 +24,7 @@ open Vfs;;
 
 let medias_dir=(Filename.dirname(Sys.executable_name));;
 
-(** Low-level objects class definitions *)
+(** Media objects class definitions *)
 
 Random.self_init();;
 

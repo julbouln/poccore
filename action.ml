@@ -32,8 +32,10 @@ change_event : pixel pos = 0,0
 open Anim;;
 open Rect;;
 
-(* 8< Not used for now *)
+(** Action and state manager *)
 
+(* 8< Not used for now *)
+(*
 type action_func_arg=
   | Point of point
   | Rectangle of rectangle
@@ -68,9 +70,10 @@ object
   method exec (v:action_func_arg list)=func v
 
 end;;
-
+*)
 (* >8 *)
 
+(** Main action class *)
 class action_object=
   object (self)
     val mutable acting=false
@@ -106,7 +109,7 @@ class action_object=
   end;;
 
 
-
+(** State class - combine action and anim *)
 class state_object n f r =
   object
     inherit anim_object f r
@@ -125,6 +128,8 @@ class state_object n f r =
 
 exception State_not_found of string
 
+
+(** State manager to handle multiple state *)
 class state_object_manager=
 object(self)
   val mutable states=

@@ -1,5 +1,7 @@
 open Object;;
 
+(** Anim class *)
+
 class anim_object frames refresh=
 object
     val mutable current_frame=0

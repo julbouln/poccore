@@ -1,5 +1,5 @@
+(** Dijkstra algorithme implementation *)
 (* FROM Développement d'applications avec Objective Caml *)
-
 
 type  cout  = Nan | Cout of float;;
 

@@ -1,5 +1,7 @@
 open Dijkstra;;
 
+(** Pathfinding class *)
+
 (* FOR BFR *)
 
 let timeit s f=    
