@@ -57,7 +57,8 @@ object(self)
   method set_pcdata t=pcdata<-t
   method get_pcdata=pcdata
 
-  method add_attr k v=Hashtbl.add attrs k v
+  method add_attr k v=
+    Hashtbl.add attrs (String.lowercase k) v;
   method get_attr k=
     (try 
        Hashtbl.find attrs k
