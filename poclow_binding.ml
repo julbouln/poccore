@@ -278,8 +278,11 @@ let parse_unicode k=
   KeyUnicode (UChar.chr k);;
 
 let parse_key k=
+  print_string "poclow_key : ";print_int k;print_newline();
   match k with 
     | 8 -> KeyBackspace
+    | 9 -> KeyTab
+
     | 13 -> KeyReturn
     | 32 -> KeySpace
     | 27 -> KeyEchap
@@ -290,7 +293,11 @@ let parse_key k=
 
     | 304 -> KeyShift
     | 306 -> KeyCtrl
-    | 308 -> KeyAlt
+
+    | 307 -> KeyAltR
+    | 308 -> KeyAltL
+
+    | 313 -> KeyAltGr
 
     | 33 -> KeyChar "!";
 

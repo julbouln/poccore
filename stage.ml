@@ -106,6 +106,7 @@ object(self)
 
   (** add a stage in stages *)
   method stage_add n s=
+    s#lua_init();
     self#lua_parent_of n (s:>lua_object);
 
     if (Hashtbl.mem stages n)==true then
@@ -153,6 +154,9 @@ object(self)
 
 end;;
 
+
+let generic_cursor=new cursors 30 30 None;;
+let stages=new stages generic_cursor;;
 
 
 (* FIXME : must declare stages here like video and audio *)

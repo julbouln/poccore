@@ -18,6 +18,7 @@ type val_generic=
     | `String of string
     | `Float of float
     | `Bool of bool
+    | `Text of string
     | `Nil
     ]
 ;;
@@ -27,6 +28,7 @@ let xml_of_val=function
   | `String s->Xml.Element("val_string",[("value",s)],[])
   | `Float f->Xml.Element("val_float",[("value",string_of_float f)],[])
   | `Bool b->Xml.Element("val_bool",[("value",if b then "true" else "false")],[])
+  | `Text s->Xml.Element("val_text",[],[Xml.PCData s])
   | `Nil -> Xml.Element("val_nil",[],[]);;
 
 
@@ -40,6 +42,7 @@ let val_of_xml=function
 					    | "false" -> false
 					    | _ -> false
 					 )
+  | Element("val_text",_,_) as x-> `Text (Xml.pcdata (List.nth (Xml.children x) 0))
   | Element("val_nil",_,_) as x-> `Nil
   | _->`Nil
 
@@ -48,6 +51,7 @@ let lua_of_val=function
   | `String s->OLuaVal.String s
   | `Float f->OLuaVal.Number f
   | `Bool s->OLuaVal.Number (if s then 1. else 0.)
+  | `Text s->OLuaVal.String s
   | `Nil->OLuaVal.Nil
 ;; 
 
@@ -70,6 +74,7 @@ let int_of_val=function
 
 let string_of_val=function
   | `String v->v
+  | `Text v->v
   | `Int v->string_of_int v
   | `Float v->string_of_float v
   | _->raise (Bad_val_type "string");;
@@ -82,6 +87,14 @@ let float_of_val=function
 let bool_of_val=function
   | `Bool v->v
   | _->raise (Bad_val_type "bool");;
+
+
+let text_of_val=function
+  | `String v->v
+  | `Text v->v
+  | `Int v->string_of_int v
+  | `Float v->string_of_float v
+  | _->raise (Bad_val_type "string");;
 
 (** Extended val type *)
 
@@ -189,12 +202,14 @@ let hash_of_lua_table tbl=
     ) tbl;
     a
 
+(* doesnt work *)
 let list_of_lua_list valto tbl=
   let a=DynArray.create() in
     Luahash.iter (
       fun k v ->
 	match k with
-	  | OLuaVal.Number i->DynArray.set a (int_of_float i) (valto v)
+(*	  | OLuaVal.Number i->DynArray.set a (int_of_float i) (valto v) *)
+	  | OLuaVal.Number i->DynArray.add a (valto v) 
 	  | _ ->()
     ) tbl;
     DynArray.to_list a
@@ -313,6 +328,7 @@ object(self)
 	DynArray.set vals !ni (n,v)
     )
     else self#add_val n v
+
   method get_val (n:'a)=
     let ni=ref (-1) in
       DynArray.iteri (
@@ -323,6 +339,17 @@ object(self)
 	(snd (DynArray.get vals !ni))
       else
 	raise (Val_not_found (string_of_val n))
+
+  method del_val (n:'a)=
+    let ni=ref (-1) in
+      DynArray.iteri (
+	  fun i (nn,vv) ->
+	    if nn=n then ni:=i;
+	) vals;
+      if !ni<>(-1) then
+	(DynArray.delete vals !ni)
+
+
   method is_val (n:'a)=
     let r=ref false in
       DynArray.iteri (
@@ -330,15 +357,37 @@ object(self)
 	  if nn=n then r:=true;
       ) vals;    
       !r
+
   method foreach_val f=
     let g (n,v)=f n v in
     DynArray.iter g vals
 
 
+  (* add vh val to self *)
   method merge (vh:('a) val_handler)=
     vh#foreach_val (
       fun k v->
 	if self#is_val k=false then
+	  self#add_val k v
+    )
+
+  (* replace self val with vh one *)
+  method flatten (vh:('a) val_handler)=
+    vh#foreach_val (
+      fun k v->
+	self#set_val k v
+    )
+
+(* FIXME : cause a segfault! *)
+  (* if self val = vh val then delete in self *)
+  method sub (vh:('a) val_handler)=
+    vh#foreach_val (
+      fun k v->
+	if self#is_val k then (
+	  if v=self#get_val k then 
+	    self#del_val k 
+	)
+	else
 	  self#add_val k v
     )
 
@@ -529,200 +578,3 @@ let list_of_val_ext_handler nh=
   nh#to_list();;
 
 
-(** xml part *)
-
-class xml_val_ext_list_parser otag=
-object(self)
-  inherit xml_parser
-  val mutable vals=new val_ext_handler
-
-  method parse_attr k v=()
-
-  method get_val=vals
-
-  method parse_child k v=
-    match k with
-      | tag when tag=otag ->
-	  vals#from_xml v#get_node
-      | _ -> ()
-end;;
-
-
-class xml_metatype_parser=
-object
-  inherit xml_parser
-  val mutable args_parser=new xml_val_ext_list_parser "args"
-  
-  val mutable id=""
-  val mutable nm=""
- 
-  val mutable lua=""
-
-  method get_val=(id,(nm,args_parser#get_val,lua))
-
-  method parse_attr k v=
-    match k with
-      | "type" ->nm<-v
-      | "id" ->id<-v
-      | _ -> ()
-   
-  method parse_child k v=
-    args_parser#parse_child k v;
-    match k with
-      | "script" -> lua<-v#get_pcdata;
-      | _ -> ()
-
-
-end;;
-
-
-exception Xml_parser_not_found of string;;
-
-(* 
-parser must have : get_type, get_id and get_val with get_val#get_lua
-   
-*)
-
-class ['pt,'t] xml_parser_container otag (gen_parser:unit->'pt)=
-object(self)
-  inherit xml_parser
-
-  val mutable mt=("",Hashtbl.create 2,"")
-  method get_mt n=
-    let (nm,h,l)=mt in
-      Hashtbl.find h n
-
-  val mutable objs=DynArray.create()
-
-  val mutable obj_parsers=Hashtbl.create 2
-  method parser_add (n:string) (p:unit->'pt)=Hashtbl.add obj_parsers n p
-  method parser_is n=Hashtbl.mem obj_parsers n
-  method parser_get n=
-    (try
-       Hashtbl.find obj_parsers n
-     with
-	 Not_found -> raise (Xml_parser_not_found n))
-
-  method parse_attr k v=()
-
-
-  method parse_child k v=
-    match k with
-      | tag when tag=otag ->
-	  let p=gen_parser() in p#parse v;
-	    if self#parser_is p#get_type then
-	      let sp=(self#parser_get p#get_type)() in (
-		  let (nm,h,l)=mt in
-		  if Hashtbl.mem h p#get_id then (
-		    sp#set_metatype (self#get_mt p#get_id);
-		  );
-		  sp#parse v;
-		  DynArray.add objs sp#get_val
-		)
-      | _ ->()
-	  
-	  
-  method init (add_obj:string->'t->unit)=
-    let (hnm,h,hl)=mt in
-    Hashtbl.iter (
-      fun k v->
-
-	let r=ref false in
-	DynArray.iter (
-	  fun (n,o)->
-	    if n=k then (
-	      let no=o() in	  	  
-		no#lua_init();
-		add_obj n (no);
-		r:=true;
-	    )
-	) objs;
-
-	if !r=false then (
-	  let (nm,_,_)=v in
-	  if self#parser_is nm then (
-	    let sp=(self#parser_get nm)() in
-	    let no=(sp#get_val_from_meta v)() in
-	      no#lua_init();
-	      add_obj k no
-	  )
-	)
-
-    ) h;
-
-
-  method init_from_meta_h (add_obj:string->'t->unit) h=
-    Hashtbl.iter (
-      fun k v->
-
-	let r=ref false in
-	DynArray.iter (
-	  fun (n,o)->
-	    if n=k then (
-	      let no=o() in	  	  
-		no#lua_init();
-		add_obj n (no);
-		r:=true;
-	    )
-	) objs;
-
-	if !r=false then (
-	  let (nm,_,_)=v in
-	  if self#parser_is nm then (
-	    let sp=(self#parser_get nm)() in
-	    let no=(sp#get_val_from_meta v)() in
-	      no#lua_init();
-	      add_obj k no
-	  )
-	)
-
-    ) h;
-    
-
-
-end;;
-
-class ['ot] xml_object_parser (new_obj:unit->'ot)= 
-object (self)
-  inherit xml_parser
-  val mutable args_parser=new xml_val_ext_list_parser "args"
-
-(** object unique id *)
-  val mutable id=""
-  method get_id=id
-(** object type *)
-  val mutable nm=""
-  method get_type=nm
-
-(** lua code for this object *)
-  val mutable lua=""
-(** object properties *)
-
-  method parse_attr k v=
-    match k with
-      | "type" ->nm<-v
-      | "id" ->id<-v
-      | _ -> ()
-   
-  method parse_child k v=
-    args_parser#parse_child k v;
-    match k with
-      | "script" -> lua<-v#get_pcdata;
-
-      | _ -> ()
-
-(** object initial init *)
-  method init_object o=
-    o#set_lua_script lua;
-    
-  method get_val=
-    let ofun()=
-      let o=
-	new_obj()
-      in
-	self#init_object o;
-	o	  
-    in      
-      (id,ofun)
-
-end;;

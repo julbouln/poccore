@@ -26,6 +26,16 @@ end;;
 
 exception Object_not_found of string;;
 
+
+let list_of_hash h=
+  let l=ref [] in
+    Hashtbl.iter (
+      fun k v->
+	l:=List.append !l [(k,v)];
+    ) h;
+    !l;;
+
+
 class ['a] generic_object_handler=
 object(self)
   val mutable objs=Hashtbl.create 2
@@ -55,10 +65,17 @@ object(self)
 
   method rename_object id nid=
     let o=self#get_object id in
-      self#add_object (Some nid) o;
+      ignore(self#add_object (Some nid) o);
       self#delete_object id;
     
   method foreach_object f=
     Hashtbl.iter f objs
+
+
+  method foreach_object_sorted s f=
+    let ol=list_of_hash objs in
+    let sl=List.sort s ol in
+    let hf(v,k)=f v k in
+      List.iter hf sl;
 
 end;;

@@ -5,6 +5,7 @@ open Video;;
 open Audio;;
 open Olua;;
 
+open Stage;;
 
 class info=
 object(self)
@@ -159,3 +160,61 @@ end;;
 
 
 let main=new main;;
+
+open Oval;;
+open Oxml;;
+open Core_xml;;
+
+class xml_game_parser=
+object(self)
+  inherit xml_parser
+  val mutable info_parser=new xml_val_ext_list_parser "infos"
+  val mutable args_parser=new xml_val_ext_list_parser "args"
+  
+  method parse_attr k v=()
+
+  method parse_child k v=
+    info_parser#parse_child k v;
+    args_parser#parse_child k v;
+
+
+  method init()=
+    if info_parser#get_val#is_val (`String "cmd") then
+      main#info#set_cmd (string_of_val (info_parser#get_val#get_val (`String "cmd")));
+    if info_parser#get_val#is_val (`String "name") then
+      main#info#set_name (string_of_val (info_parser#get_val#get_val (`String "name")));
+    if info_parser#get_val#is_val (`String "version") then
+      main#info#set_version (string_of_val (info_parser#get_val#get_val (`String "version")));
+
+    if args_parser#get_val#is_val (`String "video_size") then (
+      let (w,h)=(size_of_val (args_parser#get_val#get_val (`String "video_size"))) in
+	main#set_scr_w w;
+	main#set_scr_h h;
+    );
+    if args_parser#get_val#is_val (`String "video_default_size") then (
+    let (dw,dh)=(size_of_val (args_parser#get_val#get_val (`String "video_default_size"))) in
+      video#set_def_size dw dh;
+    );
+    if args_parser#get_val#is_val (`String "parse_args") then (
+    if (bool_of_val (args_parser#get_val#get_val (`String "parse_args"))) then
+      main#parse_args();
+    );
+    if args_parser#get_val#is_val (`String "medias_init") then (
+      if (bool_of_val (args_parser#get_val#get_val (`String "medias_init"))) then
+	main#medias_init();
+    );
+    if args_parser#get_val#is_val (`String "stages") then (
+      stages_init_from_xml (string_of_val (args_parser#get_val#get_val (`String "stages")));
+    );
+
+    if args_parser#get_val#is_val (`String "stage_start") then (
+      stages#stage_load (string_of_val (args_parser#get_val#get_val (`String "stage_start")));
+    );
+end;;
+
+
+let game_init_from_xml f=
+  let game_file=new xml_node (Xml.parse_file f) in
+  let p=new xml_game_parser in
+    p#parse game_file;
+    p#init();;

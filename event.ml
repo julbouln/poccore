@@ -1,10 +1,13 @@
 
 type key_type=
+| KeyTab
 | KeyBackspace
 | KeyReturn
 | KeySpace
 | KeyCtrl
-| KeyAlt
+| KeyAltR
+| KeyAltL
+| KeyAltGr
 | KeyEchap
 | KeyUp
 | KeyDown
