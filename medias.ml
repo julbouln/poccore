@@ -17,9 +17,9 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
-(* MUST BE NAMED medias.ml *)
-
 open Low;;
+
+open Generic;;
 open Rect;;
 open Video;;
 open Vfs;;
@@ -224,58 +224,50 @@ class sound_object soundfiles=
 
 exception Vfs_not_found of string;;
 
-
-
 class virtual canvas_object=
 object
-  method virtual get_id : string
-  method virtual get_layer : int
-  method virtual get_rect : rectangle
+  inherit generic_object
+  val mutable layer=0
+  method set_layer l=layer<-l
+  method get_layer=layer
+
+  val mutable rect=new rectangle 0 0 0 0
+  method get_rect=rect
+
   method virtual move : int -> int -> unit
   method virtual put : unit -> unit
 end;;
 
 
+
 (** Graphic object class parent *)
-class graphic_generic_object id=
+class graphic_generic_object nid=
   object (self)
     inherit canvas_object
-    val mutable tiles=id
 
+    initializer
+      self#set_id nid
 
-    val mutable rect=new rectangle 0 0 0 0
-
-    val mutable layer=0
-    method set_layer l=layer<-l
-    method get_layer=layer
-	
     val mutable cur_tile=0
 	
-
-
     method get_rpos=
-      vfs_tiles#get_rpos tiles 
+      vfs_tiles#get_rpos id
      
-
-
     method get_tile n=
-      vfs_tiles#get_one tiles n
+      vfs_tiles#get_one id n
     method get_tile_shaded n=
-      vfs_tiles#get_one (tiles^":shaded") n
-    method get_id=id
-
-
+      vfs_tiles#get_one (id^":shaded") n
       
     method get_rect=rect
     method set_cur_tile c=cur_tile<-c
     method get_cur_tile=cur_tile
-    method get_tiles_size=(Array.length (vfs_tiles#get tiles))
+    method get_tiles_size=(Array.length (vfs_tiles#get id))
 
     method move x y=rect#set_position x y 
 
     method resize fw fh=
       rect#set_size (int_of_float(fw*.(float_of_int rect#get_w))) (int_of_float(fh*.(float_of_int rect#get_h)));
-      let ts=(vfs_tiles#get tiles) in
+      let ts=(vfs_tiles#get id) in
       for i=0 to (self#get_tiles_size)-1 do
 	ts.(i)<-(tile_resize (self#get_tile i) fw fh); 
       done;
@@ -284,24 +276,24 @@ class graphic_generic_object id=
     method put() =      
       let t=self#get_tile cur_tile in
 	tile_put t rect#get_x rect#get_y;
-	vfs_tiles#free_dyn tiles t
+	vfs_tiles#free_dyn id t
 
     method put_to dest = 
       let t=self#get_tile cur_tile in
       tile_put_to t dest rect#get_x rect#get_y;
-      vfs_tiles#free_dyn tiles t
+      vfs_tiles#free_dyn id t
 
     method put_shaded ()=
       let shaded=(self#get_tile_shaded cur_tile) in      
 (*      tile_set_alpha shaded 127 127 127; *)
       tile_put shaded rect#get_x rect#get_y;
-      vfs_tiles#free_dyn (tiles^":shaded") shaded
+      vfs_tiles#free_dyn (id^":shaded") shaded
 
     method put_shaded_to dest=
       let shaded=(self#get_tile_shaded cur_tile) in      
 (*      tile_set_alpha shaded 127 127 127; *)
       tile_put_to shaded dest rect#get_x rect#get_y;
-      vfs_tiles#free_dyn (tiles^":shaded") shaded
+      vfs_tiles#free_dyn (id^":shaded") shaded
       
 
   end;;
@@ -312,7 +304,7 @@ class graphic_dyn_object n s f=
   object (self)
     inherit graphic_generic_object n as super 
     initializer
-      vfs_tiles#create_dyn_func tiles s f;
+      vfs_tiles#create_dyn_func id s f;
   end;;
 
 
@@ -326,7 +318,7 @@ class graphic_real_object nm tile=
     inherit graphic_generic_object nm as super 
     initializer
       rect#set_size (tile_get_w tile) (tile_get_h tile);
-      vfs_tiles#create_simple tiles tile;
+      vfs_tiles#create_simple id tile;
       
   end;;
 
