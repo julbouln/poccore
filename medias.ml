@@ -224,9 +224,22 @@ class sound_object soundfiles=
 
 exception Vfs_not_found of string;;
 
+
+
+class virtual canvas_object=
+object
+  method virtual get_id : string
+  method virtual get_layer : int
+  method virtual get_rect : rectangle
+  method virtual move : int -> int -> unit
+  method virtual put : unit -> unit
+end;;
+
+
 (** Graphic object class parent *)
 class graphic_generic_object id=
   object (self)
+    inherit canvas_object
     val mutable tiles=id
 
 
@@ -582,9 +595,7 @@ class graphic_scr_resized_object wi hi tilesfile mirror is_shaded=
 class canvas_NEW =
 object(self)
   val mutable objs_list=RefList.empty()
-
   val mutable tile_list=RefList.empty()
-
   val mutable del_list=RefList.empty()
 
   method clear()=
@@ -607,16 +618,17 @@ object(self)
       );
 
 
-  method add_obj (o:graphic_generic_object)=    
+  method add_obj (o:canvas_object)=    
 (*    o#set_graphic(); *)
     RefList.add objs_list o;
 
 
-  method del_obj (od:graphic_generic_object)=
+  method del_obj (od:canvas_object)=
   RefList.filter
     ( fun o->
 	if o#get_rect#get_x=od#get_rect#get_x 
 	  && o#get_rect#get_y=od#get_rect#get_y
+	  && o#get_id=od#get_id
 	then false else true
     )
     objs_list
@@ -630,10 +642,10 @@ object(self)
       objs_list
 *) 
 
-  method sort_obj (f:graphic_generic_object->graphic_generic_object->int)=
+  method sort_obj (f:canvas_object->canvas_object->int)=
     RefList.sort ~cmp:f objs_list;
 
-  method foreach_obj (f:graphic_generic_object->unit)=
+  method foreach_obj (f:canvas_object->unit)=
       RefList.iter f objs_list
 
 

@@ -23,6 +23,7 @@ open XmlParser;;
 
 open Low;;
 
+open Medias;;
 (** Xml parse in an object way *)
 
 exception Bad_xml_node;;
@@ -101,6 +102,8 @@ object(self)
     n#foreach_child self#parse_child;
 end;;
 
+
+
 (* XML : General parsers *)
 
 (* XML : int parser of form <tag a="int"> *)
@@ -109,7 +112,7 @@ object
   inherit xml_parser
 
   val mutable n=0
-  method get_int=n
+(*  method get_int=n *)
   method get_val=n
 
   method tag=""
@@ -211,9 +214,11 @@ object
 end;;
 
 (* XML : list parser  *)
-class ['a] xml_list_parser ct pc =
+class ['a,'b] xml_list_parser ct (pc:unit->'b) =
 object
   inherit xml_parser
+  val mutable parser_func=pc
+  method set_parser_func (npc:unit->'b)=parser_func<-npc
 
   val mutable frms=DynArray.create()
   method get_list=(DynArray.to_list frms : 'a list)
@@ -224,18 +229,80 @@ object
   method parse_attr k v=()
   method parse_child k v=
     match k with
-      | ct -> let p=pc() in p#parse v;DynArray.add frms p#get_val
+      | ct -> let p=parser_func() in p#parse v;DynArray.add frms p#get_val
 
 end;;
 
 class xml_intlist_parser ct pc=
 object
-  inherit [int] xml_list_parser ct pc
+  inherit [int,xml_int_parser] xml_list_parser ct pc
 end;;
 
 class xml_stringlist_parser ct pc=
 object
-  inherit [string] xml_list_parser ct pc
+  inherit [string,xml_string_parser] xml_list_parser ct pc
 end;;
 
 
+
+class ['k,'v] xml_hash_parser ct pc =
+object
+  inherit xml_parser
+
+  val mutable frms=Hashtbl.create 2
+(*  method get_val n=(DynArray.get frms n : 'a) *)
+  method get_hash=frms
+  method tag=""
+  method parse_attr k v=()
+  method parse_child k v=
+    match k with
+      | ct -> let p=pc() in p#parse v;
+	  let r=p#get_val in
+	  Hashtbl.add frms (fst r:'k) (snd r:'v)
+
+end;;
+
+class ['v] xml_stringhash_parser ct pc=
+object
+  inherit [string,'v] xml_hash_parser ct pc
+end;;
+
+class xml_font_parser=
+object
+  inherit xml_parser
+
+  val mutable file="none"
+  val mutable size=0
+
+  method get_val=new font_object file size
+
+  method tag=""
+  method parse_attr k v=
+    match k with
+      | "path" -> file<-v
+      | "size" -> size<-int_of_string v
+      | _ -> ()
+  method parse_child k v=()
+
+
+end;;
+
+
+
+class xml_tile_parser=
+object
+  inherit xml_parser
+
+  val mutable file="none"
+
+  method get_val=tile_load file
+
+  method tag=""
+  method parse_attr k v=
+    match k with
+      | "path" -> file<-v
+      | _ -> ()
+  method parse_child k v=()
+
+
+end;;
