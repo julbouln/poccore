@@ -40,6 +40,9 @@ class iface_object w h=
     val mutable release=(function()->())
     val mutable mouseover=(function()->())
     val mutable mouseout=(function()->())
+
+    val mutable focused=false
+    method set_focused f=focused<-f
 	
     method on_click (x : int) (y : int)=click()
     method on_release (x : int) (y : int)=release()
@@ -652,6 +655,19 @@ class iface_text_edit fnt color (te:text_edit) bw=
   object (self)
     inherit iface_object bw (fnt#get_height) as super
 
+    initializer
+      rect<-new rectangle 0 0 (bw+12) (fnt#get_height+12)
+
+    method move x y=rect#set_position (x-6) (y-6)
+
+
+  method on_click x y=
+    let rx=x-self#get_rect#get_x  in
+(*      print_int rx;print_newline(); *)
+      click()
+
+
+
     val mutable cur_refresh=30
     val mutable cur_c=0
 
@@ -661,29 +677,31 @@ class iface_text_edit fnt color (te:text_edit) bw=
       if showing==true then (	  
 
 	  let t=tile_rect (bw+12) (fnt#get_height + 12) (0,0,0) in
-	    tile_put t (rect#get_x-6) (rect#get_y-6);
+	    tile_put t (rect#get_x) (rect#get_y);
 	    tile_free t;
 	  let bg=tile_box (bw+10) (fnt#get_height + 10) (200,200,200) in
-	    tile_put bg (rect#get_x-5) (rect#get_y-5);
+	    tile_put bg (rect#get_x+1) (rect#get_y+1);
 	    tile_free bg;
 	if te#get_text<>"" then(
 	  let tmp=fnt#create_text data_text color in 
 	  let w=tile_get_w tmp and
 	    h=tile_get_h tmp in
-            rect#set_size (w) (h);
-	    tile_put tmp (rect#get_x) (rect#get_y);
+            (*rect#set_size (w+12) (h+12);*)
+	    tile_put tmp (rect#get_x+6) (rect#get_y+6);
 	    tile_free tmp;
       );	    
+	if focused then (
 	    if cur_c>cur_refresh/2 then (
 	      let cu=tile_rect 1 (fnt#get_height + 4) (0,0,0) in
-	      let (cw,ch)=(fnt#sizeof_text (Str.string_before te#get_text te#get_cur_utf_pos)) in 
-		tile_put cu (rect#get_x + cw) (rect#get_y-2);
+	      let (cw,ch)=(fnt#sizeof_text (Str.string_before data_text te#get_cur_utf_pos)) in 
+		tile_put cu (rect#get_x + cw+6) (rect#get_y-2+6);
 		tile_free cu;
 	    );
 	    if cur_c=cur_refresh then cur_c<-0
 	    else cur_c<-cur_c+1
 
 	)
+      )
 
   end;;
 
@@ -715,6 +733,20 @@ class interface bgfile w h=
     val mutable effect=0;
     val mutable nrect=new rectangle 0 0 0 0;
     val mutable moving=false
+
+    val mutable focus="none"
+    method set_focus f=
+      focus<-f;
+      self#unfocus_all();
+      let o=self#get_object_char focus in
+	o#set_focused true;
+    method get_focus=focus
+
+
+    method unfocus_all()=
+      let f obj=obj#set_focused false in
+      Array.iter f object_array;
+
 
     method get_moving=moving
 
@@ -839,6 +871,13 @@ class interface bgfile w h=
 	obj#put()
 	 in
       Array.iter f object_array;
+
+	if focus<> "none" then (
+	  let fo=self#get_object_char focus in
+	  let t=tile_rect (fo#get_rect#get_w+2) (fo#get_rect#get_h+2) (0,0,0) in
+	    tile_put t (fo#get_rect#get_x-1) (fo#get_rect#get_y-1);
+	    tile_free t;
+	)
   end;;
 
 
