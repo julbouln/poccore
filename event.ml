@@ -18,6 +18,24 @@ type key_type=
 | KeyChar of string
 | KeyUnknow;;
 
+let string_of_key=function
+  | KeyTab -> "tab"
+  | KeyBackspace->"backspace"
+  | KeyReturn->"return"
+  | KeySpace->"space"
+  | KeyCtrl->"ctrl"
+  | KeyAltR->"altr"
+  | KeyAltL->"altl"
+  | KeyAltGr->"altgr"
+  | KeyEchap->"echap"
+  | KeyUp->"up"
+  | KeyDown->"down"
+  | KeyRight->"right"
+  | KeyLeft->"left"
+  | KeyShift->"shift"
+  | KeyChar c->c
+  | _ -> "";;
+
 type mouse_event=
   | MouseClick of (int*int*int) (* x,y,button *)
   | MouseRelease of (int*int*int)
