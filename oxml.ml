@@ -115,6 +115,8 @@ end;;
 
 (* XML : General parsers *)
 
+
+
 (* XML : int parser of form <tag a="int"> *)
 class xml_int_parser a=
 object
@@ -124,10 +126,10 @@ object
 (*  method get_int=n *)
   method get_val=n
 
-  method tag=""
   method parse_attr k v=
     match k with
-      | a -> n<-int_of_string v
+      | r when r=a -> n<-int_of_string v
+      | _ ->()
   method parse_child k v=()
 
 
@@ -141,10 +143,10 @@ object
   val mutable n=""
   method get_val=n
 
-  method tag=""
   method parse_attr k v=
     match k with
-      | a -> n<-v
+      | r when r=a -> n<-v
+      | _ ->()
   method parse_child k v=()
 
 
@@ -161,7 +163,6 @@ object
   method get_x=x
   method get_y=y
 
-  method tag=""
   method parse_attr k v=
     match k with
       | "x" -> x<-int_of_string v
@@ -182,7 +183,6 @@ object
   method get_w=w
   method get_h=h
 
-  method tag=""
   method parse_attr k v=
     match k with
       | "w" -> w<-int_of_string v
@@ -209,7 +209,6 @@ object
   method get_g=g
   method get_b=b
 
-  method tag=""
   method parse_attr k v=
 (*    print_string "add color";print_newline(); *)
     match k with
@@ -234,12 +233,12 @@ object
   method get_array=(DynArray.to_array frms : 'a array)
 (*  method get_val n=(DynArray.get frms n : 'a) *)
 
-  method tag=""
   method parse_attr k v=()
   method parse_child k v=
     match k with
-      | ct -> let p=parser_func() in p#parse v;DynArray.add frms p#get_val
-
+      | r when r=ct -> let p=parser_func() in p#parse v;DynArray.add frms p#get_val
+      | _ -> ()
+	      
 end;;
 
 class xml_intlist_parser ct pc=
@@ -265,10 +264,10 @@ object
   method parse_attr k v=()
   method parse_child k v=
     match k with
-      | ct -> let p=pc() in p#parse v;
+      | r when r=ct -> let p=pc() in p#parse v;
 	  let r=p#get_val in
 	  Hashtbl.add frms (fst r:'k) (snd r:'v)
-
+      | _ -> ()
 end;;
 
 class ['v] xml_stringhash_parser ct pc=
@@ -276,6 +275,8 @@ object
   inherit [string,'v] xml_hash_parser ct pc
 end;;
 
+
+(** xml font parser : <font path="fontfile" size="sizeoffont"/> *)
 class xml_font_parser=
 object
   inherit xml_parser
@@ -285,7 +286,6 @@ object
 
   method get_val=new font_object file size
 
-  method tag=""
   method parse_attr k v=
     match k with
       | "path" -> file<-v
@@ -297,7 +297,7 @@ object
 end;;
 
 
-
+(** xml tile parser : <tile path="tilefile"/> *)
 class xml_tile_parser=
 object
   inherit xml_parser
@@ -307,7 +307,6 @@ object
   method get_val=tile_load file
   method get_file=file
 
-  method tag=""
   method parse_attr k v=
     match k with
       | "path" -> file<-v

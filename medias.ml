@@ -747,7 +747,79 @@ let white_border t=
 
 
 
+(** special graphic pattern resize with 9 tiles *)
+class graphic_pattern pid ptile=
+object(self)
+  inherit graphic_generic_object pid as super
 
+  val mutable gr=new graphic_generic_object pid
+
+  val mutable crect=new rectangle 0 0 0 0
+  method get_crect=crect
+
+
+  method private init()=
+    let cw=tile_get_w ptile and
+	ch=tile_get_h ptile in
+      crect#set_size (cw/3) (ch/3);
+
+    gr<-new graphic_from_func pid (
+      fun()->
+	let ta=tile_split ptile crect#get_w crect#get_h in
+	  for i=0 to (Array.length (ta))-1 do
+	    tile_set_alpha ta.(i) 255 255 255; 
+	  done;
+	  ta
+    );
+
+
+
+  initializer
+    self#init()
+
+(*
+
+036
+147
+258
+
+*)
+
+  method real_size=
+    let cw=rect#get_w/crect#get_w and
+	ch=rect#get_h/crect#get_h in    
+      (cw*crect#get_w,ch*crect#get_h)
+
+  method put()=
+    let cw=rect#get_w/crect#get_w -1 and
+	ch=rect#get_h/crect#get_h -1 in    
+      for i=0 to cw do
+	for j=0 to ch do
+	  (match (i,j) with
+	     | (0,0) -> gr#set_cur_tile 0
+	     | (0,ih) when ih=ch ->gr#set_cur_tile 2
+	     | (0,_) ->gr#set_cur_tile 1
+	     | (iw,0) when iw=cw -> gr#set_cur_tile 6
+	     | (_,0) ->gr#set_cur_tile 3
+	     | (iw,ih) when iw=cw && ih=ch -> gr#set_cur_tile 8
+	     | (_,ih) when ih=ch ->gr#set_cur_tile 5
+	     | (iw,_) when iw=cw ->gr#set_cur_tile 7
+	     | (_,_) ->gr#set_cur_tile 4
+	  );
+	  gr#move (rect#get_x + (i*crect#get_w)) (rect#get_y + (j*crect#get_h));
+	  gr#put();
+	  done
+      done
+
+end;; 
+
+class graphic_pattern_file pfile=
+object
+  inherit graphic_pattern pfile (tile_load pfile)
+end;;
+
+
+(** white border around tile *)
 class graphic_white_border tilesfile w h=
 object
   inherit graphic_from_func (tilesfile^"/white_border") 
