@@ -287,10 +287,10 @@ object(self)
     val mutable rpos=new refresh_pos
 
     method add_rpos n=
-      print_string ("add rpos for "^n);print_newline();
+(*      print_string ("add rpos for "^n);print_newline(); *)
       if (rpos#is_pos n)==false then (
 	let (x1,y1,x2,y2)=tile_refresh_pos (self#get_one n 0) in
-
+(*
 	print_int x1;
 	print_string " - ";			  
 	print_int y1;
@@ -299,12 +299,12 @@ object(self)
 	print_string " - ";			  
 	print_int y2;
 	print_newline();
-
+*)
 	rpos#add_pos n (new rectangle x1 y1 x2 y2);
       );		       
 
     method get_rpos (n:string)=
-      print_string ("get rpos for "^n);print_newline();
+(*      print_string ("get rpos for "^n);print_newline(); *)
 (*      new rectangle 0 0 0 0 *)
       if n<>"none" then (
 	self#add_rpos n;

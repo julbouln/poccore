@@ -41,7 +41,7 @@ object(self)
 
 (** is position in rectangle *)
     method is_position px py=
-      if px>=x & py>=y & px<=(x+w) & py<=(y+h) then true else false
+      if px>x && py>y && px<(x+w) && py<(y+h) then true else false
 
 (** is rectangle in rectangle *)
     method is_in_rect (r:rectangle)=
