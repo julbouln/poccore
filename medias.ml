@@ -700,9 +700,13 @@ object(self)
 	  let nx=ox-vx and
 	      ny=oy-vy in
 
-	    o#move nx ny;
-	    o#put();	
-	    o#move ox oy
+	    if vx<>0 || vy<>0 then (
+	      o#move nx ny;
+	      o#put();	
+	      o#move ox oy
+	    )
+	    else
+	      o#put();
 	)
    )
 
