@@ -223,6 +223,7 @@ class sound_object soundfiles=
 (** {2 Graphic part} *)
 
 exception Vfs_not_found of string;;
+exception Vfs_out_of_bounds of int;;
 
 class virtual canvas_object=
 object
@@ -251,10 +252,11 @@ class graphic_generic_object nid=
     val mutable cur_tile=0
 	
     method get_rpos=
-      vfs_tiles#get_rpos id
-     
+	 vfs_tiles#get_rpos id
+
     method get_tile n=
-      vfs_tiles#get_one id n
+	vfs_tiles#get_one id n
+
     method get_tile_shaded n=
       vfs_tiles#get_one (id^":shaded") n
       

@@ -29,6 +29,9 @@ object(self)
   method replace_object id o=
     Hashtbl.replace objs id o
 
+  method is_object id=
+    Hashtbl.mem objs id
+
   method get_object id=
     (try
        Hashtbl.find objs id

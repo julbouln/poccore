@@ -35,6 +35,7 @@ Limitations : we can't have a mixed dyn/static entry (array)
 *)
 
 
+
 class ['a] vfs_cache (t: 'a)=
 object(self)
 
@@ -94,6 +95,10 @@ object(self)
 
 end;;
 
+exception Vfs_data_not_found of string;;
+exception Vfs_data_from_func_not_found of string;;
+
+
 class ['a] vfs_files (t: 'a)=
  object (self)
    inherit ['a] vfs_cache t   
@@ -105,7 +110,16 @@ class ['a] vfs_files (t: 'a)=
    
    (* create only if there is no entry *)
      
- 
+   method get_data n=
+     (try 
+	Hashtbl.find datas n
+      with Not_found -> raise (Vfs_data_not_found n))
+
+   method get_data_from_func n=
+     (try 
+	Hashtbl.find datas_from_func n
+      with Not_found -> raise (Vfs_data_from_func_not_found n))
+
    (** Create entry from function (static) *)
    method create_from_func k f=
      if(Hashtbl.mem datas k)==false then 
@@ -166,22 +180,22 @@ class ['a] vfs_files (t: 'a)=
        )
      else (
        if Hashtbl.mem datas k=false then (
-	 let f=Hashtbl.find datas_from_func k in
+	 let f=self#get_data_from_func k in
 	 let d=f() in
 	   self#create k d;
 	   print_string ("VFS:exec_func:"^k);print_newline();
        );
-       Hashtbl.find datas k
+       self#get_data k
      )	 
 
    (** Get a simple entry *)	
    method get_simple k=
      if Hashtbl.mem datas k=false then (
-	 let f=Hashtbl.find datas_from_func k in
+       let f=self#get_data_from_func k in
 	 let d=f() in
 	   self#create k d;
      );
-       (Hashtbl.find datas k).(0)
+     (self#get_data k).(0)
 
    (** Is one entry *)	
    method is_one k i=
@@ -267,15 +281,17 @@ class vfs_files_tile=
 object(self)
     inherit [tile] vfs_files (tile_empty()) as super
 
-  method read_file file=tile_load_bmp file
-  method write_file file t=tile_save_bmp t file; tile_free t
+    method read_file file=tile_load_bmp file
+    method write_file file t=tile_save_bmp t file; tile_free t
         
     val mutable rpos=new refresh_pos
 
     method add_rpos n=
+      print_string ("add rpos for "^n);print_newline();
       if (rpos#is_pos n)==false then (
 	let (x1,y1,x2,y2)=tile_refresh_pos (self#get_one n 0) in
-(*	print_int x1;
+
+	print_int x1;
 	print_string " - ";			  
 	print_int y1;
 	print_string " - ";			  
@@ -283,11 +299,12 @@ object(self)
 	print_string " - ";			  
 	print_int y2;
 	print_newline();
-*)
+
 	rpos#add_pos n (new rectangle x1 y1 x2 y2);
       );		       
 
     method get_rpos (n:string)=
+      print_string ("get rpos for "^n);print_newline();
 (*      new rectangle 0 0 0 0 *)
       if n<>"none" then (
 	self#add_rpos n;
@@ -303,14 +320,7 @@ object(self)
 	(
       	 if k<>"none" && k<>"none:colored" && is_video()==true then 
 	   (
-	 (*   let t=f() in
-
-	      super#create k t;
-	 *)
-	     
 	     super#create_from_func k f; 
-	 (*    self#add_rpos k;  *)
-
 	   )
 	 else 
 	   super#create_simple k (tile_empty()); 
@@ -319,8 +329,6 @@ object(self)
       if(Hashtbl.mem datas k)==false then (
 	if k<>"none" && k<>"none:colored" && is_video()==true then (
 	  super#create k d;
-(*	  self#add_rpos k;  *)
-
 	)
 	else 
 	  super#create_simple k (tile_empty()); 

@@ -42,6 +42,9 @@ let xml_reduce n (f:Xml.xml->bool)=
       | _ -> raise Bad_xml_node ;;
     
 
+exception Xml_node_attr_not_found of string;;
+exception Xml_node_child_not_found of string;;
+
 class xml_node (n:Xml.xml)=
 object(self)
   val mutable node=n
@@ -57,11 +60,17 @@ object(self)
   method get_pcdata=pcdata
 
   method add_attr k v=Hashtbl.add attrs k v
-  method get_attr k=Hashtbl.find attrs k
+  method get_attr k=
+    (try 
+       Hashtbl.find attrs k
+     with Not_found -> raise (Xml_node_attr_not_found k))
   method foreach_attr f=Hashtbl.iter f attrs
 
   method add_child k v=Hashtbl.add children k v
-  method get_child k=Hashtbl.find children k
+  method get_child k=
+    (try 
+       Hashtbl.find children k
+     with Not_found -> raise (Xml_node_child_not_found k))
   method foreach_child f=Hashtbl.iter f children
 
   initializer
