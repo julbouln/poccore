@@ -21,7 +21,7 @@ open Low;;
 open Rect;;
 open Video;;
 
-
+open Unix;;
 
 (** Pseudo VFS system *)
 
@@ -35,8 +35,68 @@ Limitations : we can't have a mixed dyn/static entry (array)
 *)
 
 
+class ['a] vfs_cache (t: 'a)=
+object(self)
+
+  val mutable m=let h=Hashtbl.create 2 in Hashtbl.add h "none" 0;h
+  val mutable ccached=0
+  
+  val mutable frm=0
+  val mutable stats=Hashtbl.create 2
+
+  method update()=
+    frm<-frm+1
+
+  method access (f:string)=
+    if Hashtbl.mem stats f=false then
+      Hashtbl.add stats f 0
+    else
+      let n=Hashtbl.find stats f in
+	  Hashtbl.replace stats f (n+1)
+
+  method get_stat (f:string)=
+    try
+      Hashtbl.find stats f      
+    with | Not_found -> 0
+
+(*
+  method read_file file=let ic=open_in_bin file in let v=Marshal.from_channel ic in close_in ic;v
+  method write_file file t=let oc=open_out_bin file in Marshal.to_channel oc t []; close_out oc
+*)
+  method read_file file=t
+  method write_file file t=()
+
+   method is_cached (id:string)=
+    Hashtbl.mem m id
+
+  method get_cached (id:string) (*(alt:string->'a)*)=
+(*      if Hashtbl.mem m id then *)
+	let it=Hashtbl.find m id in 
+	  self#read_file ("cache/"^string_of_int it^".tmp")
+(*		
+      else (	
+	alt id
+      )
+*)
+  method need_cached (id:string)=
+    ((float_of_int (self#get_stat id))/.(float_of_int frm)) < 0.5  
+
+  method add_cached (id:string) (ti:'a)=
+    if self#need_cached id && self#is_cached id=false then
+      (
+	Hashtbl.add m id ccached;
+	self#write_file ("cache/"^string_of_int ccached^".tmp") ti;
+	ccached<-ccached+1;
+      );
+  
+    
+  method init_cached()=()
+
+end;;
+
 class ['a] vfs_files (t: 'a)=
  object (self)
+   inherit ['a] vfs_cache t   
       
    val mutable datas=let a=Hashtbl.create 2 in Hashtbl.add a "none" (Array.make 1 t);a
    val mutable datas_from_func=let a=Hashtbl.create 2 in Hashtbl.add a "none" (fun()->[|t|]);a
@@ -45,6 +105,7 @@ class ['a] vfs_files (t: 'a)=
    
    (* create only if there is no entry *)
      
+ 
    (** Create entry from function (static) *)
    method create_from_func k f=
      if(Hashtbl.mem datas k)==false then 
@@ -91,6 +152,7 @@ class ['a] vfs_files (t: 'a)=
 
   (** Get an entry *)	
    method get k=
+     self#access k; 
      if(Hashtbl.mem dyn k)==true then 
        (
 	let a=Array.make 1 t in
@@ -109,7 +171,7 @@ class ['a] vfs_files (t: 'a)=
 	   self#create k d;
 	   print_string ("VFS:exec_func:"^k);print_newline();
        );
-	 Hashtbl.find datas k
+       Hashtbl.find datas k
      )	 
 
    (** Get a simple entry *)	
@@ -138,7 +200,16 @@ class ['a] vfs_files (t: 'a)=
        )
      else 
        (
-	 (self#get k).(i)
+	 let r=(self#get k).(i) in
+(*	   self#add_cached k r;
+	   if self#need_cached k=false then r else 
+	     if r<>t then (
+	       ((self#get k).(i)<-self#get_cached k;(self#get k).(i)))
+	     else
+*)
+	       r
+
+
 (*	let a_s=Array.length (Hashtbl.find datas k) in
 	if i<a_s then
 	  (self#get k).(i)
@@ -195,6 +266,9 @@ end;;
 class vfs_files_tile=
 object(self)
     inherit [tile] vfs_files (tile_empty()) as super
+
+  method read_file file=tile_load_bmp file
+  method write_file file t=tile_save_bmp t file; tile_free t
         
     val mutable rpos=new refresh_pos
 
