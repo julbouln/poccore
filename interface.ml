@@ -599,19 +599,37 @@ object(self)
 
   method add_char c=
     text<-String.concat "" [text;c];
-  method del_last_char()=
+
+  method del_last_char_OLD()=
     if (String.length text > 0) then
       text<-String.sub text 0 (String.length text - 1);
+
+  method del_last_char()=
+    if (UTF8.length text > 0) then
+      text<-String.sub text 0 (UTF8.last text);
  
 
   method set_text t=text<-t
 
-  method parse c=
+  method parse c u=
     match c with
       | KeySpace ->self#add_char " "
-      | KeyChar ch->self#add_char ch
+(*      | KeyChar ch->self#add_char ch *)
       | KeyBackspace ->self#del_last_char()
-      | _ ->()
+      | KeyReturn -> ()
+      | KeyShift -> ()
+      | KeyUp -> ()
+      | KeyDown -> ()
+      | KeyLeft -> ()
+      | KeyRight -> ()
+      | KeyEchap -> ()
+      | KeyCtrl -> ()
+      | KeyAlt -> ()
+      | _ ->
+	  match u with
+	    | KeyUnicode ch->let c=(UTF8.init 1 (fun i->ch)) in
+		self#add_char c
+	    | _ ->()
 
 
 end;;

@@ -67,14 +67,20 @@ type key_type=
 | KeyBackspace
 | KeyReturn
 | KeySpace
+| KeyCtrl
+| KeyAlt
 | KeyEchap
 | KeyUp
 | KeyDown
 | KeyRight
 | KeyLeft
 | KeyShift
+| KeyUnicode of UChar.t
 | KeyChar of string
 | KeyUnknow;;
+
+let parse_unicode k=
+  KeyUnicode (UChar.chr k);;
 
 let parse_key k=
   match k with 
@@ -88,6 +94,8 @@ let parse_key k=
     | 276 -> KeyLeft
 
     | 304 -> KeyShift
+    | 306 -> KeyCtrl
+    | 308 -> KeyAlt
 
     | 33 -> KeyChar "!";
 
