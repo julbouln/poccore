@@ -282,12 +282,12 @@ object(self)
       o (list_of_val_ext_handler l) in
     self#add_drawing_fun n no
 
-(*
+
   method add_drawing_fun_from_format (n:string) ft (o:(val_ext) val_format->('t) drawing_object array)=
     let no (l:val_ext_handler)=
       o (format_of_val_ext_handler l ft) in
-    self#add_drawing_fun n no
-*)
+      self#add_drawing_fun n no
+
 
   method get_drawing_fun n=
     (try 
@@ -514,4 +514,6 @@ object(self)
 
 
 end;;
+
+
 

@@ -20,6 +20,7 @@
 open Str;;
 
 open Oval;;
+open Olua;;
 open Oxml;;
 
 open Core_generic;;
@@ -343,3 +344,128 @@ let v_color_from_xml f=
       colparser#get_vcolors;
   uc
 
+
+exception Drawing_script_error;;
+
+class drawing_script=
+object(self)
+  inherit lua_object as super
+
+  val mutable drv=Hashtbl.create 2
+  method add_dr n dr=Hashtbl.add drv n dr
+  method get_dr n=Hashtbl.find drv n
+
+  method dr_size n=
+    let dr=(self#get_dr n) in
+      Array.length dr
+
+  method op_create name args=
+    let did=(random_string "drscr" 20) in
+    let dr=drawing_vault#new_drawing() in
+      dr#exec_op_create_from_format name (ValLua args);
+      self#add_dr did [|dr|];
+      did
+	
+  method op_copy did nd name args=
+    let dr=(self#get_dr did).(nd) in
+    let ndid=(random_string "drscr" 20) in
+    let ndr=dr#exec_op_copy_from_format name (ValLua args) in
+      self#add_dr ndid ndr;
+      ndid
+
+  method op_write did nd name args=
+    let dr=(self#get_dr did).(nd) in
+      dr#exec_op_write_from_format name (ValLua args)
+
+  method op_read did nd name args=
+    let dr=(self#get_dr did).(nd) in
+      dr#exec_op_read_from_format name (ValLua args)
+
+  method register ds=
+    let did=List.nth (lua#parse ds) 0 in
+      match did with
+	| OLuaVal.String n->
+	       self#get_dr n
+
+	| _ -> raise Drawing_script_error
+
+  method register_with_args ds (args:OLuaVal.table)=
+    lua#set_val (OLuaVal.String "args") (OLuaVal.Table args);
+    self#register ds;
+
+  method lua_init()=
+    lua#set_val (OLuaVal.String "create") 
+      (OLuaVal.efunc (OLuaVal.string **-> OLuaVal.table **->> OLuaVal.string) 
+	 (fun n a->
+	    self#op_create n 
+	      (let lo=new lua_obj in
+		 lo#from_table a;
+		 lo
+	      )
+	 )
+      );
+
+    lua#set_val (OLuaVal.String "copy") 
+      (OLuaVal.efunc (OLuaVal.string **->OLuaVal.int **-> OLuaVal.string **-> OLuaVal.table **->> OLuaVal.string) 
+	 (fun did nd n a->
+	    self#op_copy did nd n 
+	      (let lo=new lua_obj in
+		 lo#from_table a;
+		 lo
+	      )
+	 )
+      );
+
+    lua#set_val (OLuaVal.String "write") 
+      (OLuaVal.efunc (OLuaVal.string **->OLuaVal.int **-> OLuaVal.string **-> OLuaVal.table **->> OLuaVal.unit) 
+	 (fun did nd n a->
+	    self#op_write did nd n 
+	      (let lo=new lua_obj in
+		 lo#from_table a;
+		 lo
+	      )
+	 )
+      );
+
+    lua#set_val (OLuaVal.String "read") 
+      (OLuaVal.efunc (OLuaVal.string **->OLuaVal.int **-> OLuaVal.string **-> OLuaVal.table **->> OLuaVal.value) 
+	 (fun did nd n a->
+	    let v=
+	    self#op_read did nd n 
+	      (let lo=new lua_obj in
+		 lo#from_table a;
+		 lo
+	      ) in
+	      lua_of_val_ext v
+	 )
+      );
+
+    lua#set_val (OLuaVal.String "size") 
+      (OLuaVal.efunc (OLuaVal.string **->> OLuaVal.int) (self#dr_size));
+
+
+
+    super#lua_init();
+    
+
+end;;
+
+
+let add_drawing_fun_from_drawing_script n s=
+  let drs=new drawing_script in
+    drs#lua_init();
+    drawing_vault#add_drawing_fun_from_format n TValLua
+      ( fun v->
+	  match v with
+	    | ValLua l->drs#register_with_args s l#to_table;
+	    | _ -> raise Drawing_script_error
+      );;
+
+(* WORKS *)
+(*
+add_drawing_fun_from_drawing_script "testds" 
+"
+dr=self.create(\"rect\",{self.args[0],self.args[1]});
+return dr
+";;
+*)
