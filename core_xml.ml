@@ -42,7 +42,9 @@ object(self)
   method parse_child k v=
     match k with
       | tag when tag=otag ->
-	  vals#from_xml v#get_node
+	  let n=new xml_node_NEW in
+	    n#of_xml_t v#get_node;
+	    vals#from_xml n
       | _ -> ()
 end;;
 

@@ -371,6 +371,7 @@ object(self)
 	    | _ ->()
       ) largs;
       
+      
       if self#is_cache_fun (string_of_val (List.nth largs 0))=false then (
 	let drl=(fun()->self#call_drawing_fun args) in    
 	  self#add_cache !n drl;

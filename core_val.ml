@@ -42,6 +42,50 @@ let list_of_val=function
   | `List v->v
   | _->raise (Bad_val_type "list");;
 
+let rec xml_of_val_ext_NEW v=
+  let ron=ref (new xml_node_NEW) in
+  let on= !ron in
+    (match v with
+       | #val_generic as v-> ron:=xml_of_val_NEW v
+       | `Position (x,y)->
+	   on#of_list 
+	     [
+	       Tag "val_position";
+	       Attribute ("x",string_of_int x);
+	       Attribute ("y",string_of_int y)
+	     ]
+       | `Size (w,h)->
+	   on#of_list 
+	     [
+	       Tag "val_size";
+	       Attribute ("w",string_of_int w);
+	       Attribute ("h",string_of_int h)
+	     ]
+       | `Color (r,g,b)->
+	   on#of_list 
+	     [
+	       Tag "val_color";
+	       Attribute ("r",string_of_int r);
+	       Attribute ("g",string_of_int g);
+	       Attribute ("b",string_of_int b);
+	     ]
+       | `Time t->
+	   on#of_list 
+	     [
+	       Tag "val_time";
+	       Attribute ("h",string_of_int t.h);
+	       Attribute ("m",string_of_int t.m);
+	       Attribute ("s",string_of_int t.s);
+	       Attribute ("f",string_of_int t.f);
+	     ]
+	     
+       | `List vl->
+	   on#of_list 
+	     ([Tag "val_list"]@(List.map (fun v->(xml_of_val_ext_NEW v)#to_node) vl))
+    );
+    on
+;; 
+
 let rec xml_of_val_ext=function
   | #val_generic as v->xml_of_val v
   | `Position (x,y)->Xml.Element("val_position",[("x",string_of_int x);("y",string_of_int y)],[])
@@ -50,6 +94,36 @@ let rec xml_of_val_ext=function
   | `Time t->Xml.Element("val_time",[("h",string_of_int t.h);("m",string_of_int t.m);("s",string_of_int t.s);("f",string_of_int t.f)],[])
   | `List vl->Xml.Element("val_list",[],List.map (fun v->xml_of_val_ext v) vl)
 ;; 
+
+
+let rec val_ext_of_xml_NEW x=
+  match x#tag with 
+  | "val_position"-> 
+      `Position (
+	(int_of_string (x#attrib "x")),
+	(int_of_string (x#attrib "y"))
+      )
+  | "val_size"-> 
+      `Size (
+	(int_of_string (x#attrib "w")),
+	(int_of_string (x#attrib "h"))
+      )
+  | "val_color"->
+      `Color (
+	(int_of_string (x#attrib "r")),
+	(int_of_string (x#attrib "g")),
+	(int_of_string (x#attrib "b"))
+      )
+  | "val_time"->
+      `Time {
+	h=(int_of_string (x#attrib "h"));
+	m=(int_of_string (x#attrib "m"));
+	s=(int_of_string (x#attrib "s"));
+	f=(int_of_string (x#attrib "f"));
+      }
+  | "val_list" ->`List (List.map (fun c->let cn=new xml_node_NEW in cn#of_node c;val_ext_of_xml_NEW cn) x#children)
+  | _ -> val_of_xml_NEW x
+;;
 
 let rec val_ext_of_xml=function
   | Element("val_position",_,_) as x-> 
@@ -187,7 +261,7 @@ let ext_of_generic v=(v : val_generic :> val_ext);;
 
 class val_ext_handler=
 object
-  inherit [val_ext] val_handler xml_of_val_ext val_ext_of_xml lua_of_val_ext val_ext_of_lua 
+  inherit [val_ext] val_handler xml_of_val_ext_NEW val_ext_of_xml_NEW lua_of_val_ext val_ext_of_lua 
 end;;
 
 let val_ext_handler_of_format f=
