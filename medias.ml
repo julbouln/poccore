@@ -139,19 +139,36 @@ class font_object fontfile s=
     method get_height=
       if fontfile<>"none" then
 	font_height (vfs_fonts#get_simple (font ^ ":" ^ string_of_int(size)^"pt"))
-      else 0
+      else 
+	(
+	  8
+	)
+
     method sizeof_text txt=
       if fontfile<>"none" then     
-     font_sizeof (vfs_fonts#get_simple (font ^ ":" ^ string_of_int(size)^"pt")) txt
-      else (0,0)
+	font_sizeof (vfs_fonts#get_simple (font ^ ":" ^ string_of_int(size)^"pt")) txt
+      else
+	(
+	  (String.length txt*8,8);
+	)
+(*
     method get_font=
       if fontfile<>"none" then
 	vfs_fonts#get_simple (font ^ ":" ^ string_of_int(size)^"pt")
       else font_empty()
+*)
     method create_text txt color =
       if fontfile<>"none" then
 	tile_text (vfs_fonts#get_simple (font ^ ":" ^ string_of_int(size)^"pt")) txt color
-      else tile_empty()
+      else
+	(
+	  let tmp=tile_box (String.length txt*8) 8 (255,255,255) in
+	    tile_set_alpha tmp 255 255 255;
+	    tile_string tmp (0,0) txt color; 
+	    tmp
+	)
+(*	tile_empty() *)
+(*	tile_string txt color *)
   end;;
 
 

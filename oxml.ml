@@ -305,6 +305,7 @@ object
   val mutable file="none"
 
   method get_val=tile_load file
+  method get_file=file
 
   method tag=""
   method parse_attr k v=
