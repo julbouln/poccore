@@ -34,44 +34,6 @@ open Rect;;
 
 (** Action and state manager *)
 
-(* 8< Not used for now *)
-(*
-type action_func_arg=
-  | Point of point
-  | Rectangle of rectangle
-  | Unit of (int * int)
-  | Decor of int
-  | Resource of int
-  | Nil;;
-
-class virtual go_action_func=
-object
-
-  method parse_args (args:action_func_arg list) f=
-    List.iter (
-      fun arg->
-	f arg
-    )
-      args;
-
-  method virtual exec : action_func_arg list -> unit
-
-end;;
-
-
-class go_action_func_mutable=
-object
-  inherit go_action_func
-  val mutable func=function v->()
-
-  method set_func f=func<-f
-  method get_func=func
-
-  method exec (v:action_func_arg list)=func v
-
-end;;
-*)
-(* >8 *)
 
 (** Main action class *)
 class action_object=
