@@ -7,7 +7,6 @@ open Core_stage;;
 open Value_lua;;
 open Value_val;;
 open Value_xml;;
-open Core_xml;;
 
 (** Main app part *)
 
@@ -185,79 +184,3 @@ let main=new main;;
 
 
 
-class xml_game_parser=
-object(self)
-  inherit xml_parser
-  val mutable info_parser=new xml_val_ext_list_parser "infos"
-  val mutable args_parser=new xml_val_ext_list_parser "args"
-  val mutable stages_parser=(Global.get xml_default_stages_parser)()
- 
-  
-  method parse_attr k v=()
-
-  method parse_child k v=
-    info_parser#parse_child k v;
-    args_parser#parse_child k v;
-    match k with
-      | "stages" -> stages_parser#parse v
-      | _ -> ()
-
-  method init()=
-    (* infos *)
-    if info_parser#get_val#is_val (`String "cmd") then
-      main#info#set_cmd (string_of_val (info_parser#get_val#get_val (`String "cmd")));
-    if info_parser#get_val#is_val (`String "name") then
-      main#info#set_name (string_of_val (info_parser#get_val#get_val (`String "name")));
-    if info_parser#get_val#is_val (`String "version") then
-      main#info#set_version (string_of_val (info_parser#get_val#get_val (`String "version")));
-
-    (* video *)
-    if args_parser#get_val#is_val (`String "video_size") then (
-      let (w,h)=(size_of_val (args_parser#get_val#get_val (`String "video_size"))) in
-	main#set_scr_w w;
-	main#set_scr_h h;
-    );
-    if args_parser#get_val#is_val (`String "video_default_size") then (
-    let (dw,dh)=(size_of_val (args_parser#get_val#get_val (`String "video_default_size"))) in
-      main#set_def_size dw dh;
-    );
-
-    if args_parser#get_val#is_val (`String "video_depth") then
-      main#set_depth (int_of_val (args_parser#get_val#get_val (`String "video_depth")));
-
-    if args_parser#get_val#is_val (`String "video_fullscreen") then
-      main#set_fs (bool_of_val (args_parser#get_val#get_val (`String "video_fullscreen")));
-
-
-    (* others *)
-(*
-    if args_parser#get_val#is_val (`String "parse_args") then (
-    if (bool_of_val (args_parser#get_val#get_val (`String "parse_args"))) then
-      main#parse_args();
-    );
-    if args_parser#get_val#is_val (`String "medias_init") then (
-      if (bool_of_val (args_parser#get_val#get_val (`String "medias_init"))) then
-	main#medias_init();
-    );
-*)
-    main#parse_args();
-    main#medias_init();
-(*    if args_parser#get_val#is_val (`String "stages") then (
-      stages_init_from_xml (string_of_val (args_parser#get_val#get_val (`String "stages")));
-    );
-*)
-    stages_parser#init_simple stages#stage_add;
-    ignore(stages#lua_init());
-
-    if args_parser#get_val#is_val (`String "stage_start") then (
-      stages#stage_load (string_of_val (args_parser#get_val#get_val (`String "stage_start")));
-    );
-end;;
-
-
-let game_init_from_xml f=
-(*  let game_file=new xml_node (Xml.parse_file f) in *)
-  let game_file=xml_node_from_file f in
-  let p=new xml_game_parser in
-    p#parse game_file;
-    p#init();;
