@@ -280,14 +280,14 @@ object(self)
 
 end;;
 
-class ['t] drawing_cache s=
+class virtual ['t] drawing_cache s mt=
 object
-  inherit [('t) drawing_object] medias_cache s
+  inherit [('t) drawing_object] medias_cache s mt
 end;;
 
-class virtual ['t] drawing_vault cache_size=
+class virtual ['t] drawing_vault cache_size mt=
 object(self)
-  inherit ['t] drawing_cache cache_size as cache
+  inherit ['t] drawing_cache cache_size mt as cache
   inherit ['t] drawing_handler
 
   (* link between cache & handler *)

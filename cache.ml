@@ -22,11 +22,15 @@ exception Cache_no_corres of string;;
 exception Cache_out_of_bound of (string*int);;
 exception Cache_full;;
 
-class ['ct] medias_cache s=
+class virtual ['ct] medias_cache s mt=
 object(self)
   val mutable cache=Weak.create s
   val mutable cache_f=Hashtbl.create 2 
   val mutable corres=Hashtbl.create 2    
+  val mutable cache_time=Hashtbl.create 2
+
+  method virtual cache_file_save: string -> 'ct array->unit
+  method virtual cache_file_load: string ->'ct array
 
   method set_corres n i=
     if Hashtbl.mem corres n then
@@ -84,9 +88,17 @@ object(self)
     let ff=self#first_free() in
       self#add_cache_fun n o_f;
       self#set_corres n ff;
+      let t1=Unix.gettimeofday() in
       let o=o_f() in
+      let t2=Unix.gettimeofday() in
 (*	(self#simple_of o)#set_id n; *)
 	Weak.set cache ff (Some (n,o));
+	print_string ("CACHE: time "^string_of_float (t2-.t1));print_newline();
+	if (t2-.t1>mt) then (
+	  self#cache_file_save n o;
+	  self#replace_cache_fun n (fun()->self#cache_file_load n);
+	);
+	Hashtbl.add cache_time n (t2-.t1);
     );
 
   method replace_cache n o=
