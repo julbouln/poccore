@@ -60,6 +60,8 @@ object
   val mutable anim=new anim_object frames refresh
   val mutable graph=new graphic_object_from_file file w h
 
+  method get_rect=graph#get_rect
+
   method get_anim=anim
 
   method move x y=graph#move x y
@@ -75,6 +77,8 @@ object
   val mutable graph=new graphic_cached_object id
 
   method get_anim=anim
+
+  method get_rect=graph#get_rect
 
   method move x y=graph#move x y
   method anim()=anim#anim();

@@ -291,3 +291,25 @@ object(self)
 
 end;;
 
+
+(* xml & lua test *)
+(*
+
+
+
+ <drawing_object id="test" fun="load_multiple">
+  <values>
+   <val_string str="medias/test.png"/> 
+   <val_size w="32" h="32"/>
+   <val_color r="255" g="255" b="255"/>
+  </values>
+  <script>
+   i=0;
+   while i<test.size do
+    test[i].set_alpha(255,255,255);
+    i=i+1;
+   end;
+  </script>
+ </drawing_object>
+  
+*)

@@ -323,7 +323,7 @@ object
   val fgr=new graphic_object_from_file file iw ih
   inherit graphic_from_drawing (file^":"^string_of_int i^":resized") 
     (fun()->
-       let dr=(drawing_vault#get_cache file).(i)#copy() in
+       let dr=(drawing_vault#get_cache_entry file i)#copy() in
 	 dr#exec_op_copy "resize" [DrawValSizeFloat(((float_of_int w)/.(float_of_int iw)),((float_of_int h)/.(float_of_int ih)))]	 
     )
 end;;
@@ -332,29 +332,32 @@ class graphic_object_resized pdraw i fw fh=
 object
   inherit graphic_from_drawing (pdraw^":"^string_of_int i^":resized") 
     (fun()->
-       let dr=(drawing_vault#get_cache pdraw).(i)#copy() in
+       let dr=(drawing_vault#get_cache_entry pdraw i)#copy() in
 	 dr#exec_op_copy "resize" [DrawValSizeFloat(fw,fh)]	 
     )
 end;;
 
 
-class graphic_object_text fnt_t txt color=
+class graphic_object_text fnt_t (txt:string list) color=
 object
-  inherit graphic_from_drawing txt 
+  inherit graphic_from_drawing ("text:"^(Digest.to_hex(Digest.string (String.concat "" txt))))
     (fun()->
 
-	 let  dr=drawing_vault#new_drawing() in
 	 let fnt_n=get_font_id fnt_t in
-		font_vault#add_cache (fnt_n) (
-		  fun()->
-		  let fnt=font_vault#new_font() in
-		    fnt#load fnt_t;
-		    [|fnt|]
-		);
-		dr#exec_op_create "create_text" [DrawValString fnt_n;DrawValString txt;DrawValColor color];
-       [|dr|]
+	   font_vault#add_cache (fnt_n) (
+	     fun()->
+	       let fnt=font_vault#new_font() in
+		 fnt#load fnt_t;
+		 [|fnt|]
+	   );
+	   Array.map
+	     (
+	       fun tx->
+		 let  dr=drawing_vault#new_drawing() in
+		   dr#exec_op_create "create_text" [DrawValString fnt_n;DrawValString tx;DrawValColor color];
+		   dr
+	     ) (Array.of_list txt)
     )
-
 end;;
 
 
