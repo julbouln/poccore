@@ -1,4 +1,5 @@
 open Rect;;
+open Oval;;
 open Cache;;
 open Event;;
 open Font;;
@@ -88,25 +89,25 @@ object(self)
 
 (** create ops *)
 
-    self#add_op "load" DrawTypeCreate (
+    self#add_op_from_list "load" DrawTypeCreate (
       fun ovl->
-	let f=(get_draw_op_string ovl 0) in
+	let f=string_of_val (List.nth ovl 0) in
 	print_string ("DRAWING_OBJECT: load "^f);print_newline();
 	DrawResultT (tile_load f);
     );
 
-    self#add_op "rect" DrawTypeCreate (
+    self#add_op_from_list "rect" DrawTypeCreate (
       fun ovl->
-	let (w,h)=(get_draw_op_size ovl 0) in
-	let col=(get_draw_op_color ovl 1) in
+	let (w,h)=size_of_val (List.nth ovl 0) in
+	let col=color_of_val (List.nth ovl 1) in
 	DrawResultT (tile_rect w h col);
     );
 
-    self#add_op "create_text" DrawTypeCreate (
+    self#add_op_from_list "create_text" DrawTypeCreate (
       fun ovl->
-	let fnt_n=(get_draw_op_string ovl 0) and
-	    txt=(get_draw_op_string ovl 1) and
-	    color=(get_draw_op_color ovl 2) in
+	let fnt_n=string_of_val (List.nth ovl 0)  and
+	    txt=string_of_val (List.nth ovl 1)  and
+	    color=color_of_val (List.nth ovl 2)  in
 	let fnt=(font_vault#get_cache_simple fnt_n) in
 
 	  DrawResultT
@@ -121,61 +122,64 @@ object(self)
 	    ));
 (** copy ops *)
 
-    self#add_op "mirror" DrawTypeCopy (
+    self#add_op_from_list "mirror" DrawTypeCopy (
       fun ovl->
 	DrawResultT (tile_mirror self#get_t);
     );
 
-    self#add_op "split" DrawTypeCopy (
+    self#add_op_from_list "split" DrawTypeCopy (
       fun ovl->
-	let (w,h)=get_draw_op_size ovl 0 in
+	let (w,h)=size_of_val (List.nth ovl 0)  in
 	DrawResultTArray (tile_split self#get_t w h);
     );
 
-    self#add_op "resize" DrawTypeCopy (
+    self#add_op_from_list "resize" DrawTypeCopy (
       fun ovl->
-	let (w,h)=get_draw_op_size_float ovl 0 in
-	DrawResultT (tile_resize self#get_t w h);
+	let (w,h)=size_of_val (List.nth ovl 0)  in
+	let fw=(float_of_int w)/.100. and
+	    fh=(float_of_int h)/.100. in
+
+	DrawResultT (tile_resize self#get_t fw fh);
     );
 
-    self#add_op "color_change" DrawTypeCopy (
+    self#add_op_from_list "color_change" DrawTypeCopy (
       fun ovl->      
-      let col1=get_draw_op_color ovl 0 and
-	  col2=get_draw_op_color ovl 1 in
+      let col1=color_of_val (List.nth ovl 0) and
+	  col2=color_of_val (List.nth ovl 1) in
 	DrawResultT (tile_color_change self#get_t col1 col2)
     );
 
 
 (** write op *)
 
-    self#add_op "set_alpha" DrawTypeWrite (
+    self#add_op_from_list "set_alpha" DrawTypeWrite (
       fun ovl->
-	let (r,g,b)=get_draw_op_color ovl 0 in
+	let (r,g,b)=color_of_val (List.nth ovl 0) in
 	  (tile_set_alpha self#get_t r g b);
 	  DrawResultUnit();
     );
 
-    self#add_op "unset_alpha" DrawTypeWrite (
+    self#add_op_from_list "unset_alpha" DrawTypeWrite (
       fun ovl->
 	(tile_unset_alpha self#get_t);
 	DrawResultUnit();
     );
 
-    self#add_op "line" DrawTypeWrite (
+    self#add_op_from_list "line" DrawTypeWrite (
       fun ovl->
-	let p1=get_draw_op_position ovl 0 and
-	    p2=get_draw_op_position ovl 1 and
-	    col=get_draw_op_color ovl 2 in
+	let p1=position_of_val (List.nth ovl 0) and
+	    p2=position_of_val (List.nth ovl 1)  and
+	    col=color_of_val (List.nth ovl 2)  in
 	  
 	  (tile_line self#get_t p1 p2 col);
 	  DrawResultUnit();
     );
 
-    self#add_op "rectangle" DrawTypeWrite (
+    self#add_op_from_list "rectangle" DrawTypeWrite (
       fun ovl->
-	let p1=get_draw_op_position ovl 0 and
-	    p2=get_draw_op_position ovl 1 and
-	    col=get_draw_op_color ovl 2 in
+	let p1=position_of_val (List.nth ovl 0) and
+	    p2=position_of_val (List.nth ovl 1)  and
+	    col=color_of_val (List.nth ovl 2)  in
 	  
 	  (tile_rectangle self#get_t p1 p2 col);
 	  DrawResultUnit();
@@ -183,11 +187,11 @@ object(self)
 
 (** read op *)
 
-    self#add_op "get_rpos" DrawTypeRead (
+    self#add_op_from_list "get_rpos" DrawTypeRead (
       fun ovl->
-	let rcol=(get_draw_op_color ovl 0) in
+	let rcol=color_of_val (List.nth ovl 0) in
 	let (x1,y1,x2,y2)=tile_refresh_pos self#get_t in
-	  DrawResultVal(DrawValRectangle (new rectangle x1 y1 x2 y2))
+	  DrawResultVal(`List [`Position(x1,y1);`Position(x2,y2)])
     );
 
 end;;
@@ -240,9 +244,9 @@ object(self)
       fun i d->
 	let fn=(digest_of_string f^"_"^string_of_int i^".bmp") in
 	  if Sys.file_exists fn=false then (
-	    d#exec_op_write "unset_alpha" [];
+	    d#exec_op_write_from_list "unset_alpha" [];
 	    tile_save_bmp (d#get_t) ("cache/"^fn);
-	    d#exec_op_write "set_alpha" [DrawValColor (255,255,255)];
+	    d#exec_op_write_from_list "set_alpha" [`Color (255,255,255)];
 	  )
     ) dl;
 
@@ -254,7 +258,7 @@ object(self)
 	  DynArray.add a (
 	    let nd=self#new_drawing() in	      
 	      nd#set_t (tile_load_bmp ("cache/"^fn));
-	      nd#exec_op_write "set_alpha" [DrawValColor (255,255,255)];
+	      nd#exec_op_write_from_list "set_alpha" [`Color (255,255,255)];
 	      nd
 	  );
 	i:= !i+1;

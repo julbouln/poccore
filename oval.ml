@@ -92,6 +92,23 @@ type val_ext=
     ]
 ;;
 
+let size_of_val=function
+  | `Size v->v
+  | _->raise Bad_val_type;;
+
+let position_of_val=function
+  | `Position v->v
+  | _->raise Bad_val_type;;
+
+
+let color_of_val=function
+  | `Color v->v
+  | _->raise Bad_val_type;;
+
+let list_of_val=function
+  | `List v->v
+  | _->raise Bad_val_type;;
+
 let rec xml_of_val_ext=function
   | #val_generic as v->xml_of_val v
   | `Position (x,y)->Xml.Element("val_position",[("x",string_of_int x);("y",string_of_int y)],[])
@@ -216,14 +233,83 @@ let ext_of_generic v=(v : val_generic :> val_ext);;
 
 (** Ocaml & Lua & XML interface *)
 
+type val_format_t=
+  | TValList
+  | TValXml
+  | TValXmlString
+  | TValLua
+  | TValLuaString;;
+
+type ('a) val_format=
+  | ValList of 'a list
+  | ValXml of Xml.xml
+  | ValXmlString of string
+  | ValLua of OLuaVal.value
+  | ValLuaString of string;;
+
+
 class ['a] val_handler (xmlfrom:'a->Xml.xml) (xmlto:Xml.xml->'a) (luafrom:'a->OLuaVal.value) (luato:OLuaVal.value->'a)=
 object(self)
   inherit generic_object
 
+  method from_format (fmt:('a) val_format)=
+    match fmt with
+      | ValList l ->self#from_list l
+      | ValXml x->self#from_xml x
+      | ValXmlString x->self#from_xml_string x
+      | ValLua l->self#from_lua l
+      | ValLuaString s->self#from_lua_string s
+
+  method to_format (fmt_t:val_format_t)=
+    match fmt_t with
+      | TValList->ValList (self#to_list())
+      | TValXml->ValXml (self#to_xml)
+      | TValXmlString->ValXmlString (self#to_xml_string)
+      | TValLua->ValLua (self#to_lua)
+      | TValLuaString->ValLuaString (self#to_lua_string)
+
+
 (** OCaml part *)
+  val mutable vals=DynArray.create()
+  method add_val (n:'a) (v:'a)=
+    DynArray.add vals (n,v)
+
+  method set_val (n:'a) (v:'a)=
+    if self#is_val n then (
+      let ni=ref 0 in
+	DynArray.iteri (
+	  fun i (nn,vv) ->
+	    if nn=n then ni:=i;
+	) vals;
+	DynArray.set vals !ni (n,v)
+    )
+    else self#add_val n v
+  method get_val (n:'a)=
+    let ni=ref (-1) in
+      DynArray.iteri (
+	  fun i (nn,vv) ->
+	    if nn=n then ni:=i;
+	) vals;
+      if !ni<>(-1) then
+	(snd (DynArray.get vals !ni))
+      else
+	raise (Val_not_found (string_of_val n))
+  method is_val (n:'a)=
+    let r=ref false in
+      DynArray.iteri (
+	fun i (nn,vv) ->
+	  if nn=n then r:=true;
+      ) vals;    
+      !r
+  method foreach_val f=
+    let g (n,v)=f n v in
+    DynArray.iter g vals
+
+(*
   val mutable vals=Hashtbl.create 2
 
-  method add_val (n:'a) (v:'a)=Hashtbl.add vals n v
+  method add_val (n:'a) (v:'a)=
+    Hashtbl.add vals n v
   method set_val (n:'a) (v:'a)=
     if self#is_val n then
       Hashtbl.replace vals n v
@@ -231,17 +317,36 @@ object(self)
   method get_val n=
     (try
        Hashtbl.find vals n 
-     with Not_found ->raise (Val_not_found (string_of_val n)))
+     with Not_found ->
+       raise (Val_not_found (string_of_val n)))
   method is_val n=Hashtbl.mem vals n
-
   method clear()=vals<-Hashtbl.create 2
+  method foreach_val f=
+    Hashtbl.iter f vals
+    *)
 
-  method from_list (l:('a*'a) list)=
+
+  method from_named_list (l:('a*'a) list)=
     List.iter (
       fun (k,v)->
 	self#set_val k v
     ) l;
 
+  method from_list (l:('a) list)=
+    let i=ref 0 in
+    List.iter (
+      fun (v)->
+	self#set_val (`Int !i) v;
+	i:= !i+1;
+    ) l;
+
+  method to_list ()=
+    let a=DynArray.create() in
+    self#foreach_val (
+      fun n v->
+	DynArray.add a v
+    );
+      DynArray.to_list a
 
 (** XML part *)
   method from_xml_string s=
@@ -271,7 +376,7 @@ object(self)
  
   method to_xml=
     let a=DynArray.create() in
-      Hashtbl.iter (
+      self#foreach_val (
 	fun k v->
 	  let xr=xmlfrom v in
 	  let xv=
@@ -289,20 +394,21 @@ object(self)
 	      | `String s->	      
 		  DynArray.add a xv
 	      | `Int i->
-		  print_int i;print_newline();
+(*		  print_int i;print_newline(); *)
 (*		  print_string (string_of_val v);print_newline(); *)
 (*		  DynArray.set a i xv *)
 		  DynArray.add a xv
 	      | _ -> ())
 	  
-    ) vals;
+    );
 
       Element(id,[],
 	      (DynArray.to_list a)
 	     );
 
 (** Lua part *)
-  method from_lua_string (interp:lua_interp) str =
+  method from_lua_string str =
+    let interp=new lua_interp in
     self#from_lua (List.nth (interp#parse str) 0)
 
   method from_lua (t:OLuaVal.value)=
@@ -317,39 +423,42 @@ object(self)
       | _ ->  ()   
 
   method to_lua_string=
-    let tbl=self#to_lua in
-    let str=ref "" in
-      str := (!str^id^"={");
-      Luahash.iter (
-	fun k v->
-	  let ak=luato k and
-	      av=luato v in
-	    (match ak with
-	       | `String s-> str := (!str^string_of_val ak^"=")		    
-	       | _ -> ()
-	    );
-	    str:= ( !str^
-	    (match av with
-	       | `String s -> ("\""^s^"\"")
-	       | v -> string_of_val v
-	    )
+    match self#to_lua with
+      | OLuaVal.Table tbl ->
+	  let str=ref "" in
+	    str := (!str^id^"={");
+	    Luahash.iter (
+	      fun k v->
+		let ak=luato k and
+		    av=luato v in
+		  (match ak with
+		     | `String s-> str := (!str^string_of_val ak^"=")		    
+		     | _ -> ()
 		  );
-	    str:= (!str^";");
-      ) tbl;
-      str := (!str^"}");
-      !str
+		  str:= ( !str^
+			    (match av with
+			       | `String s -> ("\""^s^"\"")
+			       | v -> string_of_val v
+			    )
+			);
+		  str:= (!str^";");
+	    ) tbl;
+	    str := (!str^"}");
+	    !str
+      | _ -> ""
 
 
   method to_lua_interp (interp:lua_interp)=
-    interp#set_global_val id (OLuaVal.Table (self#to_lua))
+    interp#set_global_val id (self#to_lua)
 
   method to_lua=
     let tbl=Luahash.create (fun a b->a=b) 2 in
-      Hashtbl.iter (
+      self#foreach_val (
 	fun k v ->
 	  Luahash.replace tbl ~key:(luafrom k) ~data:(luafrom v)
-      ) vals;
-      tbl
+      );
+      OLuaVal.Table tbl
+
 
 
 end;;
@@ -363,4 +472,27 @@ class val_ext_handler=
 object
   inherit [val_ext] val_handler xml_of_val_ext val_ext_of_xml lua_of_val_ext val_ext_of_lua 
 end;;
+
+let val_ext_handler_of_format f=
+  let nh=new val_ext_handler in
+    nh#from_format f;
+    nh;;
+
+let val_ext_handler_of_list l=
+  let nh=new val_ext_handler in
+    nh#from_list l;
+    nh;;
+
+let val_ext_handler_of_xml_string l=
+  let nh=new val_ext_handler in
+    nh#from_xml_string l;
+    nh;;
+
+
+let format_of_val_ext_handler nh ft=
+  nh#to_format ft;;
+
+
+let list_of_val_ext_handler nh=
+  nh#to_list();;
 

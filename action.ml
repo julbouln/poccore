@@ -27,8 +27,6 @@ change_event : pixel pos = 0,0
 
 *)
 
-(* for simplification "go" mean "game_object" *)
-
 open Anim;;
 open Rect;;
 

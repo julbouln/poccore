@@ -19,6 +19,8 @@
 
 open Str;;
 
+open Oval;;
+
 open Generic;;
 open Rect;;
 open Video;;
@@ -81,9 +83,7 @@ object
     print_string (" * layer: "^string_of_int layer);print_newline();
 end;;
 
-
-
-class canvas_NEW =
+class canvas =
 object(self)
   val mutable objs_list=RefList.empty()
   val mutable tile_list=RefList.empty()
@@ -193,6 +193,7 @@ object(self)
 
 end;;
 
+
 exception Bad_v_color of int;;
 
 class v_color=
@@ -227,7 +228,6 @@ object(self)
   method vcolor_foreach f=
     Hashtbl.iter f colors
       
-
 end;;
 
 (* NEW : use drawing_vault *)
@@ -252,15 +252,38 @@ object
     );
 end;;
 
+
+(*
+ <graphic_object type="graphic_from_file">
+  <position x="0" y="0"/>
+  <args>
+   <val_string name="filename" value="filename.png"/>
+   <val_size name="size" w="wsize" h="hsize"/>
+  </args>
+ </graphic_object>
+
+is equal to
+
+ <graphic_object type="graphic_from_drawing_fun">
+  <position x="0" y="0"/>
+  <args>
+   <val_string value="with_alpha"/>
+   <val_color r="255" g="255" b="255"/>
+   <val_string value="load_multiple"/>
+   <val_string value="filename.png"/>
+   <val_size w="wsize" h="hsize"/>   
+  </args>
+ </graphic_object>  
+*)
+
 (** Graphic object class parent *)
-class graphic_cached_object nid=
+class graphic_object nid=
   object (self)
     inherit canvas_object
 
     initializer
       self#set_id nid
 	
-    (* FIXME: must be get_drawing and return drawing_object *)
     val mutable cur_drawing=0
 
     method get_drawing n=
@@ -281,9 +304,10 @@ class graphic_cached_object nid=
 
   end;;
 
+
 class graphic_from_drawing n (f)=
 object
-  inherit graphic_cached_object n
+  inherit graphic_object n
 
   initializer
     drawing_vault#add_cache n f;
@@ -292,9 +316,23 @@ object
     
 end;;
 
+
+class graphic_from_drawing_fun_fmt n args=
+object
+  inherit graphic_object n
+
+  initializer
+    drawing_vault#add_cache_from_drawing_fun_fmt n args;
+
+    let dra=drawing_vault#get_cache_simple n in
+      rect#set_size (dra#get_w) (dra#get_h);
+
+end;;
+
+
 class graphic_from_drawing_fun n args=
 object
-  inherit graphic_cached_object n
+  inherit graphic_object n
 
   initializer
     drawing_vault#add_cache_from_drawing_fun n args;
@@ -305,62 +343,54 @@ object
 end;;
 
 
-
-class graphic_object_from_file file w h=
+class graphic_from_file file w h=
 object(self)
-(*
-OCAML :
- [
-  [("fun",`String "with_alpha");
-   ("color", `Color (255,255,255))];
-  [("fun",`String "load_multiple");
-   ("file",`String file);
-   ("size",`Size (w,h)]
- ]
-XML :
- <val_list>
-  <val_string name="fun" value="with_alpha"/>
-  <val_color name="color" r="255" g="255" b="255"/>
- </val_list> 
- <val_list>
-  <val_string name="fun" value="load_multiple"/>
-  <val_string name="file" value="file"/>
-  <val_size name="size" w="0" h="0"/>
- </val_list>
+(*  inherit graphic_from_drawing_fun file 
+    [
+      `String "with_alpha";
+      `Color(255,255,255);
+      `String "load_multiple";
+      `String file;
+      `Size(w,h);
+    ]
 *)
-  inherit graphic_from_drawing_fun file 
-	[
-	  DrawValString "with_alpha";
-	  DrawValColor(255,255,255);
-	  DrawValString "load_multiple";
-	  DrawValString file;
-	  DrawValSize(w,h);
-	]
+
+  inherit graphic_from_drawing_fun_fmt file 
+    (ValList [
+      `String "with_alpha";
+      `Color(255,255,255);
+      `String "load_multiple";
+      `String file;
+      `Size(w,h);
+    ])
 end;;
 
-
-
-
-class graphic_object_resized_from_file file i w h iw ih=
+class graphic_resized_from_file file i w h iw ih=
 object
-  val fgr=new graphic_object_from_file file iw ih
+  val fgr=new graphic_from_file file iw ih
   inherit graphic_from_drawing (file^"_"^string_of_int i^"_resized") 
     (fun()->
        let dr=(drawing_vault#get_cache_entry file i)#copy() in
-	 dr#exec_op_copy "resize" 
+	 dr#exec_op_copy_from_list "resize" 
 	   [
-	     DrawValSizeFloat(((float_of_int w)/.(float_of_int iw)),((float_of_int h)/.(float_of_int ih)))
+	     `Size(
+	       int_of_float ((float_of_int w)/.(float_of_int iw) *.100.),
+	       int_of_float ((float_of_int h)/.(float_of_int ih) *.100.)
+	     )
 	   ]	 
     )
 end;;
 
-class graphic_object_resized pdraw i fw fh=
+class graphic_resized pdraw i fw fh=
 object
   inherit graphic_from_drawing (pdraw^"_"^string_of_int i^"_resized") 
     (fun()->
        let dr=(drawing_vault#get_cache_entry pdraw i)#copy() in
-	 dr#exec_op_copy "resize" [
-	   DrawValSizeFloat(fw,fh)
+	 dr#exec_op_copy_from_list "resize" [
+	  `Size(
+	    int_of_float (fw*.100.),
+	    int_of_float (fh*.100.)
+	  )
 	 ]	 
     )
 end;;
@@ -404,11 +434,11 @@ object
 	     (
 	       fun tx->
 		 let  dr=drawing_vault#new_drawing() in
-		   dr#exec_op_create "create_text" 
+		   dr#exec_op_create_from_list "create_text" 
 		     [
-		       DrawValString fnt_n;
-		       DrawValString tx;
-		       DrawValColor color
+		       `String fnt_n;
+		       `String tx;
+		       `Color color
 		     ];
 		   dr
 	     ) (Array.of_list txt)
@@ -416,12 +446,10 @@ object
 end;;
 
 
-
-(* FIXME : go in poccore *)
 (** graphic text object *)
 class graphic_text nid fnt_t (col:color)=
 object(self)
-  inherit graphic_cached_object nid
+  inherit graphic_object nid
 (*  val mutable graphic=new graphic_cached_object nid *)
   val mutable graphic=new graphic_object_text fnt_t (["text_empty"]) col;
   val mutable fnt=(font_vault#get_cache_simple (get_font_id fnt_t))
@@ -533,7 +561,7 @@ object(self)
 
     if t="" then (
       text<-[""];
-      graphic<-new graphic_cached_object "text_empty";
+      graphic<-new graphic_object "text_empty";
     )
     else (
       text<-self#cut_string2 t;
@@ -572,14 +600,12 @@ object(self)
 end;;
 
 
-
-
 (** special graphic pattern resize with 9 tiles *)
 class graphic_pattern pid pdrawid=
 object(self)
-  inherit graphic_cached_object pid as super
+  inherit graphic_object pid as super
 
-  val mutable gr=new graphic_cached_object pid
+  val mutable gr=new graphic_object pid
 
   val mutable crect=new rectangle 0 0 0 0
   method get_crect=crect
@@ -593,22 +619,12 @@ object(self)
 
       gr<-new graphic_from_drawing_fun pid
 	[
-	  DrawValString "with_alpha";
-	  DrawValColor(255,255,255);
-	  DrawValString "create_multiple";
-	  DrawValString pdrawid;
-	  DrawValSize(crect#get_w,crect#get_h);
+	  `String "with_alpha";
+	  `Color(255,255,255);
+	  `String "create_multiple";
+	  `String pdrawid;
+	  `Size(crect#get_w,crect#get_h);
 	];
-(*
-    gr<-new graphic_from_func pid (
-      fun()->
-	let ta=tile_split ptile crect#get_w crect#get_h in
-	  for i=0 to (Array.length (ta))-1 do
-	    tile_set_alpha ta.(i) 255 255 255; 
-	  done;
-	  ta
-    );
-*)
 
   initializer
     self#init()
@@ -654,14 +670,13 @@ object
   initializer
     drawing_vault#add_cache_from_drawing_fun (pfile^"_simple") 
       [
-	DrawValString "load_simple";
-	DrawValString pfile
+	`String "load_simple";
+	`String pfile
       ];
 
   inherit graphic_pattern pfile (pfile^"_simple")
 
 end;;
-
 
 
 (** XML part *)

@@ -42,7 +42,7 @@ object
 
 
 (** Animated graphic object *)
-class graphic_with_anim (graph:graphic_cached_object) frames refresh= 
+class graphic_with_anim (graph:graphic_object) frames refresh= 
 object
   val mutable anim=new anim_object frames refresh
 
@@ -55,10 +55,10 @@ object
 end;;
 
 (** Animated graphic object *)
-class graphic_object_anim w h file frames refresh= 
+class graphic_anim_from_file w h file frames refresh= 
 object
   val mutable anim=new anim_object frames refresh
-  val mutable graph=new graphic_object_from_file file w h
+  val mutable graph=new graphic_from_file file w h
 
   method get_rect=graph#get_rect
 
@@ -71,10 +71,10 @@ object
 end;;
 
 
-class graphic_generic_object_anim id frames refresh= 
+class graphic_anim id frames refresh= 
 object
   val mutable anim=new anim_object frames refresh
-  val mutable graph=new graphic_cached_object id
+  val mutable graph=new graphic_object id
 
   method get_anim=anim
 
