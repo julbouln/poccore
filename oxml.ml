@@ -25,8 +25,23 @@ open Low;;
 
 (** Xml parse in an object way *)
 
+exception Bad_xml_node;;
 
-class xml_node n=
+let xml_reduce n (f:Xml.xml->bool)=
+  let childd=DynArray.create() in
+  List.iter (
+    fun x->(
+      match x with
+	| Element v -> if (f x) then DynArray.add childd x
+	| _ ->()
+      )
+  ) (Xml.children n);
+    match n with
+      | Element (t,attrs,childs)->Element (t,attrs,DynArray.to_list childd)
+      | _ -> raise Bad_xml_node ;;
+    
+
+class xml_node (n:Xml.xml)=
 object(self)
   val mutable node=n
   val mutable tag="none"
