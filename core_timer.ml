@@ -97,7 +97,7 @@ object(self)
 (*    print_string "GAME_TIME: add timer "; *)
     let ft=self#from_time t in
     let nt=self#to_time (ft+cfrm) in
-      print_int cfrm;
+(*      print_int cfrm; *)
       self#add_timer nt f;
-	print_newline();
+(*	print_newline(); *)
 end;;
