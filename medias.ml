@@ -191,12 +191,26 @@ object(self)
 
 end;;
 
+exception Bad_v_color of int;;
+
 class v_color=
-object
+object(self)
   val mutable colors=Hashtbl.create 2
 
   method add_vcolor (vc:color) (c:color array)=
     Hashtbl.add colors vc c
+
+  method to_array n=
+    let c1=DynArray.create() and
+	c2=DynArray.create() in
+    self#vcolor_foreach 
+      (fun k v->
+	 DynArray.add c1 k;
+	 (try
+	    DynArray.add c2 v.(n);
+	  with Invalid_argument a->raise (Bad_v_color n))
+      );
+      (DynArray.to_array c1,DynArray.to_array c2)
 
 (*  method color_change t n=
     let rt=ref t in
@@ -308,10 +322,10 @@ class graphic_object_from_file file w h=
 object(self)
   inherit graphic_from_drawing_fun file "with_alpha"   
 	[
+	  DrawValColor(255,255,255);
 	  DrawValString "load_multiple";
 	  DrawValString file;
 	  DrawValSize(w,h);
-	  DrawValColor(255,255,255)
 	]
 end;;
 
@@ -338,9 +352,12 @@ object
 end;;
 
 
+let digest_of_string_list txt=
+  (Digest.to_hex(Digest.string (String.concat "" txt)));;
+
 class graphic_object_text fnt_t (txt:string list) color=
 object
-  inherit graphic_from_drawing ("text:"^(Digest.to_hex(Digest.string (String.concat "" txt))))
+  inherit graphic_from_drawing ((random_string "text:" 10)^digest_of_string_list txt)
     (fun()->
 
 	 let fnt_n=get_font_id fnt_t in
@@ -380,10 +397,10 @@ object(self)
 
       gr<-new graphic_from_drawing_fun pid "with_alpha" 
 	[
+	  DrawValColor(255,255,255);
 	  DrawValString "create_multiple";
 	  DrawValString pdrawid;
 	  DrawValSize(crect#get_w,crect#get_h);
-	  DrawValColor(255,255,255)
 	];
 (*
     gr<-new graphic_from_func pid (

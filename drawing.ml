@@ -41,14 +41,16 @@ exception Drawing_not_found of string;;
 type color=(int*int*int);;
 
 type ('t) draw_op_val=
+  | DrawValInt of int
+  | DrawValString of string
   | DrawValPosition of (int*int)
   | DrawValSize of (int*int)
   | DrawValSizeFloat of (float*float)
   | DrawValRectangle of rectangle
   | DrawValColor of color
-  | DrawValString of string
   | DrawValT of 't
   | DrawValTArray of 't array
+  | DrawValList of ('t) draw_op_val list
   | DrawValNil;;
 
 let draw_op_val_to_string v=
@@ -58,13 +60,22 @@ let draw_op_val_to_string v=
     | DrawValSizeFloat (x,y)->("DrawValSizeFloat ("^string_of_float x^","^string_of_float y^")")
     | DrawValColor (r,g,b)->("DrawValColor ("^string_of_int r^","^string_of_int g^","^string_of_int b^")")
     | DrawValString s->("DrawValString "^s);
+    | DrawValInt s->("DrawValInt "^string_of_int s);
+    | DrawValList l->("DrawValList");
     | DrawValT t->("DrawValT");
     | DrawValTArray t->("DrawValTArray");
     | DrawValNil ->("DrawValNil")
+    | DrawValRectangle r->("DrawValRectangle")
     | _ -> "DrawOther";;
 let get_draw_op_val (ovl:('t) draw_op_val list) (n:int)=
   List.nth ovl n;;
 
+let get_draw_op_string ovl n=match (get_draw_op_val ovl n) with
+  | DrawValString x->x
+  | _ -> raise Bad_draw_op_val;;
+let get_draw_op_int ovl n=match (get_draw_op_val ovl n) with
+  | DrawValInt x->x
+  | _ -> raise Bad_draw_op_val;;
 let get_draw_op_position ovl n=match (get_draw_op_val ovl n) with
   | DrawValPosition x->x
   | _ -> raise Bad_draw_op_val;;
@@ -80,14 +91,14 @@ let get_draw_op_rect ovl n=match (get_draw_op_val ovl n) with
 let get_draw_op_color ovl n=match (get_draw_op_val ovl n) with
   | DrawValColor x->x
   | _ -> raise Bad_draw_op_val;;
-let get_draw_op_string ovl n=match (get_draw_op_val ovl n) with
-  | DrawValString x->x
-  | _ -> raise Bad_draw_op_val;;
 let get_draw_op_t ovl n=match (get_draw_op_val ovl n) with
   | DrawValT x->x
   | _ -> raise Bad_draw_op_val;;
 let get_draw_op_t_array ovl n=match (get_draw_op_val ovl n) with
   | DrawValTArray x->x
+  | _ -> raise Bad_draw_op_val;;
+let get_draw_op_list ovl n=match (get_draw_op_val ovl n) with
+  | DrawValList x->x
   | _ -> raise Bad_draw_op_val;;
 
 type draw_op_t=
@@ -279,15 +290,45 @@ object(self)
     self#add_drawing_fun "with_alpha"
       (
 	fun vl->
-	  let par=get_draw_op_string vl 0 and
-	      col=List.nth vl (List.length vl -1) in
-	  let drl=self#exec_drawing_fun par (List.tl vl) in
+	  let col=List.nth vl (0) and
+	      par=get_draw_op_string vl 1 in	      
+	  let drl=self#exec_drawing_fun par (snd (ExtList.List.split_nth 2 vl)) in
 	    Array.iter (
 	      fun dr->
 		dr#exec_op_write "set_alpha" [col]
 	    ) drl;
 	    drl
-      )
+      );
+
+
+
+    self#add_drawing_fun "with_mirror3"
+      (
+	fun vl->
+	  let par=get_draw_op_string vl 0 in
+	  let drl=self#exec_drawing_fun par (List.tl vl) in
+	  let column=(Array.length drl)/3 in
+	  let ndrl=Array.make (column*8) drl.(0) in
+	    Array.iteri (
+	      fun i dr->
+		ndrl.(i)<-dr;
+	    ) drl;
+	    let copy_col v m mirror=
+	      let k=ref 0 in
+		for i=v*column to (v+1)*column - 1 do
+		  ndrl.(column*m + !k)<-(if mirror then ((drl.(i))#exec_op_copy "mirror" []).(0) else drl.(i));
+		  k:= !k+1;
+		done
+	in
+	      copy_col 2 4 false;
+	      copy_col 1 6 true;
+	      copy_col 1 2 false;
+	      
+	      ndrl
+
+  );
+
+
 
 end;;
 
