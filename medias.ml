@@ -240,15 +240,15 @@ class graphic_generic_object id=
 	
 
 
-   method get_rpos=(try
-		      vfs_tiles#get_rpos tiles 
-		    with _ -> raise (Vfs_not_found tiles)) 
+    method get_rpos=
+      vfs_tiles#get_rpos tiles 
+     
 
 
     method get_tile n=
-      (try vfs_tiles#get_one tiles n with _ -> raise (Vfs_not_found tiles)) 
+      vfs_tiles#get_one tiles n
     method get_tile_shaded n=
-      (try vfs_tiles#get_one (tiles^":shaded") n with _ -> raise (Vfs_not_found tiles)) 
+      vfs_tiles#get_one (tiles^":shaded") n
     method get_id=id
 
 
