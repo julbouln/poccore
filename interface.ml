@@ -1352,8 +1352,6 @@ object(self)
 
   method private init()=
     self#reset_size();
-    print_int rect#get_w;print_newline();
-    print_int rect#get_h;print_newline();
     fond#resize (rect#get_w) (rect#get_h); 
 (*    tfond#resize (tobj#get_rect#get_w+16) (tobj#get_rect#get_h);	*)
     let (pw,ph)=self#size_from_parent() in
