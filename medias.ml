@@ -74,7 +74,6 @@ object
   method virtual move : int -> int -> unit
   method virtual put : unit -> unit
 
-
   method print_info()=
     print_string (" * position: "^string_of_int rect#get_x^" - "^string_of_int rect#get_y);print_newline();
     print_string (" * size: "^string_of_int rect#get_w^" - "^string_of_int rect#get_h);print_newline();

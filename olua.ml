@@ -84,6 +84,7 @@ object(self)
 	| _ ->()
 
   method to_table=vals
+  method from_table v=vals<-v;self#update_interp()
 
   method set_obj_val (nm:string) (o:lua_obj)=
     self#set_val (OLuaVal.String nm) (OLuaVal.Table o#to_table)

@@ -10,7 +10,7 @@ open Oxml;;
 open Anim;;
 open Rect;;
 
-
+open Timer;;
 
 (** Action and state manager *)
 
@@ -124,6 +124,34 @@ object(self)
 
     al#lua_init();
 
+
+end;;
+
+class action_timed max_time=
+object
+  inherit action_lua as al
+  val mutable time=new timer
+  initializer
+    time#set_limit max_time
+
+  method on_start ve=
+    al#on_start ve;
+(*    let t={h=0;m=1;s=0;f=0} in *)
+(*    let t=time_of_val (ve#get_val (`String "interval")) in *)
+    let t=time_of_val (ve#get_val (`Int 0)) in
+      time#add_task t (fun()->al#on_loop());
+      time#start();
+
+  method on_loop()=
+    time#step()
+
+  method on_stop()=
+    al#on_stop();
+    time#reset();
+    time#stop();
+
+  method lua_init()=
+    al#lua_init();
 end;;
 
 
@@ -140,10 +168,13 @@ object(self)
 
   method start (ve:val_ext_handler)=
     self#foreach_object (fun k o-> 
-			   let nlv=ve#get_val (`String k) in
-			   let nl=list_of_val nlv in
-			   let nve=val_ext_handler_of_list nl in
-			     o#on_start nve
+			   if ve#is_val (`String k) then (
+			     let nlv=ve#get_val (`String k) in
+			     let nl=list_of_val nlv in
+			     let nve=val_ext_handler_of_list nl in
+			       o#on_start nve
+			   ) else
+			     o#on_start (new val_ext_handler)
 			);
 
   method loop()=
@@ -179,6 +210,19 @@ object(self)
     match current with
       | Some n->let o=self#get_object n in o#loop()
       | None -> ()
+
+
+  method lua_init()=
+    lua#set_val (OLuaVal.String "set_state") 
+      (OLuaVal.efunc (OLuaVal.string **-> OLuaVal.table **->> OLuaVal.unit) 
+	 (fun n v->
+	    let lo=new lua_obj in
+	      lo#from_table v;
+	    self#set_state (Some n) (val_ext_handler_of_format (ValLua lo))
+	 )
+      );
+
+    lo#lua_init();    
     
 end;;
 
@@ -206,6 +250,36 @@ object(self)
       (ofun)
 
 end;;
+
+
+class xml_action_timed_parser=
+object(self)
+  inherit xml_action_object_parser
+
+  method get_val=
+    let ofun()=
+    let (nm,vh,l)=mt in      
+      let o=
+	let args=args_parser#get_val in
+	  args#merge vh;
+	  new action_timed (time_of_val (args#get_val (`String "limit")))
+      in
+	self#init_object (o:>action_lua);
+	(o:>action_lua)	  
+    in      
+      (id,ofun)
+
+  method get_val_from_meta (m:string*val_ext_handler*string)=
+    let ofun()=
+      let (nm,vh,l)=m in
+      let o=
+	new action_timed (time_of_val (vh#get_val (`String "limit"))) in
+	o#set_lua_script (l);
+	o in	
+      (ofun)
+
+end;;
+
 
 class xml_action_anim_parser=
 object(self)
@@ -292,11 +366,13 @@ object(self)
 
 end;;
 
+(** Global parser def *)
 
 let xml_factory_actions_parser()=
   let p=new xml_actions_parser in
     p#parser_add "action_lua" (fun()->new xml_action_object_parser);
     p#parser_add "action_anim" (fun()->new xml_action_anim_parser);
+    p#parser_add "action_timed" (fun()->new xml_action_timed_parser);
     p;;
 
 (** global default actions parser, can be overided *)

@@ -1,11 +1,13 @@
 open Generic;;
 open Xml;;
+
+open Timer;;
 open Oxml;;
 open Olua;;
 
 (** Val system with conversion between OCaml, XML and Lua *)
 
-exception Bad_val_type;;
+exception Bad_val_type of string;;
 exception Val_not_found of string;;
 
 (** Generic val type *)
@@ -64,22 +66,22 @@ let int_of_val=function
   | `Int v->v
   | `String v->int_of_string v
   | `Float v->int_of_float v
-  | _->raise Bad_val_type;;
+  | _->raise (Bad_val_type "int");;
 
 let string_of_val=function
   | `String v->v
   | `Int v->string_of_int v
   | `Float v->string_of_float v
-  | _->raise Bad_val_type;;
+  | _->raise (Bad_val_type "string");;
 
 let float_of_val=function
   | `Int v->v
   | `Float v->float_of_int v
-  | _->raise Bad_val_type;;
+  | _->raise (Bad_val_type "float");;
 
 let bool_of_val=function
   | `Bool v->v
-  | _->raise Bad_val_type;;
+  | _->raise (Bad_val_type "bool");;
 
 (** Extended val type *)
 
@@ -89,6 +91,7 @@ type val_ext=
     | `Position of (int*int)
     | `Size of (int*int)
     | `Color of (int*int*int)
+    | `Time of time
     | `List of val_ext list 
 (*    | `Function of val_ext list-> val_ext list *)
     ]
@@ -96,26 +99,31 @@ type val_ext=
 
 let size_of_val=function
   | `Size v->v
-  | _->raise Bad_val_type;;
+  | _->raise (Bad_val_type "size");;
 
 let position_of_val=function
   | `Position v->v
-  | _->raise Bad_val_type;;
+  | _->raise (Bad_val_type "position");;
 
 
 let color_of_val=function
   | `Color v->v
-  | _->raise Bad_val_type;;
+  | _->raise (Bad_val_type "color");;
+
+let time_of_val=function
+  | `Time v->v
+  | _->raise (Bad_val_type "time");;
 
 let list_of_val=function
   | `List v->v
-  | _->raise Bad_val_type;;
+  | _->raise (Bad_val_type "list");;
 
 let rec xml_of_val_ext=function
   | #val_generic as v->xml_of_val v
   | `Position (x,y)->Xml.Element("val_position",[("x",string_of_int x);("y",string_of_int y)],[])
   | `Size (w,h)->Xml.Element("val_size",[("w",string_of_int w);("h",string_of_int h)],[])
   | `Color (r,g,b)->Xml.Element("val_color",[("r",string_of_int r);("g",string_of_int g);("b",string_of_int b)],[])
+  | `Time t->Xml.Element("val_time",[("h",string_of_int t.h);("m",string_of_int t.m);("s",string_of_int t.s);("f",string_of_int t.f)],[])
   | `List vl->Xml.Element("val_list",[],List.map (fun v->xml_of_val_ext v) vl)
 ;; 
 
@@ -136,6 +144,13 @@ let rec val_ext_of_xml=function
 	(int_of_string (Xml.attrib x "g")),
 	(int_of_string (Xml.attrib x "b"))
       )
+  | Element("val_time",_,_) as x->
+      `Time {
+	h=(int_of_string (Xml.attrib x "h"));
+	m=(int_of_string (Xml.attrib x "m"));
+	s=(int_of_string (Xml.attrib x "s"));
+	f=(int_of_string (Xml.attrib x "f"));
+      }
   | Element("val_list",_,childs) as x->`List (List.map (fun c->val_ext_of_xml c) childs)
   | Element(_,_,_) as x->val_of_xml x
   | _ -> `Nil
@@ -202,6 +217,13 @@ let rec lua_of_val_ext=function
 	("g",OLuaVal.Number (float g));
 	("b",OLuaVal.Number (float b));
       ])
+  | `Time t->
+      OLuaVal.Table (lua_table_of_list [
+	("h",OLuaVal.Number (float t.h));
+	("m",OLuaVal.Number (float t.m));
+	("s",OLuaVal.Number (float t.s));
+	("f",OLuaVal.Number (float t.f));
+      ])
   | `List l->OLuaVal.Table (lua_list_of_list lua_of_val_ext l);
 ;; 
 
@@ -220,6 +242,9 @@ let rec val_ext_of_lua=function
 	
 	if is_v "r" && is_v "g" && is_v "b" then
 	  r:=`Color (get_v "r",get_v "g",get_v "b");
+
+	if is_v "h" && is_v "m" && is_v "s" && is_v "f" then
+	  r:=`Time {h=get_v "h";m=get_v "m";s=get_v "s";f=get_v "f"};
 	
 	if !r=(`Nil) then (
 	  let l=list_of_lua_list val_ext_of_lua tbl in	  
@@ -587,10 +612,8 @@ object(self)
 	  let p=gen_parser() in p#parse v;
 	    if self#parser_is p#get_type then
 	      let sp=(self#parser_get p#get_type)() in (
-		  print_string ("type "^p#get_type);print_newline();
 		  let (nm,h,l)=mt in
 		  if Hashtbl.mem h p#get_id then (
-		    print_string ("set meta "^p#get_id);print_newline();
 		    sp#set_metatype (self#get_mt p#get_id);
 		  );
 		  sp#parse v;
@@ -603,7 +626,6 @@ object(self)
     let (hnm,h,hl)=mt in
     Hashtbl.iter (
       fun k v->
-	print_string ("meta "^k);print_newline();
 
 	let r=ref false in
 	DynArray.iter (
@@ -618,9 +640,7 @@ object(self)
 
 	if !r=false then (
 	  let (nm,_,_)=v in
-	  print_string ("add "^nm^" from meta");print_newline();
 	  if self#parser_is nm then (
-	    print_string (nm^" exists!");print_newline();
 	    let sp=(self#parser_get nm)() in
 	    let no=(sp#get_val_from_meta v)() in
 	      no#lua_init();
@@ -634,7 +654,6 @@ object(self)
   method init_from_meta_h (add_obj:string->'t->unit) h=
     Hashtbl.iter (
       fun k v->
-	print_string ("meta "^k);print_newline();
 
 	let r=ref false in
 	DynArray.iter (
@@ -649,9 +668,7 @@ object(self)
 
 	if !r=false then (
 	  let (nm,_,_)=v in
-	  print_string ("add "^nm^" from meta");print_newline();
 	  if self#parser_is nm then (
-	    print_string (nm^" exists!");print_newline();
 	    let sp=(self#parser_get nm)() in
 	    let no=(sp#get_val_from_meta v)() in
 	      no#lua_init();

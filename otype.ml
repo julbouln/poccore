@@ -6,6 +6,7 @@ class ['a] obj_types=
     val mutable objects=Hashtbl.create 2
 
     method add_object_type nm (obj:unit->'a)=
+      print_string ("OBJ_TYPES : add object type "^nm);print_newline();
       if(Hashtbl.mem objects nm)==false then
 	Hashtbl.add objects nm (obj());	  
       Hashtbl.add object_types nm obj
