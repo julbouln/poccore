@@ -30,7 +30,7 @@ object
   method get_function nm=Hashtbl.find funcs nm
     
   method lua_block()=
-    (if lmod<>"" then (lmod^"={};\n") else "")^(
+(*    (if lmod<>"" then (lmod^"={};\n") else "")^*)(
       let fcs=ref "" in
       Hashtbl.iter (fun k f-> fcs:= !fcs^f^"\n") funcs;
 	!fcs
@@ -72,6 +72,9 @@ method register_vals_module m=
 		
 method parse e= I.dostring interp e
 method init_object (o:lua_object)=
+  self#parse (o#lua_block())
+
+method parse_object (o:lua_object)=
   self#parse (o#lua_block())
 
 end;;

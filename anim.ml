@@ -9,6 +9,7 @@ object
     val mutable current_refresh=0
     val mutable frames=frames
     val mutable refresh=refresh
+
     method get_num_frames=Array.length frames
     method set_frames f=frames<-f
     method set_refresh r=refresh<-r

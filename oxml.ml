@@ -77,7 +77,7 @@ end;;
 
 class virtual xml_parser=
 object(self)
-  method virtual tag:string
+  method tag=""
   method virtual parse_attr: string->string->unit
   method virtual parse_child: string->xml_node->unit
 
