@@ -50,6 +50,7 @@ class action_object=
     val mutable on_stop_event=function()->true
 
     method set_action a=action<-a 
+
     method set_on_start a=on_start<-a 
     method set_on_stop a=on_stop<-a 
 
