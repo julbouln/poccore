@@ -130,7 +130,7 @@ let tiles_load_with_mirror file w h=
 class font_object fontfile s=
   object (self)
     val mutable font=fontfile
-    val mutable size=int_of_float(video#get_fact_w()*.(float_of_int s))
+    val mutable size=(*int_of_float(video#get_fact_w()*.(float_of_int s))*)s
     initializer 
       if fontfile<>"none" then
 	vfs_fonts#create_simple (fontfile ^ ":" ^ (string_of_int(size))^"pt") (font_load fontfile size)
