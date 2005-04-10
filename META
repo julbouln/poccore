@@ -1,5 +1,5 @@
 description = "Pocengine core"
-requires = "poclow,pocvalue"
+requires = "sdl,sdl.sdlimage,sdl.sdlttf,sdl.sdlgfx,pocvalue"
 version = "0.2.0"
 archive(byte) = "poccore.cma"
 archive(native) = "poccore.cmxa"

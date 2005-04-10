@@ -18,7 +18,6 @@ object(self)
   inherit generic_object
   inherit lua_object as lo
 
-
   method virtual on_start : val_ext_handler -> unit
   method virtual on_loop : unit -> unit
   method virtual on_stop : unit -> unit

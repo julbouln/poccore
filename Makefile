@@ -1,8 +1,8 @@
 OCAMLMAKEFILE = OCamlMakefile
 
-BINDING=poclow_binding.ml
+BINDING=ocamlsdl_binding.ml
 
-PACKS=pocvalue poclow
+PACKS=pocvalue sdl sdl.sdlimage sdl.sdlttf sdl.sdlgfx
 
 LIBINSTALL_FILES=*.cmi *.cmo *.cmx *.a poccore.cma poccore.cmxa
 

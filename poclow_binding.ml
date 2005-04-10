@@ -295,6 +295,11 @@ object(self)
     
 end;;
 
+class default_drawing_object=
+object
+  inherit poclow_drawing_object
+end;;
+
 (* the drawing vault *)
 let drawing_vault=new poclow_drawing_vault 10000 (1./.25.);;
 
