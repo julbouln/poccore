@@ -66,6 +66,7 @@ object(self)
     prect#set_position x y;
     self#graphics_update();
 
+
 (** states *)
   val mutable states=new state_actions
   method get_states=states

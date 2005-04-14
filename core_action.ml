@@ -164,6 +164,54 @@ object(self)
 
 end;;
 
+
+(** action with anim capabilities and lua func definition *)
+class action_movement=
+object(self)
+  inherit action_lua as al
+
+  val mutable dir=0
+  val mutable d=0
+  val mutable s=0
+
+  val mutable cx=0
+  val mutable cy=0
+
+  method on_start ve=
+    dir<-int_of_val (ve#get_val (`Int 0));
+(*    d<-int_of_val (ve#get_val (`Int 1)); *)
+    s<-int_of_val (ve#get_val (`Int 1));
+    let get_x=self#get_lua#get_parent#get_parent#get_parent#get_fun (OLuaVal.String "get_prect_x") and
+    get_y=self#get_lua#get_parent#get_parent#get_parent#get_fun (OLuaVal.String "get_prect_y") in
+      cx<-int_of_val(val_of_lua(List.nth (get_x [OLuaVal.Nil]) 0));
+      cy<-int_of_val(val_of_lua(List.nth (get_y [OLuaVal.Nil]) 0));
+      al#on_start ve;
+
+
+  method on_loop()=
+
+    (match dir with 
+      | 0 ->cy<-cy-s;
+      | 1 ->cx<-cx+s;cy<-cy-s;
+      | 2 ->cx<-cx+s;
+      | 3 ->cx<-cx+s;cy<-cy+s;
+      | 4 ->cy<-cy+s;
+      | 5 ->cx<-cx-s;cy<-cy+s;
+      | 6 ->cx<-cx-s;
+      | 7 ->cx<-cx-s;cy<-cy-s;
+      | _ ->());
+    let move=self#get_lua#get_parent#get_parent#get_parent#get_fun (OLuaVal.String "jump") in
+      move[OLuaVal.Number (float_of_int cx);OLuaVal.Number (float_of_int cy)];
+	al#on_loop();
+
+
+  method lua_init()=
+    al#lua_init();
+
+
+end;;
+
+
 (** action repeat over specified time *)
 class action_timed max_time=
 object
@@ -355,5 +403,4 @@ object(self)
     lo#lua_init();    
     
 end;;
-
 

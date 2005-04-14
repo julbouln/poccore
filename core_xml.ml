@@ -439,8 +439,8 @@ Global.set xml_default_graphics_parser xml_factory_graphics_parser;;
 class xml_action_object_parser=
 object(self)
   inherit [action_lua] xml_object_parser (fun()->new action_lua)
-
 end;;
+
 
 
 class xml_action_timed_parser=
@@ -509,6 +509,12 @@ object(self)
 end;;
 
 
+class xml_action_movement_parser=
+object(self)
+  inherit [action_lua] xml_object_parser (fun()->new action_movement)
+end;;
+
+
 class xml_actions_parser=
 object(self)
   inherit [xml_action_object_parser,action_lua] xml_container_parser "action_object" (fun()->new xml_action_object_parser)
@@ -541,6 +547,7 @@ let xml_factory_actions_parser()=
     p#parser_add "action_anim" (fun()->new xml_action_anim_parser);
     p#parser_add "action_timed" (fun()->new xml_action_timed_parser);
     p#parser_add "action_intime" (fun()->new xml_action_intime_parser);
+    p#parser_add "action_movement" (fun()->new xml_action_movement_parser);
     p;;
 
 Global.set xml_default_actions_parser xml_factory_actions_parser;;
