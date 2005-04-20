@@ -177,19 +177,27 @@ object(self)
   val mutable cx=0
   val mutable cy=0
 
+
+  val mutable get_x=fun l->[OLuaVal.Nil]
+  val mutable get_y=fun l->[OLuaVal.Nil]
+  val mutable jump=fun l->[OLuaVal.Nil]
+
   method on_start ve=
     dir<-direction_of_val (ve#get_val (`Int 0));
 (*    d<-int_of_val (ve#get_val (`Int 1)); *)
     s<-int_of_val (ve#get_val (`Int 1));
-    let get_x=self#get_lua#get_parent#get_parent#get_parent#get_fun (OLuaVal.String "get_prect_x") and
-    get_y=self#get_lua#get_parent#get_parent#get_parent#get_fun (OLuaVal.String "get_prect_y") in
-      cx<-int_of_val(val_of_lua(List.nth (get_x [OLuaVal.Nil]) 0));
-      cy<-int_of_val(val_of_lua(List.nth (get_y [OLuaVal.Nil]) 0));
-      al#on_start ve;
+
+    get_x<-self#get_lua#get_parent#get_parent#get_parent#get_fun (OLuaVal.String "get_prect_x");
+    get_y<-self#get_lua#get_parent#get_parent#get_parent#get_fun (OLuaVal.String "get_prect_y");
+    jump<-self#get_lua#get_parent#get_parent#get_parent#get_fun (OLuaVal.String "jump");
+
+    al#on_start ve;
 
 
   method on_loop()=
 
+      cx<-int_of_val(val_of_lua(List.nth (get_x [OLuaVal.Nil]) 0));
+      cy<-int_of_val(val_of_lua(List.nth (get_y [OLuaVal.Nil]) 0));
     (match dir with 
       | NORTH ->cy<-cy-s;
       | NORTH_WEST ->cx<-cx+s;cy<-cy-s;
@@ -200,9 +208,9 @@ object(self)
       | EAST ->cx<-cx-s;
       | NORTH_EAST ->cx<-cx-s;cy<-cy-s;
       | _ ->());
-    let move=self#get_lua#get_parent#get_parent#get_parent#get_fun (OLuaVal.String "jump") in
-      move[OLuaVal.Number (float_of_int cx);OLuaVal.Number (float_of_int cy)];
-	al#on_loop();
+
+      jump[OLuaVal.Number (float_of_int cx);OLuaVal.Number (float_of_int cy)];
+      al#on_loop();
 
 
   method lua_init()=

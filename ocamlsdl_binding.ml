@@ -201,12 +201,15 @@ object(self)
 		     tile_string tmp (0,0) txt color; 
 		     tmp
 *)
-	    let (r,g,b)=color in
-	      create_RGB_surface [`SWSURFACE] (String.length txt*8) 8 16 
-		(Int32.of_int r) 
-		(Int32.of_int g) 
-		(Int32.of_int b) 
-		(Int32.of_int 0) 
+	    let (r,g,b)=color in	      
+	    let tmp=display_format(create_RGB_surface [`SWSURFACE] (String.length txt*8) 8 16
+		(Int32.of_int 255) 
+		(Int32.of_int 255) 
+		(Int32.of_int 255) 
+		(Int32.of_int 255)) in
+	      fill_rect tmp (map_RGB tmp (255,255,255));
+	      stringRGBA tmp {r_x=0;r_y=0;r_w=0;r_h=0} txt color 255;
+	      tmp
 	    ));
 
 (** copy ops *)
