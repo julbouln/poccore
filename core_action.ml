@@ -170,7 +170,7 @@ class action_movement=
 object(self)
   inherit action_lua as al
 
-  val mutable dir=0
+  val mutable dir=NORTH
   val mutable d=0
   val mutable s=0
 
@@ -178,7 +178,7 @@ object(self)
   val mutable cy=0
 
   method on_start ve=
-    dir<-int_of_val (ve#get_val (`Int 0));
+    dir<-direction_of_val (ve#get_val (`Int 0));
 (*    d<-int_of_val (ve#get_val (`Int 1)); *)
     s<-int_of_val (ve#get_val (`Int 1));
     let get_x=self#get_lua#get_parent#get_parent#get_parent#get_fun (OLuaVal.String "get_prect_x") and
@@ -191,14 +191,14 @@ object(self)
   method on_loop()=
 
     (match dir with 
-      | 0 ->cy<-cy-s;
-      | 1 ->cx<-cx+s;cy<-cy-s;
-      | 2 ->cx<-cx+s;
-      | 3 ->cx<-cx+s;cy<-cy+s;
-      | 4 ->cy<-cy+s;
-      | 5 ->cx<-cx-s;cy<-cy+s;
-      | 6 ->cx<-cx-s;
-      | 7 ->cx<-cx-s;cy<-cy-s;
+      | NORTH ->cy<-cy-s;
+      | NORTH_WEST ->cx<-cx+s;cy<-cy-s;
+      | WEST ->cx<-cx+s;
+      | SOUTH_WEST ->cx<-cx+s;cy<-cy+s;
+      | SOUTH ->cy<-cy+s;
+      | SOUTH_EAST ->cx<-cx-s;cy<-cy+s;
+      | EAST ->cx<-cx-s;
+      | NORTH_EAST ->cx<-cx-s;cy<-cy-s;
       | _ ->());
     let move=self#get_lua#get_parent#get_parent#get_parent#get_fun (OLuaVal.String "jump") in
       move[OLuaVal.Number (float_of_int cx);OLuaVal.Number (float_of_int cy)];

@@ -6,6 +6,43 @@ open Core_timer;;
 
 (** Extended val type *)
 
+type direction=
+  | NORTH
+  | NORTH_WEST
+  | WEST
+  | SOUTH_WEST
+  | SOUTH
+  | SOUTH_EAST
+  | EAST
+  | NORTH_EAST
+
+exception Not_a_direction of string
+
+let direction_of_string s=
+  (match s with
+     | "north" -> NORTH  
+     | "north_west" -> NORTH_WEST 
+     | "west" -> WEST 
+     | "south_west" -> SOUTH_WEST 
+     | "south" -> SOUTH
+     | "south_east" -> SOUTH_EAST
+     | "east" -> EAST
+     | "north_east" -> NORTH_EAST
+     | s -> raise (Not_a_direction s)
+  )
+
+let string_of_direction d=
+  (match d with
+     | NORTH -> "north"
+     | NORTH_WEST -> "north_west"
+     | WEST -> "west"
+     | SOUTH_WEST -> "south_west"
+     | SOUTH -> "south"
+     | SOUTH_EAST -> "south_east"
+     | EAST -> "east"
+     | NORTH_EAST -> "north_east")
+
+
 type val_ext=
     [
       val_generic
@@ -14,6 +51,8 @@ type val_ext=
     | `Color of (int*int*int)
     | `Time of time
     | `List of val_ext list 
+    | `Direction of direction
+
 (*    | `Function of val_ext list-> val_ext list *)
     ]
 ;;
@@ -38,6 +77,10 @@ let time_of_val=function
 let list_of_val=function
   | `List v->v
   | _->raise (Bad_val_type "list");;
+
+let direction_of_val=function
+  | `Direction v->v
+  | _->raise (Bad_val_type "direction");;
 
 let rec xml_of_val_ext v=
   let ron=ref (new xml_node) in
@@ -79,6 +122,13 @@ let rec xml_of_val_ext v=
        | `List vl->
 	   on#of_list 
 	     ([Tag "val_list"]@(List.map (fun v->(xml_of_val_ext v)#to_node) vl))
+
+       | `Direction dir->
+	   on#of_list 
+	     [
+	       Tag "val_direction";
+	       Attribute ("dir",string_of_direction dir )
+	     ]	   
     );
     on
 ;; 
@@ -109,6 +159,7 @@ let rec val_ext_of_xml x=
 	f=(int_of_string (x#attrib "f"));
       }
   | "val_list" ->`List (List.map (fun cn->val_ext_of_xml cn) x#children)
+  | "val_direction" -> `Direction (direction_of_string (x#attrib "dir"))
   | _ -> val_of_xml x
 ;;
 
@@ -141,6 +192,20 @@ let hash_of_lua_table tbl=
 	      match v with
 		| OLuaVal.Number n->int_of_float n
 		| _ -> 0
+	    )
+	  | _ ->()
+    ) tbl;
+    a
+
+let hash_of_lua_table_str tbl=
+  let a=Hashtbl.create 2 in
+    Luahash.iter (
+      fun k v ->
+	match k with
+	  | OLuaVal.String s->Hashtbl.add a s (
+	      match v with
+		| OLuaVal.String n->n
+		| _ -> ""
 	    )
 	  | _ ->()
     ) tbl;
@@ -184,14 +249,19 @@ let rec lua_of_val_ext=function
 	("f",OLuaVal.Number (float t.f));
       ])
   | `List l->OLuaVal.Table (lua_list_of_list lua_of_val_ext l);
+  | `Direction d->OLuaVal.String (string_of_direction d)
+
 ;; 
 
 let rec val_ext_of_lua=function
   | OLuaVal.Table tbl->
       let r=ref `Nil in
       let h=hash_of_lua_table tbl in
+      let h_str=hash_of_lua_table_str tbl in
       let is_v v=Hashtbl.mem h v and
 	  get_v v=Hashtbl.find h v in	
+      let is_v_str v=Hashtbl.mem h_str v and
+	  get_v_str v=Hashtbl.find h_str v in	
 	
 	if is_v "w" && is_v "h" then
 	  r:=`Size (get_v "w",get_v "h");
@@ -204,7 +274,10 @@ let rec val_ext_of_lua=function
 
 	if is_v "h" && is_v "m" && is_v "s" && is_v "f" then
 	  r:=`Time {h=get_v "h";m=get_v "m";s=get_v "s";f=get_v "f"};
-	
+
+	if is_v_str "dir" then
+	  r:=`Direction (direction_of_string (get_v_str "dir"));
+
 	if !r=(`Nil) then (
 	  let l=list_of_lua_list val_ext_of_lua tbl in	  
 	    if List.length l>0 then
