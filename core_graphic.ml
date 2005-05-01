@@ -73,10 +73,13 @@ class graphic_object=
       lua#set_val (OLuaVal.String "get_w") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.int) (fun()->rect#get_w));
       lua#set_val (OLuaVal.String "get_h") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.int) (fun()->rect#get_h));
       lua#set_val (OLuaVal.String "set_cur_drawing") (OLuaVal.efunc (OLuaVal.int **->> OLuaVal.unit) self#set_cur_drawing);
+      lua#set_val (OLuaVal.String "get_cur_drawing") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.int) (fun()->self#get_cur_drawing));
       lua#set_val (OLuaVal.String "get_drawings_size") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.int) (fun()->self#get_drawings_size));
 
       lua#set_val (OLuaVal.String "show") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.unit) self#show);
       lua#set_val (OLuaVal.String "hide") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.unit) self#hide);
+
+      lua#set_val (OLuaVal.String "set_layer") (OLuaVal.efunc (OLuaVal.int **->> OLuaVal.unit) self#set_layer);
 
       lo#lua_init();
       update_fun<-lua#get_fun (OLuaVal.String "on_update");

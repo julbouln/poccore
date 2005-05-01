@@ -406,7 +406,10 @@ object(self)
     Sdl.init [`EVERYTHING];
     Sdlttf.init();
 (*    print_string "BINDING(poclow): init screen";print_newline(); *)
-    self#set_t (set_video_mode ~w:w ~h:h ~bpp:bpp [`HWSURFACE;`DOUBLEBUF])
+    if fs then
+      self#set_t (set_video_mode ~w:w ~h:h ~bpp:bpp [`HWSURFACE;`DOUBLEBUF;`FULLSCREEN])
+    else
+      self#set_t (set_video_mode ~w:w ~h:h ~bpp:bpp [`HWSURFACE;`DOUBLEBUF])
 
   method refresh()=
     flip self#get_t

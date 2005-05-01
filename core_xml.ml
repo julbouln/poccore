@@ -389,6 +389,10 @@ object(self)
 
 end;;
 
+
+
+
+
 class xml_graphic_text_parser=
 object(self)
   inherit xml_graphic_object_parser
@@ -412,6 +416,31 @@ object(self)
 end;;
 
 
+class xml_graphic_pattern_parser=
+object(self)
+  inherit xml_graphic_object_parser
+
+  method get_val=
+    let ofun()=
+      let o=
+	let args=args_parser#get_val in
+	let file=string_of_val(args#get_val (`String "file")) and
+	(w,h)=size_of_val(args#get_val (`String "size")) in
+
+	(let no=new graphic_pattern_file file in
+	   no#get_rect#set_size w h;
+	   no:>graphic_object)
+      in
+	self#init_object o;
+	o	  
+    in      
+      (id,ofun)
+
+
+end;;
+
+
+
 class xml_graphics_parser=
 object(self)
   inherit [xml_graphic_object_parser,graphic_object] xml_container_parser "graphic_object" (fun()->new xml_graphic_object_parser)
@@ -429,6 +458,7 @@ let xml_factory_graphics_parser()=
     p#parser_add "graphic_from_drawing_create" (fun()->new xml_graphic_from_drawing_create_parser);
     p#parser_add "graphic_from_drawing_script" (fun()->new xml_graphic_from_drawing_script_parser);
     p#parser_add "graphic_text" (fun()->new xml_graphic_text_parser);
+    p#parser_add "graphic_pattern" (fun()->new xml_graphic_pattern_parser);
     p;;
 
 

@@ -196,15 +196,15 @@ object(self)
 
   val mutable interaction=new interaction_lua
   method set_interaction i=interaction<-i
-
+(*
   val mutable canvas=new canvas
   method get_canvas=canvas
-
+*)
   val mutable sprites=new sprite_vault
   method get_sprites=sprites
 
   method on_load()=
-    canvas#clear();
+(*    canvas#clear(); *)
     sprites#clear();
     super#on_load();
     ignore(self#lua_init());
@@ -215,7 +215,7 @@ object(self)
   method on_loop()=
     super#on_loop();
     sprites#update();
-    canvas#refresh 0 0 32 32;
+    canvas#refresh 0 0 32 32; 
 
   method ev_parser e=
     super#ev_parser e;

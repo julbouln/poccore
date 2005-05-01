@@ -90,6 +90,11 @@ object (self)
   val mutable initialized=false
   val curs=cursor
 
+  val mutable canvas=new canvas
+  method get_canvas=canvas
+  method set_canvas c=canvas<-c
+
+
   val mutable load_fun=fun l->[OLuaVal.Nil]
   val mutable loop_fun=fun l->[OLuaVal.Nil]
 
@@ -102,7 +107,8 @@ object (self)
 
 (** what to do on each frame *)
   method on_loop()=
-    ignore(loop_fun [OLuaVal.Nil])
+    ignore(loop_fun [OLuaVal.Nil]);
+
 
 (** what to do when quit stage *)
   method on_quit()=()
@@ -187,18 +193,20 @@ object(self)
     ignore(self#add_object (Some n) o);
     ignore(o#lua_init());
     self#lua_parent_of n (o:>lua_object);
+(*    o#set_canvas canvas; *)
 
   method on_load()=
     super#on_load();
     self#foreach_object (
       fun n s-> s#on_load()
-    )
+    );
+
 
   method on_loop()=
     super#on_loop();
     self#foreach_object (
       fun n s-> s#on_loop()
-    )
+    );
 
   method on_continue()=
     self#foreach_object (
@@ -227,6 +235,7 @@ object(self)
   method get_id="stages"
   val mutable current_stage="none"
 
+
   (* create an Hashtbl of stages *)
   val mutable stages=let a=Hashtbl.create 2 in Hashtbl.add a "none" (new stage curs);a;
 
@@ -242,6 +251,8 @@ object(self)
       (
 	Hashtbl.add stages n s;
       );
+
+
     s#set_id n;
     ignore(s#lua_init());
     self#lua_parent_of n (s:>lua_object);
