@@ -90,6 +90,11 @@ object (self)
   val mutable initialized=false
   val curs=cursor
 
+  (** graphic echange *)
+  method get_graphic (id:string) (gid:string)=(None:graphic_object option)
+  method add_graphic (id:string) (gid:string) (go:graphic_object)=()
+  method delete_graphic (id:string) (gid:string)=()
+
   val mutable canvas=new canvas
   method get_canvas=canvas
   method set_canvas c=canvas<-c
@@ -224,6 +229,21 @@ object(self)
       fun n s-> s#ev_parser e
     )
 
+  method lua_init()=
+    lua#set_val (OLuaVal.String "move_graphic") 
+      (OLuaVal.efunc (OLuaVal.string **-> OLuaVal.string **-> OLuaVal.string **-> OLuaVal.string **-> OLuaVal.string **->> OLuaVal.unit)  
+	 (fun gid sst sid dst did->(
+	    let sstate=self#get_object sst in
+	    let go=sstate#get_graphic sid gid in
+	      match go with
+		| Some gr->
+		    let dstate=self#get_object dst in
+		      dstate#add_graphic did gid gr;
+		      sstate#delete_graphic sid gid 
+		| None -> ()
+	  ))						   
+);
+    super#lua_init()
 end;;
 
 exception Stage_not_found of string;;

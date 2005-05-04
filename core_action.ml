@@ -165,7 +165,34 @@ object(self)
 end;;
 
 
-(** action with anim capabilities and lua func definition *)
+
+
+(** action with sprite methods included and lua func definition *)
+class action_sprite=
+object(self)
+  inherit action_lua as al
+
+  val mutable get_x=fun l->[OLuaVal.Nil]
+  val mutable get_y=fun l->[OLuaVal.Nil]
+  val mutable jump=fun l->[OLuaVal.Nil]
+
+  method private get_x=int_of_val(val_of_lua(List.nth (get_x [OLuaVal.Nil]) 0))
+  method private get_y=int_of_val(val_of_lua(List.nth (get_y [OLuaVal.Nil]) 0))
+  method private jump x y=jump[OLuaVal.Number (float_of_int x);OLuaVal.Number (float_of_int y)];
+
+  method on_start ve=
+    get_x<-self#get_lua#get_parent#get_parent#get_parent#get_fun (OLuaVal.String "get_prect_x");
+    get_y<-self#get_lua#get_parent#get_parent#get_parent#get_fun (OLuaVal.String "get_prect_y");
+    jump<-self#get_lua#get_parent#get_parent#get_parent#get_fun (OLuaVal.String "jump");
+    al#on_start ve;
+
+
+  method lua_init()=
+    al#lua_init();
+
+end;;
+
+(** action with movement capabilities and lua func definition *)
 class action_movement=
 object(self)
   inherit action_lua as al

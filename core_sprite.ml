@@ -11,6 +11,8 @@ open Core_type;;
 open Core_event;;
 open Core_video;;
 
+open Core_fun;;
+
 (** Sprites *)
 
 (** graphic container *)
@@ -24,6 +26,14 @@ object(self)
     ignore(self#add_object (Some n) gr);
     ignore(gr#lua_init());
     self#lua_parent_of n (gr:>lua_object)
+
+  method delete_graphic n=
+    lo#get_lua#del_val (OLuaVal.String n);
+    self#delete_object n
+
+
+  method get_graphic n=
+    self#get_object n
 
   method graphics_update()=
     self#foreach_object (
@@ -50,15 +60,12 @@ object(self)
   inherit generic_object
   inherit lua_object as lo
 
-
   (** type *)
   val mutable name=""
   method get_name=name
   method set_name n=name<-n
 
-
-
-(** pixel position *)
+  (** pixel position *)
   val mutable prect=new rectangle 0 0 0 0
   method get_prect=prect
 
@@ -67,22 +74,27 @@ object(self)
     self#graphics_update();
 
 
-(** states *)
+  (** states *)
   val mutable states=new state_actions
   method get_states=states
 
   method act()=
     states#act();
 
-
-(** properties *)
+  (** properties *)
   val mutable props=new val_ext_handler
   method get_props=props
   method set_props p=props<-p
 
-(** graphics *)
+  (** graphics *)
   val mutable graphics=new graphics_container
   method get_graphics=graphics
+
+  method add_graphic n gr=
+    graphics#add_graphic n gr;
+  method get_graphic n=graphics#get_graphic n
+  method delete_graphic n=
+    graphics#delete_graphic n
 
   method graphics_register (reg:canvas_object->unit)=
     graphics#graphics_register reg;
@@ -92,6 +104,14 @@ object(self)
     graphics#graphics_update()
 
 
+  method functionize : functionizer=
+    `SpriteFun {
+      get_prect_x=(fun()->prect#get_x);
+      get_prect_y=(fun()->prect#get_y);
+      jump=self#jump;
+
+    }
+
   method lua_init()=
     lua#set_val (OLuaVal.String "get_prect_x") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.int) (fun()->prect#get_x));
     lua#set_val (OLuaVal.String "get_prect_y") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.int) (fun()->prect#get_y));
@@ -100,7 +120,7 @@ object(self)
     
     lua#set_val (OLuaVal.String "jump") (OLuaVal.efunc (OLuaVal.int **-> OLuaVal.int **->> OLuaVal.unit) (self#jump));
 (*    
-    lua#set_val (OLuaVal.String "get_id") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.string) (fun()->self#get_id));
+      lua#set_val (OLuaVal.String "get_id") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.string) (fun()->self#get_id));
 *)  
     lua#set_val (OLuaVal.String "get_type") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.string) (fun()->self#get_name));
     
@@ -111,12 +131,11 @@ object(self)
     
     ignore(graphics#lua_init()); 
     self#lua_parent_of "graphics" (graphics:>lua_object);
-
+    
     ignore(states#lua_init());    
     self#lua_parent_of "states" (states:>lua_object);
-
+    
     lo#lua_init()
-
 end
 
 class sprite_object_types=
@@ -196,12 +215,24 @@ object(self)
 
   val mutable interaction=new interaction_lua
   method set_interaction i=interaction<-i
-(*
-  val mutable canvas=new canvas
-  method get_canvas=canvas
-*)
+
   val mutable sprites=new sprite_vault
   method get_sprites=sprites
+
+  method get_graphic id gid=
+    let s=sprites#get_object id in
+      (Some (s#get_graphic gid))
+
+  method add_graphic id gid go=
+    let s=sprites#get_object id in
+      canvas#add_obj (go:>canvas_object);
+      s#add_graphic gid go
+
+  method delete_graphic id gid=
+    let s=sprites#get_object id in
+    let gr=s#get_graphic gid in
+      canvas#del_obj (gr:>canvas_object);
+      s#delete_graphic gid
 
   method on_load()=
 (*    canvas#clear(); *)

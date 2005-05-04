@@ -613,9 +613,12 @@ object(self)
     let ol=self#get_on_loop in
       self#set_on_loop ol;
       self#loop();
-    done
+    done;
+    Sdl.quit()
+
 end;;
 
+at_exit (Sdl.quit);;
 
 (* the event manager *)
 let eventm=new sdl_event_manager;;

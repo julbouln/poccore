@@ -413,7 +413,7 @@ end;;
 
 
 (** special graphic pattern resize with 9 tiles *)
-class graphic_pattern pdrawid=
+class graphic_pattern_old pdrawid=
 object(self)
   inherit graphic_object as super
 
@@ -477,13 +477,99 @@ object(self)
 
 end;; 
 
+
+(** special graphic pattern resize with 9 tiles *)
+class graphic_pattern pdrawid=
+object(self)
+  inherit graphic_object as super
+
+  val mutable gr=new graphic_object
+
+  val mutable crect=new rectangle 0 0 0 0
+  method get_crect=crect
+
+
+  method private init()=
+    let pdrawing=(drawing_vault#get_cache_simple pdrawid) in
+    let cw=pdrawing#get_w and
+	ch=pdrawing#get_h in
+      crect#set_size (cw/3) (ch/3);
+
+      gr<-new graphic_from_drawing_fun_fmt
+	(ValList [
+	  `String "with_alpha";
+	  `Color(255,255,255);
+	  `String "create_multiple";
+	  `String pdrawid;
+	  `Size(crect#get_w,crect#get_h);
+	]);
+
+  initializer
+    self#init()
+
+(*
+
+036
+147
+258
+
+*)
+
+  method real_size=
+    let cw=rect#get_w/crect#get_w and
+	ch=rect#get_h/crect#get_h in    
+      (cw*crect#get_w,ch*crect#get_h)
+
+  val mutable ocw=0
+  val mutable och=0
+
+  method create_dr()=
+    let cw=rect#get_w/crect#get_w -1 and
+	ch=rect#get_h/crect#get_h -1 in
+
+      if cw<>ocw or ch<>och then (
+	let rdr=drawing_vault#new_drawing() in
+	  rdr#create ((cw+1)*crect#get_w) ((ch+1)*crect#get_h) (255,255,255);
+	  
+	  for i=0 to cw do
+	    for j=0 to ch do
+	      (match (i,j) with
+		 | (0,0) -> gr#set_cur_drawing 0
+		 | (0,ih) when ih=ch ->gr#set_cur_drawing 2
+		 | (0,_) ->gr#set_cur_drawing 1
+		 | (iw,0) when iw=cw -> gr#set_cur_drawing 6
+		 | (_,0) ->gr#set_cur_drawing 3
+		 | (iw,ih) when iw=cw && ih=ch -> gr#set_cur_drawing 8
+		 | (_,ih) when ih=ch ->gr#set_cur_drawing 5
+		 | (iw,_) when iw=cw ->gr#set_cur_drawing 7
+		 | (_,_) ->gr#set_cur_drawing 4
+	      );
+	      let dr=gr#get_drawing (gr#get_cur_drawing) in
+		rdr#compose dr ((i*crect#get_w)) ((j*crect#get_h));
+	    done
+	  done;
+	  let did=(pdrawid^(string_of_int cw)^"x"^(string_of_int ch)) in
+	    drawing_vault#add_cache did (fun()->[|rdr|]);
+	    self#set_drawing_id did;
+	    ocw<-cw;
+	    och<-ch;
+      )
+  method put()=
+    self#create_dr();
+    super#put();
+	
+
+end;; 
+
 class graphic_pattern_file pfile=
 
   
   let did=drawing_vault#add_cache_from_drawing_fun_fmt_auto 
-      (ValList  [
-	 `String "load_simple";
-	 `String pfile
+    (ValList  [
+       `String "with_alpha";
+       `Color(255,255,255);
+       `String "load_simple";
+       `String pfile
        ]) in
 object(self)
   inherit graphic_pattern did
