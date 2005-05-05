@@ -10,6 +10,7 @@ open Core_medias;;
 open Core_font;;
 open Core_drawing;;
 
+open Core_fun;;
 
 open Binding;;
 
@@ -62,6 +63,21 @@ class graphic_object=
 	  video#get_drawing#compose t rect#get_x rect#get_y
       )
 
+
+  method functionize : functionizer=
+    `GraphicFun {
+      move=self#move;
+      get_x=(fun()->rect#get_x);
+      get_y=(fun()->rect#get_y);
+      get_w=(fun()->rect#get_w);
+      get_h=(fun()->rect#get_h);
+      set_cur_drawing=self#set_cur_drawing;
+      get_cur_drawing=(fun()->self#get_cur_drawing);
+      get_drawings_size=(fun()->self#get_drawings_size);
+      show=self#show;
+      hide=self#hide;
+      set_layer=self#set_layer;
+    }
 
     method on_update()=
       ignore(update_fun [OLuaVal.Nil])
