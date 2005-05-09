@@ -410,6 +410,7 @@ object(self)
       
 
   method put()=
+    if showing then 
     for i=0 to (List.length self#get_text)-1 do
       graphic#move (rect#get_x) (rect#get_y+(i*fnt#get_height));
       graphic#set_cur_drawing i;

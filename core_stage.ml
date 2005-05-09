@@ -241,14 +241,14 @@ object(self)
 	| None -> ()
 
   method copy_graphic gid sst sid dst did=
-	    let sstate=self#get_object sst in
-	    let go=sstate#get_graphic sid gid in
-	      match go with
-		| Some gr->
-		    let dstate=self#get_object dst in
-		      dstate#add_graphic did gid (Oo.copy gr);
-		| None -> ()
-
+    let sstate=self#get_object sst in
+    let go=sstate#get_graphic sid gid in
+      match go with
+	| Some gr->
+	    let dstate=self#get_object dst in
+	      dstate#add_graphic did gid (Oo.copy gr);
+	| None -> ()
+	    
   method lua_init()=
     lua#set_val (OLuaVal.String "move_graphic") 
       (OLuaVal.efunc (OLuaVal.string **-> OLuaVal.string **-> OLuaVal.string **-> OLuaVal.string **-> OLuaVal.string **->> OLuaVal.unit)  
