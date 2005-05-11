@@ -84,25 +84,24 @@ let direction_of_val=function
 
 let rec xml_of_val_ext v=
   let ron=ref (new xml_node) in
-  let on= !ron in
     (match v with
        | #val_generic as v-> ron:=xml_of_val v
        | `Position (x,y)->
-	   on#of_list 
+	   !ron#of_list 
 	     [
 	       Tag "val_position";
 	       Attribute ("x",string_of_int x);
 	       Attribute ("y",string_of_int y)
 	     ]
        | `Size (w,h)->
-	   on#of_list 
+	   !ron#of_list 
 	     [
 	       Tag "val_size";
 	       Attribute ("w",string_of_int w);
 	       Attribute ("h",string_of_int h)
 	     ]
        | `Color (r,g,b)->
-	   on#of_list 
+	   !ron#of_list 
 	     [
 	       Tag "val_color";
 	       Attribute ("r",string_of_int r);
@@ -110,7 +109,7 @@ let rec xml_of_val_ext v=
 	       Attribute ("b",string_of_int b);
 	     ]
        | `Time t->
-	   on#of_list 
+	   !ron#of_list 
 	     [
 	       Tag "val_time";
 	       Attribute ("h",string_of_int t.h);
@@ -120,17 +119,17 @@ let rec xml_of_val_ext v=
 	     ]
 	     
        | `List vl->
-	   on#of_list 
+	   !ron#of_list 
 	     ([Tag "val_list"]@(List.map (fun v->(xml_of_val_ext v)#to_node) vl))
 
        | `Direction dir->
-	   on#of_list 
+	   !ron#of_list 
 	     [
 	       Tag "val_direction";
 	       Attribute ("dir",string_of_direction dir )
 	     ]	   
     );
-    on
+    !ron
 ;; 
 
 let rec val_ext_of_xml x=
