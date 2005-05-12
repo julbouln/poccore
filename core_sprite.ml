@@ -191,12 +191,28 @@ object(self)
       lo#get_lua#del_val (OLuaVal.String id) ;
       super#delete_object id;
 
+(** sprite methods *)
+  method set_sprite_state id st_id st_v=
+    let s=self#get_object id in
+      s#get_states#set_state st_id st_v
+
+
+
   method update()=
     self#foreach_object (fun k o->
 			   o#act();
 			)
 
   method lua_init()=
+    lua#set_val (OLuaVal.String "set_sprite_state") 
+      (OLuaVal.efunc (OLuaVal.string **-> OLuaVal.string **-> OLuaVal.table **->> OLuaVal.unit) 
+	 (fun id n v->
+	    let lo=new lua_obj in
+	      lo#from_table v;
+	    self#set_sprite_state id (Some n) (val_ext_handler_of_format (ValLua lo))
+	 )
+      );
+
    lua#set_val (OLuaVal.String "add_sprite_from_type") 
      (OLuaVal.efunc (OLuaVal.string **-> OLuaVal.int **-> OLuaVal.int **->> OLuaVal.string) 
 	(fun t x y->self#add_sprite_from_type None t x y));
@@ -235,6 +251,7 @@ object(self)
     let gr=s#get_graphic gid in
       canvas#del_obj (gr:>canvas_object);
       s#delete_graphic gid
+
 
   method on_load()=
 (*    canvas#clear(); *)

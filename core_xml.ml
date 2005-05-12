@@ -802,11 +802,62 @@ object (self)
 
 end;;
 
+open Core_net;;
+
+class xml_net_client_sprite_engine_stage_parser=
+object (self)
+  inherit xml_sprite_engine_stage_parser as super
+
+  method get_val=
+    let ofun()=
+      let o=
+	let args=args_parser#get_val in
+	let saddr=(string_of_val(args#get_val (`String "server_address"))) and
+	    sport=(int_of_val(args#get_val (`String "server_port"))) and
+	    cport=(int_of_val(args#get_val (`String "client_port"))) in
+	self#init_cursor();
+	new net_client_sprite_engine curs saddr sport cport
+      in
+	sprite_type_parser#init o#get_sprites#add_object_type;
+	let inter=(snd interaction_parser#get_val)() in
+	  o#set_interaction inter;
+	self#init_object (o:>stage);
+	(o:>stage)	  
+    in      
+      (id,ofun)
+
+end;;
+
+
+class xml_net_server_sprite_engine_stage_parser=
+object (self)
+  inherit xml_sprite_engine_stage_parser as super
+
+  method get_val=
+    let ofun()=
+      let o=
+	let args=args_parser#get_val in
+	let sport=(int_of_val(args#get_val (`String "server_port"))) in
+	  self#init_cursor();
+	  new net_server_sprite_engine sport
+      in
+	sprite_type_parser#init o#get_sprites#add_object_type;
+	let inter=(snd interaction_parser#get_val)() in
+	  o#set_interaction inter;
+	self#init_object (o:>stage);
+	(o:>stage)	  
+    in      
+      (id,ofun)
+
+end;;
+
 let xml_factory_stages_parser()=
   let p=new xml_stages_parser in
     p#parser_add "stage" (fun()->new xml_stage_parser);
     p#parser_add "multi_stage" (fun()->new xml_multi_stage_parser);
     p#parser_add "sprite_engine" (fun()->new xml_sprite_engine_stage_parser);
+    p#parser_add "net_client_sprite_engine" (fun()->new xml_net_client_sprite_engine_stage_parser);
+    p#parser_add "net_server_sprite_engine" (fun()->new xml_net_server_sprite_engine_stage_parser);
     p;;
 
 

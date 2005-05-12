@@ -415,6 +415,13 @@ object(self)
 	      | None->OLuaVal.Nil
 	 )
 );
+    lua#set_val (OLuaVal.String "set_no_state") 
+      (OLuaVal.efunc ( OLuaVal.unit **->> OLuaVal.unit) 
+	 (fun()->
+	    self#set_state (None) (new val_ext_handler)
+	 )
+      );
+
     lua#set_val (OLuaVal.String "set_state") 
       (OLuaVal.efunc (OLuaVal.string **-> OLuaVal.table **->> OLuaVal.unit) 
 	 (fun n v->
