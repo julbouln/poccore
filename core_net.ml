@@ -208,6 +208,8 @@ object(self)
     ignore(on_disconnect_fun [OLuaVal.String c])
 
   method lua_init()=
+    lua#set_val (OLuaVal.String "on_connect") (OLuaVal.efunc (OLuaVal.string **->> OLuaVal.unit) (fun cli->()));
+    lua#set_val (OLuaVal.String "on_disconnect") (OLuaVal.efunc (OLuaVal.string **->> OLuaVal.unit) (fun cli->()));
     self#net_lua_init (serv:>network_object);
     super#lua_init();
     on_connect_fun<-lua#get_fun (OLuaVal.String "on_connect");
