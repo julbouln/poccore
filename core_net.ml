@@ -4,6 +4,7 @@ open Value_val;;
 open Core_stage;;
 open Core_val;;
 open Core_sprite;;
+open Core_timer;;
 
 open Net_message;;
 open Net_conn;;
@@ -32,13 +33,9 @@ object(self)
 	    st_v#from_xml msg#get_data;
 	| None ->());
 	    set_state spr_id st_id st_v;
-    let res=new xml_message in
-      res#set_type "response";
-      let vl=new val_generic_handler in
-	vl#set_id "values";
-	vl#set_val (`String "type") (`String msg#get_type);
-	res#set_values vl;
-	res
+
+	message_generic_response msg;
+
   method check msg=
     true
 end;;
@@ -54,17 +51,14 @@ object(self)
     let data=new val_ext_handler in
       data#from_xml msg#get_data;
       let (x,y)=(position_of_val (data#get_val (`String "position"))) in
-      add_sprite spr_id spr_type x y;
-    let res=new xml_message in
-      res#set_type "response";
-      let vl=new val_generic_handler in
-	vl#set_id "values";
-	vl#set_val (`String "type") (`String msg#get_type);
-	res#set_values vl;
-	res
+	add_sprite spr_id spr_type x y;
+	
+	message_generic_response msg;
+
   method check msg=
     true
 end;;
+
 
 class delete_sprite_message_handler delete_sprite=
 object(self)
@@ -72,20 +66,35 @@ object(self)
   method parse msg=
     let spr_id=(string_of_val (msg#get_values#get_val (`String "sprite"))) in
       delete_sprite spr_id;
-    let res=new xml_message in
-      res#set_type "response";
-      let vl=new val_generic_handler in
-	vl#set_id "values";
-	vl#set_val (`String "type") (`String msg#get_type);
-	res#set_values vl;
-	res
+
+      message_generic_response msg;
+
   method check msg=
     true
 end;;
 
+class sync_sprites_message_handler from_xml=
+object(self)
+  inherit message_handler
+  method parse msg=
+    from_xml msg#get_data;
+    
+    message_generic_response msg;
+
+  method check msg=
+    true
+end;;
+
+
 class net_sprite_engine curs=
 object(self)
   inherit sprite_engine curs as super
+
+  method init_message_handler (mph:message_parser_handler)=
+    mph#handler_add "set_state" (new set_state_message_handler self#get_sprites#set_sprite_state);
+    mph#handler_add "add_sprite" (new add_sprite_message_handler (fun n t x y->ignore(self#get_sprites#add_sprite_from_type (Some n) t x y)));
+    mph#handler_add "delete_sprite" (new delete_sprite_message_handler self#get_sprites#delete_sprite);
+    mph#handler_add "sync_sprites" (new sync_sprites_message_handler self#get_sprites#from_xml);
 
   method net_set_sprite_state (conn:network_object) dst n st_id st_v=
     st_v#set_id "args";
@@ -145,6 +154,22 @@ object(self)
       );
     sprites#delete_sprite n
 
+
+  method net_sync_sprites (conn:network_object) dst=
+    let xsprs=sprites#to_xml() in
+    conn#message_send 
+      (xml_message_of_string (
+	 "<message type=\"sync_sprites\" dst=\""^dst^"\">
+<values/>
+<data>"^
+	   xsprs#to_string
+	 ^"
+</data>
+                       </message>
+                      ")
+      );()
+
+
   method net_lua_init conn=
     lua#set_val (OLuaVal.String "net_set_sprite_state") 
       (OLuaVal.efunc (OLuaVal.string **-> OLuaVal.string **-> OLuaVal.string **-> OLuaVal.table **->> OLuaVal.unit) 
@@ -157,6 +182,7 @@ object(self)
     lua#set_val (OLuaVal.String "net_set_sprite_no_state") (OLuaVal.efunc (OLuaVal.string **-> OLuaVal.string **->> OLuaVal.unit) (self#net_set_sprite_no_state conn));
     lua#set_val (OLuaVal.String "net_add_sprite") (OLuaVal.efunc (OLuaVal.string **-> OLuaVal.string **-> OLuaVal.string **-> OLuaVal.int **-> OLuaVal.int **->> OLuaVal.unit) (self#net_add_sprite_named_from_type conn));
     lua#set_val (OLuaVal.String "net_delete_sprite") (OLuaVal.efunc (OLuaVal.string **-> OLuaVal.string **->> OLuaVal.unit) (self#net_delete_sprite conn));
+    lua#set_val (OLuaVal.String "net_sync_sprites") (OLuaVal.efunc (OLuaVal.string **->> OLuaVal.unit) (self#net_sync_sprites conn));
 
 
 end;;
@@ -167,9 +193,8 @@ object(self)
   val mutable cli=new network_client cport
 
   method on_load()=
-    cli#get_mph#handler_add "set_state" (new set_state_message_handler self#get_sprites#set_sprite_state);
-    cli#get_mph#handler_add "add_sprite" (new add_sprite_message_handler (fun n t x y->ignore(self#get_sprites#add_sprite_from_type (Some n) t x y)));
-    cli#get_mph#handler_add "delete_sprite" (new delete_sprite_message_handler self#get_sprites#delete_sprite);
+    self#init_message_handler cli#get_mph;
+
     cli#connect saddr sport;
     super#on_load()
 
@@ -190,14 +215,22 @@ object(self)
   initializer
     sprites#set_canvas None;
 *)
+  val mutable sync_time=new timer
+  method init_sync()=
+    sync_time#add_task {h=0;m=0;s=15;f=0} (fun()->self#net_sync_sprites (serv:>network_object) "*");
+    sync_time#start();
+    
+
   method on_load()=
-    serv#get_mph#handler_add "set_state" (new set_state_message_handler self#get_sprites#set_sprite_state);
-    serv#get_mph#handler_add "add_sprite" (new add_sprite_message_handler (fun n t x y->ignore(self#get_sprites#add_sprite_from_type (Some n) t x y)));
-    serv#get_mph#handler_add "delete_sprite" (new delete_sprite_message_handler self#get_sprites#delete_sprite);
+    self#init_message_handler serv#get_mph;
+
     super#on_load();
-(*    serv#set_update self#on_loop; *)
+    self#init_sync();
     Thread.create(function()->serv#run()) ();()
 
+  method on_loop()=
+    super#on_loop();
+    sync_time#step();
 
   val mutable on_connect_fun=fun v->[OLuaVal.Nil]
   method on_connect c=

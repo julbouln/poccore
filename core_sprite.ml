@@ -1,6 +1,7 @@
 open Value_common;;
 open Value_lua;;
 open Value_val;;
+open Value_xml;;
 
 open Core_val;;
 open Core_rect;;
@@ -197,6 +198,59 @@ object(self)
       s#get_states#set_state st_id st_v
 
 
+(** <xml> *)
+  method to_xml()=
+    let xml=new xml_node in
+      xml#set_tag "sprites";
+      
+      self#foreach_object (fun spr_id spr->
+			     let sxml=new xml_node in
+			       sxml#of_list [
+				 Tag "sprite";
+				 Attribute ("id",spr_id);
+				 Attribute ("type",spr#get_name);
+			       ];
+			       let vh=new val_ext_handler in
+				 vh#set_id "args";
+				 vh#set_val (`String "position") (`Position (spr#get_prect#get_x,spr#get_prect#get_y));
+
+				 sxml#add_child vh#to_xml;
+				 
+				 xml#add_child sxml;
+			  );
+      xml
+
+  method from_xml (xml:xml_node)=
+    List.iter (
+      fun c->
+	let args=new val_ext_handler and
+	    props=new val_ext_handler in
+
+	  List.iter (
+	    fun cc->
+	      match (cc#tag) with
+		| "args" -> 
+		    args#from_xml cc
+		| "properties" -> 
+		    props#from_xml cc
+		| _ ->()
+	  ) c#children;
+	  let (x,y)=position_of_val (args#get_val (`String "position")) in
+	  let oid=(c#attrib "id") in
+	    if self#is_object oid then (
+	      let o=self#get_object oid in
+		o#get_prect#set_position x y;
+	    )
+	    else 
+	      (
+		let nid=self#add_sprite_from_type (Some (c#attrib "id")) (c#attrib "type") x y in
+		let o=self#get_object oid in
+		  o#get_props#flatten props;
+	      )
+	      
+    ) xml#children;
+
+(** </xml> *)
 
   method update()=
     self#foreach_object (fun k o->
