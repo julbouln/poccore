@@ -24,10 +24,15 @@ exception Drawing_id_not_set;;
 (** Graphic object class parent *)
 class graphic_object=
   object (self)
-    inherit generic_object
+    inherit generic_object as go
     inherit canvas_object
     inherit lua_object as lo
 
+    val mutable fnode=new core_fun_node
+    method get_fnode=fnode
+      
+    method fun_init()=
+      fnode#set_fun self#functionize
 
     val mutable update_fun=fun l->[OLuaVal.Nil]
 
@@ -64,9 +69,18 @@ class graphic_object=
       )
 
 
+(** for fun *)
+    method get_x()=rect#get_x
+    method get_y()=rect#get_y
+    method get_w()=rect#get_w
+    method get_h()=rect#get_h 
+    method cur_drawing()=self#get_cur_drawing
+    method drawings_size()=self#get_drawings_size
+
   method functionize : functionizer=
-    `GraphicFun {
-      move=self#move;
+    `GraphicFun 
+      (self :> graphic_fun)
+(*      move=self#move;
       get_x=(fun()->rect#get_x);
       get_y=(fun()->rect#get_y);
       get_w=(fun()->rect#get_w);
@@ -78,7 +92,7 @@ class graphic_object=
       hide=self#hide;
       set_layer=self#set_layer;
     }
-
+*)
     method on_update()=
       ignore(update_fun [OLuaVal.Nil])
 

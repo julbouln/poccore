@@ -10,13 +10,29 @@ open Core_rect;;
 
 open Core_timer;;
 
+open Core_fun;;
+
 (** Action and state manager *)
 
 (** action object - repeat some function *)
 class virtual action_object=
 object(self)
-  inherit generic_object
+  inherit generic_object as go
   inherit lua_object as lo
+
+  val mutable fnode=new core_fun_node
+  method get_fnode=fnode
+
+  method private get_graphics_node=
+    fnode#get_parent#get_parent#get_parent#get_children#get_object "graphics"
+
+  method private get_graphic gid=
+    let gr=self#get_graphics_node#get_children#get_object gid in
+    graphic_of_fun gr#get_fun
+
+  method private get_sprite=
+    let spr=fnode#get_parent#get_parent#get_parent in
+      sprite_of_fun spr#get_fun
 
   method virtual on_start : val_ext_handler -> unit
   method virtual on_loop : unit -> unit
@@ -42,53 +58,6 @@ object
   method on_stop()=f_on_stop()
 end;;
 
-(*
-<state_actions>
- <state_object id="idle">
-  <action_object id="anim" type="action_anim"/>
-  <args>
-   <val_int name="refresh" value="2"/>
-   <val_list name="frames">
-    <val_int value="1"/>
-   </val_list>
-  </args>
-  </action_object>
- </state_object>
- <state_object id="move">
-  <action_object id="anim" type="action_anim">
-   <!-- ... -->
-  </action_object>
-  <action_object id="mouvement" type="action_lua">
-   <script>
-    function self.on_start(ev)
-     obj=self.parent;
-     if (ev.direction="bottom") then obj.turn 0;
-     // ...
-    end
-    function self.on_loop()
-     obj=self.parent;
-     speed=obj.properties.speed;
-     px=obj.prect.get_x;
-     py=obj.prect.get_y;
-     if (obj.direction=0) then obj.prect.set_position (px) (py-speed);
-     // ...
-    end
-   </script>
-  </action_object>
- </state_object>
-</state_actions>
-
-
-<action_object type="action_anim">
- <args>
-  <val_int name="refresh" value="2"/>
-  <val_list name="frames">
-    <val_int value="1"/>
-  </val_list>
- </args>
-</action_object>
-
-*)
 
 (** action from lua func definition *)
 class action_lua2=
@@ -145,12 +114,38 @@ end;;
 
 
 (** action with anim capabilities and lua func definition *)
-class action_anim frs r=
+class action_anim_OLD frs r=
 object(self)
   inherit action_lua as al
   inherit anim_object frs r
 
   method on_loop()=self#anim();al#on_loop();
+
+  method on_stop()=
+   self#set_current 0;
+    al#on_stop();
+
+  method lua_init()=
+    lua#set_val (OLuaVal.String "get_frame") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.int) (fun()->self#get_frame));
+
+    al#lua_init();
+
+
+end;;
+
+
+(** action with anim capabilities and lua func definition *)
+class action_anim frs r=
+object(self)
+  inherit action_lua as al
+  inherit anim_object frs r
+
+
+  method on_loop()=
+    self#anim();
+    let gr=self#get_graphic "main" in
+      gr#set_cur_drawing self#get_frame;
+    al#on_loop(); 
 
   method on_stop()=
    self#set_current 0;
@@ -193,7 +188,7 @@ object(self)
 end;;
 
 (** action with movement capabilities and lua func definition *)
-class action_movement=
+class action_movement_OLD=
 object(self)
   inherit action_lua as al
 
@@ -245,6 +240,55 @@ object(self)
 
 
 end;;
+
+
+
+(** action with movement capabilities and lua func definition *)
+class action_movement=
+object(self)
+  inherit action_lua as al
+
+  val mutable dir=NORTH
+  val mutable d=0
+  val mutable s=0
+
+  val mutable cx=0
+  val mutable cy=0
+
+
+  method on_start ve=
+    dir<-direction_of_val (ve#get_val (`Int 0));
+(*    d<-int_of_val (ve#get_val (`Int 1)); *)
+    s<-int_of_val (ve#get_val (`Int 1));
+
+    al#on_start ve;
+
+
+  method on_loop()=
+
+      cx<-self#get_sprite#get_x();
+      cy<-self#get_sprite#get_y();
+    (match dir with 
+      | NORTH ->cy<-cy-s;
+      | NORTH_WEST ->cx<-cx+s;cy<-cy-s;
+      | WEST ->cx<-cx+s;
+      | SOUTH_WEST ->cx<-cx+s;cy<-cy+s;
+      | SOUTH ->cy<-cy+s;
+      | SOUTH_EAST ->cx<-cx-s;cy<-cy+s;
+      | EAST ->cx<-cx-s;
+      | NORTH_EAST ->cx<-cx-s;cy<-cy-s;
+      | _ ->());
+
+    self#get_sprite#jump cx cy;
+    al#on_loop();
+
+
+  method lua_init()=
+    al#lua_init();
+
+
+end;;
+
 
 
 (** action repeat over specified time *)
@@ -310,12 +354,23 @@ end;;
 class state_object=
 object(self)
   inherit [action_object] generic_object_handler
-  inherit generic_object
+  inherit generic_object as go
   inherit lua_object as lo
+
+
+  val mutable fnode=new core_fun_node
+  method get_fnode=fnode
+
+  method fun_init()=()
+
 
   method add_action n act=
 (*    print_string ("STATE_OBJECT : add action "^n);print_newline(); *)
     ignore(self#add_object (Some n) act);
+
+    act#get_fnode#set_parent fnode;
+    fnode#get_children#add_object (Some n) act#get_fnode;
+
     ignore(act#lua_init()); 
     self#lua_parent_of n (act:>lua_object)
 
@@ -371,11 +426,23 @@ object(self)
   method get_id="state_actions"
   val mutable current=None
 
+
+  val mutable fnode=new core_fun_node
+  method get_fnode=fnode
+
+  method fun_init()=
+    fnode#set_id "states";
+
   method get_state=current
 
   method add_state n st=
 (*    print_string ("STATE_ACTIONS : add state "^n);print_newline(); *)
     ignore(self#add_object (Some n) st);
+
+    st#fun_init();
+    st#get_fnode#set_parent fnode;
+    fnode#get_children#add_object (Some n) st#get_fnode;
+
     ignore(st#lua_init()); 
     self#lua_parent_of n (st:>lua_object)
 

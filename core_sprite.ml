@@ -22,12 +22,27 @@ object(self)
   inherit [graphic_object] generic_object_handler
   inherit lua_object as lo
   method get_id="graphics"
-  method add_graphic n gr=
-(*    print_string ("GRAPHICS_CONTAINER : add graphic "^n);print_newline(); *)
-    ignore(self#add_object (Some n) gr);
-    ignore(gr#lua_init());
-    self#lua_parent_of n (gr:>lua_object)
 
+  val mutable fnode=new core_fun_node
+  method get_fnode=fnode
+
+  method fun_init()=
+    fnode#set_id "graphics";
+
+  method add_graphic n gr=
+
+(*    print_string ("GRAPHICS_CONTAINER : add graphic "^n);print_newline();  *)
+    ignore(self#add_object (Some n) gr);
+
+    gr#fun_init();
+    gr#get_fnode#set_parent fnode;
+    fnode#get_children#add_object (Some n) gr#get_fnode;
+
+    ignore(gr#lua_init());
+    self#lua_parent_of n (gr:>lua_object);
+
+
+	
   method delete_graphic n=
     lo#get_lua#del_val (OLuaVal.String n);
     self#delete_object n
@@ -53,13 +68,20 @@ object(self)
       fun k o->
 	unreg (o:>canvas_object)
     );
+
+  method lua_init()=
+    lo#lua_init();
+
 end;;
 
 
 class sprite_object=
 object(self)
-  inherit generic_object
+  inherit generic_object as go
   inherit lua_object as lo
+
+  val mutable fnode=new core_fun_node
+  method get_fnode=fnode
 
   (** type *)
   val mutable name=""
@@ -91,6 +113,17 @@ object(self)
   val mutable graphics=new graphics_container
   method get_graphics=graphics
 
+
+  method fun_init()=
+    graphics#fun_init();
+    states#fun_init();
+    graphics#get_fnode#set_parent fnode;
+    states#get_fnode#set_parent fnode;
+    fnode#get_children#add_object (Some "graphics") (graphics#get_fnode :> core_fun_node);
+    fnode#get_children#add_object (Some "states") (states#get_fnode :> core_fun_node);
+    fnode#set_fun self#functionize
+
+
   method add_graphic n gr=
     graphics#add_graphic n gr;
   method get_graphic n=graphics#get_graphic n
@@ -105,15 +138,17 @@ object(self)
     graphics#graphics_update()
 
 
-  method functionize : functionizer=
-    `SpriteFun {
-      get_px=(fun()->prect#get_x);
-      get_py=(fun()->prect#get_y);
-      jump=self#jump;
+(** for fun *)
+  method get_x()=prect#get_x
+  method get_y()=prect#get_y
 
-    }
+  method functionize : functionizer=
+    `SpriteFun 
+      (self :> sprite_fun)
+
 
   method lua_init()=
+
 (* DEPRECATED *)
     lua#set_val (OLuaVal.String "get_prect_x") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.int) (fun()->prect#get_x));
     lua#set_val (OLuaVal.String "get_prect_y") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.int) (fun()->prect#get_y));
@@ -177,6 +212,7 @@ object(self)
   method add_sprite_at (id:string option) (o:sprite_object) (px:int) (py:int)=
     self#add_sprite_to_canvas o;
     let n=self#add_object id o in
+      o#fun_init();
       ignore(o#lua_init());
       self#lua_parent_of n (o:>lua_object);
       o#jump px py;
