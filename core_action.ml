@@ -112,7 +112,7 @@ end;;
 
 
 
-
+(* DEPRECATED *)
 (** action with anim capabilities and lua func definition *)
 class action_anim_OLD frs r=
 object(self)
@@ -187,6 +187,7 @@ object(self)
 
 end;;
 
+(* DEPRECATED *)
 (** action with movement capabilities and lua func definition *)
 class action_movement_OLD=
 object(self)

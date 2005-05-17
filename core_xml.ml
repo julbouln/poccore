@@ -443,7 +443,7 @@ end;;
 
 class xml_graphics_parser=
 object(self)
-  inherit [xml_graphic_object_parser,graphic_object] xml_container_parser "graphic_object" (fun()->new xml_graphic_object_parser)
+  inherit [xml_graphic_object_parser,graphic_object] xml_container_parser "graphic" (fun()->new xml_graphic_object_parser)
 
 end;;
 
@@ -547,7 +547,7 @@ end;;
 
 class xml_actions_parser=
 object(self)
-  inherit [xml_action_object_parser,action_lua] xml_container_parser "action_object" (fun()->new xml_action_object_parser)
+  inherit [xml_action_object_parser,action_lua] xml_container_parser "action" (fun()->new xml_action_object_parser)
 
   val mutable id=""
   method get_id=id
@@ -585,7 +585,7 @@ Global.set xml_default_actions_parser xml_factory_actions_parser;;
 
 class xml_state_actions_parser=
 object(self)
-  inherit [xml_actions_parser,state_object] xml_container_parser "state_object" (fun()->(Global.get xml_default_actions_parser)())
+  inherit [xml_actions_parser,state_object] xml_container_parser "state" (fun()->(Global.get xml_default_actions_parser)())
 
   initializer
     self#parser_add "unique" (fun()->(Global.get xml_default_actions_parser)())
@@ -667,7 +667,7 @@ object(self)
     match k with
       | "graphics" ->
 	  graphics_parser#parse v;	  
-      | "state_actions" ->
+      | "states" ->
 	  states_parser#parse v;
       | _ -> ()
 
@@ -685,7 +685,7 @@ end;;
 
 class xml_sprite_object_types_parser=
 object(self)
-  inherit [(unit->sprite_object)] xml_stringhash_parser "sprite_object_type" (fun()->new xml_sprite_object_type_parser) as super
+  inherit [(unit->sprite_object)] xml_stringhash_parser "sprite_type" (fun()->new xml_sprite_object_type_parser) as super
 
   method parse_child k v=
     super#parse_child k v;
@@ -781,7 +781,7 @@ object (self)
   method parse_child k v=
     super#parse_child k v;
     match k with
-      | "sprite_object_types" -> sprite_type_parser#parse v 
+      | "sprite_types" -> sprite_type_parser#parse v 
       | "interaction"->	  interaction_parser#parse v
       | _ -> ()
 

@@ -20,10 +20,25 @@ object
   method virtual jump : int -> int -> unit
 end;;
 
+class virtual game_object_fun=
+object
+  inherit sprite_fun
+  method virtual pixel_x : unit->int
+  method virtual pixel_y : unit->int
+  method virtual case_x : unit->int
+  method virtual case_y : unit->int
+  method virtual case_w : unit->int
+  method virtual case_h : unit->int
+  method virtual move : int -> int -> unit
+  method virtual direction : unit -> int
+  method virtual turn : int -> unit
+end;;
+
 type functionizer=
     [
       `GraphicFun of graphic_fun
     | `SpriteFun of sprite_fun	
+    | `GameObjectFun of game_object_fun
     | `NoFun
     ];;
 
@@ -36,6 +51,10 @@ let graphic_of_fun=function
 let sprite_of_fun=function
   | `SpriteFun spr-> spr
   | _->raise (Bad_fun_type "sprite_fun");;
+
+let game_object_of_fun=function
+  | `GameObjectFun spr-> spr
+  | _->raise (Bad_fun_type "game_object_fun");;
   
 
 
