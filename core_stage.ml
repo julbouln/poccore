@@ -26,6 +26,8 @@ open Core_cursor;;
 open Core_timer;;
 open Core_graphic;;
 open Core_font;;
+open Core_timer;;
+
 open Binding;;
 
 
@@ -90,6 +92,9 @@ object (self)
   val mutable initialized=false
   val curs=cursor
 
+  val mutable ltimer=new lua_timer
+
+
   (** graphic echange *)
   method get_graphic (id:string) (gid:string)=(None:graphic_object option)
   method add_graphic (id:string) (gid:string) (go:graphic_object)=()
@@ -108,6 +113,7 @@ object (self)
 
 (** what to do when first load stage *)
   method on_load()=
+
     ignore(load_fun [OLuaVal.Nil])
 
 (** what to do on each frame *)
@@ -121,6 +127,7 @@ object (self)
 (** what to do when continue a stage already loaded *)
   method on_continue()=()
   method on_leave()=()
+
 
 (** parse the event coming in stage *)
   method ev_parser (e:event)=
@@ -183,6 +190,10 @@ object (self)
   method lua_init()=
     lua#set_val (OLuaVal.String "on_load") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.unit) (fun()->()));
     lua#set_val (OLuaVal.String "on_loop") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.unit) (fun()->()));
+
+    ignore(ltimer#lua_init()); 
+    self#lua_parent_of "timer" (ltimer:>lua_object);
+
     super#lua_init();
     load_fun<-lua#get_fun (OLuaVal.String "on_load");
     loop_fun<-lua#get_fun (OLuaVal.String "on_loop");

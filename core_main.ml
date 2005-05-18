@@ -99,7 +99,7 @@ object(self)
   method scr_h=scr_h
 
   val mutable server=ref false
-  method server_mode= !server
+  method server_mode()= !server
 
   val mutable fullscreen=ref false
   val mutable windowed=ref false

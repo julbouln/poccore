@@ -1,3 +1,5 @@
+open Value_common;;
+
 
 (** Time manager *)
 
@@ -23,7 +25,7 @@ type time=
 
 class timer=
 object(self)
-
+  inherit generic_object
   val mutable timers=Hashtbl.create 2
   method add_timer (t:time) (f:unit->unit)=
     Hashtbl.add timers (self#from_time t) f
@@ -34,6 +36,7 @@ object(self)
 
   val mutable tasks=Hashtbl.create 2
   method add_task (t:time) (f:unit->unit)=
+(*    print_string "CORE_TIMER: add task ";print_newline() *)
     Hashtbl.add tasks (self#from_time t) f
   method is_task (t)=
     Hashtbl.mem tasks (self#from_time t)
@@ -50,7 +53,11 @@ object(self)
 
   val mutable run=false
 
-  method start()=run<-true
+  method start()=    
+(*
+    print_string "CORE_TIMER: start ";
+print_newline() *) 
+   run<-true
   method stop()=run<-false
 
   method set_limit t=frm<-self#from_time t
@@ -60,6 +67,9 @@ object(self)
   method reset()=cfrm<-0
 
   method step()=
+(*
+    print_string "CORE_TIMER: step ";
+print_newline() *)
     if run then (
       Hashtbl.iter 
 	(
@@ -100,4 +110,63 @@ object(self)
 (*      print_int cfrm; *)
       self#add_timer nt f;
 (*	print_newline(); *)
+end;;
+
+
+open Value_lua;;
+
+(* FIXME : exist in core_val *)
+let hash_of_lua_table tbl=
+  let a=Hashtbl.create 2 in
+    Luahash.iter (
+      fun k v ->
+	match k with
+	  | OLuaVal.String s->Hashtbl.add a s (
+	      match v with
+		| OLuaVal.Number n->int_of_float n
+		| _ -> 0
+	    )
+	  | _ ->()
+    ) tbl;
+    a
+
+class lua_timer=
+object(self)
+  inherit timer
+  inherit lua_object as lo
+
+  method private time_of_lua t=
+    let h=hash_of_lua_table t in
+    let get_v v=Hashtbl.find h v in	
+      {h=get_v "h";m=get_v "m";s=get_v "s";f=get_v "f"}
+  
+  method lua_init()=
+    lua#set_val (OLuaVal.String "start") 
+      (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.unit) (self#start));
+    lua#set_val (OLuaVal.String "stop") 
+      (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.unit) (self#stop));
+    lua#set_val (OLuaVal.String "step") 
+      (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.unit) (self#step));
+    lua#set_val (OLuaVal.String "del_task") 
+      (OLuaVal.efunc (OLuaVal.table **->> OLuaVal.unit) 
+	 (fun t->
+	    let ti=self#time_of_lua t in
+	      self#del_task ti
+	 )
+      );
+    lua#set_val (OLuaVal.String "add_task") 
+      (OLuaVal.efunc (OLuaVal.table **-> OLuaVal.value **->> OLuaVal.unit) 
+	 (fun t f->
+	    let g()=
+	      match f with
+		| OLuaVal.Function (s,f)->
+		    f [OLuaVal.Nil];()
+		| _ -> () in
+
+	    let ti=self#time_of_lua t in
+		self#add_task ti g
+		  
+	 )
+      );
+    lo#lua_init();
 end;;

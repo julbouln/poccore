@@ -10,7 +10,7 @@ open Net_message;;
 open Net_conn;;
 open Net_server;;
 
-(** types de message :
+(** types de messages :
     - add_sprite : ajoute un sprite
     - delete_sprite : supprime un sprite
     - set_sprite_state : change l'etat d'un sprite
