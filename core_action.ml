@@ -426,7 +426,7 @@ object(self)
   inherit lua_object as lo
   method get_id="state_actions"
   val mutable current=None
-
+  val mutable current_ve=None
 
   val mutable fnode=new core_fun_node
   method get_fnode=fnode
@@ -435,6 +435,7 @@ object(self)
     fnode#set_id "states";
 
   method get_state=current
+  method get_state_val=current_ve
 
   method add_state n st=
 (*    print_string ("STATE_ACTIONS : add state "^n);print_newline(); *)
@@ -462,11 +463,13 @@ object(self)
       | Some n->let o=self#get_object n in o#stop()
       | None -> ());
     current<-sn;
+
     (match current with
       | Some n->
 (*	  print_string ("STATE_ACTIONS : set state "^n);print_newline(); *)
+	  current_ve<-(Some ve);
 	    let o=self#get_object n in o#start ve
-      | None -> ());    
+      | None -> current_ve<-(None));    
 
   method act()=
     match current with
@@ -483,6 +486,16 @@ object(self)
 	      | None->OLuaVal.Nil
 	 )
 );
+
+    lua#set_val (OLuaVal.String "get_state_val") 
+      (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.value) 
+	 (fun()->
+	    match self#get_state_val with
+	      | Some s->OLuaVal.Table s#to_lua#to_table
+	      | None->OLuaVal.Nil
+	 )
+);
+
     lua#set_val (OLuaVal.String "set_no_state") 
       (OLuaVal.efunc ( OLuaVal.unit **->> OLuaVal.unit) 
 	 (fun()->

@@ -50,6 +50,7 @@ let graphic_of_fun=function
 
 let sprite_of_fun=function
   | `SpriteFun spr-> spr
+  | `GameObjectFun spr-> (spr:>sprite_fun)
   | _->raise (Bad_fun_type "sprite_fun");;
 
 let game_object_of_fun=function
