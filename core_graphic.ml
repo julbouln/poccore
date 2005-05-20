@@ -94,7 +94,8 @@ class graphic_object=
     }
 *)
     method on_update()=
-      ignore(update_fun [OLuaVal.Nil])
+      ignore(lua#exec_val_fun (OLuaVal.String "on_update") [OLuaVal.Nil]);
+(*      ignore(update_fun [OLuaVal.Nil]) *)
 
     method lua_init()=
       lua#set_val (OLuaVal.String "move") (OLuaVal.efunc (OLuaVal.int **-> OLuaVal.int **->> OLuaVal.unit) self#move);
