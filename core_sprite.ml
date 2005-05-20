@@ -355,6 +355,8 @@ object(self)
   method on_loop()=
     super#on_loop();
     sprites#update();
+
+  method on_loop_graphic()=
     canvas#refresh 0 0 32 32; 
 
   method ev_parser e=

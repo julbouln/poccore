@@ -61,22 +61,30 @@ object(self)
 	g#put();
       | None -> ()
 
-  method get_current_fps=fcount/lcount
+  method get_current_fps=
+    if lcount<>0 then
+      fcount/lcount
+    else
+      0
 
+  val mutable fmod=0.
+  method set_fmod f=fmod<-f;
 
+  method frame_drop=
+    (float self#get_current_fps)<ffps
 
   method start()=
     t1<-Unix.gettimeofday();
   method finish()=
     t2<-Unix.gettimeofday();
     lcount<-lcount+1;
-    fcount<-fcount+(int_of_float (1./.(t2 -. t1)));
+    fcount<-fcount+(int_of_float (1./.((t2 -. t1)+. fmod)));
     (match fpsgr with
       | Some g ->
 	  g#set_text ("fps: "^string_of_int(fcount/lcount)); 
       | None ->());
     if (t2 -. t1)<(1./. ffps) then
-      usleep ((1./. ffps)  -. (t2 -. t1));     
+      usleep ((1./. ffps)  -. ((t2 -. t1) +. fmod));     
   
 end;;
 
@@ -120,6 +128,7 @@ object (self)
   method on_loop()=
     ignore(loop_fun [OLuaVal.Nil]);
 
+  method on_loop_graphic()=()
 
 (** what to do when quit stage *)
   method on_quit()=()
@@ -153,7 +162,7 @@ object (self)
 
 
   method get_curs=curs
-  
+
   val mutable frml=new frame_limiter
   method get_frame_limiter=frml
   method load()=
@@ -167,6 +176,8 @@ object (self)
 	fun()->
 	  frml#start();
 	  self#on_loop();
+	  if frml#frame_drop=false then
+	    self#on_loop_graphic();
 	  curs#put();
 	  frml#put_fps();
 	  video#flip();
@@ -222,6 +233,12 @@ object(self)
     super#on_loop();
     self#foreach_object (
       fun n s-> s#on_loop()
+    );
+
+  method on_loop_graphic()=
+    super#on_loop_graphic();
+    self#foreach_object (
+      fun n s-> s#on_loop_graphic()
     );
 
   method on_continue()=
