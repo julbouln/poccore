@@ -106,7 +106,21 @@ object(self)
 
   (** properties *)
   val mutable props=new val_ext_handler
-  method get_props=props
+
+  method reinit_caml_props()=
+    let prval=lua#get_val (OLuaVal.String "properties") in
+    let probj=new lua_obj in
+      (match prval with
+	| OLuaVal.Table tbl->
+	    probj#from_table (tbl);
+	| _ -> ());
+    props#from_lua probj;
+
+  method reinit_lua_props()=
+    lua#set_val (OLuaVal.String "properties") (OLuaVal.Table props#to_lua#to_table);
+
+  method get_props=
+    props
   method set_props p=props<-p
 
   (** graphics *)
