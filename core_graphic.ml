@@ -529,8 +529,9 @@ object(self)
 
       gr<-new graphic_from_drawing_fun_fmt
 	(ValList [
-	  `String "with_alpha";
+(*	  `String "with_alpha";
 	  `Color(255,255,255);
+*)
 	  `String "create_multiple";
 	  `String pdrawid;
 	  `Size(crect#get_w,crect#get_h);
@@ -562,7 +563,11 @@ object(self)
       if cw<>ocw or ch<>och then (
 	let rdr=drawing_vault#new_drawing() in
 	  rdr#create ((cw+1)*crect#get_w) ((ch+1)*crect#get_h) (255,255,255);
-	  
+(*
+	  rdr#exec_op_create_from_list "box" [`Size (((cw+1)*crect#get_w),((ch+1)*crect#get_h)); `Color (255,255,255)];
+*)
+
+
 	  for i=0 to cw do
 	    for j=0 to ch do
 	      (match (i,j) with
@@ -580,6 +585,7 @@ object(self)
 		rdr#compose dr ((i*crect#get_w)) ((j*crect#get_h));
 	    done
 	  done;
+	  rdr#exec_op_write_from_list "set_alpha" [`Color (255,255,255)];
 	  let did=(pdrawid^(string_of_int cw)^"x"^(string_of_int ch)) in
 	    drawing_vault#add_cache did (fun()->[|rdr|]);
 	    self#set_drawing_id did;
@@ -598,8 +604,8 @@ class graphic_pattern_file pfile=
   
   let did=drawing_vault#add_cache_from_drawing_fun_fmt_auto 
     (ValList  [
-       `String "with_alpha";
-       `Color(255,255,255);
+(*       `String "with_alpha";
+       `Color(255,255,255);*)
        `String "load_simple";
        `String pfile
        ]) in

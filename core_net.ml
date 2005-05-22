@@ -8,6 +8,7 @@ open Core_timer;;
 
 open Net_message;;
 open Net_conn;;
+open Net_client;;
 open Net_server;;
 
 (** types de messages :

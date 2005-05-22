@@ -279,7 +279,7 @@ object(self)
       dr#exec_op_create_from_format name (ValLua args);
       self#add_dr did [|dr|];
       did
-	
+
   method op_copy did nd name args=
     let dr=(self#get_dr did).(nd) in
     let ndid=(random_string "drscr" 20) in
