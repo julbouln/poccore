@@ -44,6 +44,9 @@ object(self)
   val mutable t2=0.
 
   val mutable ffps=float (Global.get default_fps)
+  method set_ffps f=ffps<-f
+  method get_ffps=ffps
+
   val mutable fcount=0
   val mutable lcount=0				
 
