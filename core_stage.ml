@@ -105,6 +105,9 @@ object (self)
 
   val mutable ltimer=new lua_timer
 
+  val mutable graphic_ops=true
+  method set_graphic_ops g=graphic_ops<-g
+
 
   (** graphic echange *)
   method get_graphic (id:string) (gid:string)=(None:graphic_object option)
@@ -179,11 +182,14 @@ object (self)
 	fun()->
 	  frml#start();
 	  self#on_loop();
-	  if frml#frame_drop=false then
-	    self#on_loop_graphic();
-	  curs#put();
-	  frml#put_fps();
-	  video#flip();
+	  if graphic_ops then
+	    (  
+	      if frml#frame_drop=false then
+		self#on_loop_graphic();
+	      curs#put();
+	      frml#put_fps();
+	      video#flip();
+	    );
 	  frml#finish();	  
       );
     eventm#init();

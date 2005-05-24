@@ -723,6 +723,9 @@ object (self)
       if args#is_val (`String "show_fps") then
 	o#get_frame_limiter#set_show_fps (bool_of_val(args#get_val (`String "show_fps")));
 
+      if args#is_val (`String "graphic_operations") then
+	o#set_graphic_ops (bool_of_val(args#get_val (`String "graphic_operations")));
+
 end;;
 
 
