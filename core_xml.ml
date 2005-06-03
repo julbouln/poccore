@@ -52,6 +52,10 @@ let xml_default_actions_parser=
 let xml_default_stages_parser=
   Global.empty("xml_default_stages_parser");;
 
+(** global default interaction parser, can be overided *)
+let xml_default_interactions_parser=
+  Global.empty("xml_default_interactions_parser");;
+
 
 
 (** XML part *)
@@ -613,11 +617,6 @@ object(self)
       o#set_lua_script (lua);
 (*      ignore(o#lua_init()); *)
  
-  method parse_attr k v=
-    match k with
-      | "name"->nm<-v
-      | _ -> ()
-
   method get_val=
     let ofun()=
       let o=
@@ -626,9 +625,36 @@ object(self)
 	self#init_object o;
 	o	  
     in      
-      (nm,ofun)
+      (id,ofun)
 
 end;;
+
+
+
+class xml_interaction_objects_parser=
+object(self)
+(*  inherit [(unit->interaction_lua)] xml_stringhash_parser "interaction" (fun()->new xml_interaction_object_parser) as super
+*)
+  inherit [xml_interaction_object_parser,interaction_lua] xml_container_parser "interaction" (fun()->new xml_interaction_object_parser)
+
+  method init=self#init_simple
+(*  method parse_child k v=
+    super#parse_child k v;
+
+  method init (add_obj:string->(interaction_lua)->unit)=
+    Hashtbl.iter (
+      fun k v->
+	add_obj k (v())
+    ) super#get_hash;
+*)
+end;;
+
+let xml_generic_interactions_parser()=
+  let p=new xml_interaction_objects_parser in
+    p#parser_add "interaction_lua" (fun()->new xml_interaction_object_parser);
+    p;;
+
+Global.set xml_default_interactions_parser  xml_generic_interactions_parser;;
 
 
 (** sprite *)
@@ -779,13 +805,13 @@ object (self)
   inherit xml_stage_parser as super
 
   val mutable sprite_type_parser=new xml_sprite_object_types_parser
-  val mutable interaction_parser=new xml_interaction_object_parser
+  val mutable interaction_parser=new xml_interaction_objects_parser
 
   method parse_child k v=
     super#parse_child k v;
     match k with
       | "sprite_types" -> sprite_type_parser#parse v 
-      | "interaction"->	  interaction_parser#parse v
+      | "interactions"->	  interaction_parser#parse v
       | _ -> ()
 
     
@@ -796,8 +822,10 @@ object (self)
 	new sprite_engine curs
       in
 	sprite_type_parser#init o#get_sprites#add_object_type;
-	let inter=(snd interaction_parser#get_val)() in
+(*	let inter=(snd interaction_parser#get_val)() in
 	  o#set_interaction inter;
+*)
+	interaction_parser#init o#get_interaction#add_interaction;
 	self#init_object (o:>stage);
 	(o:>stage)	  
     in      
@@ -822,8 +850,10 @@ object (self)
 	new net_client_sprite_engine curs saddr sport cport
       in
 	sprite_type_parser#init o#get_sprites#add_object_type;
-	let inter=(snd interaction_parser#get_val)() in
+(*	let inter=(snd interaction_parser#get_val)() in
 	  o#set_interaction inter;
+*)
+	interaction_parser#init o#get_interaction#add_interaction;
 	self#init_object (o:>stage);
 	(o:>stage)	  
     in      
@@ -845,8 +875,9 @@ object (self)
 	  new net_server_sprite_engine sport
       in
 	sprite_type_parser#init o#get_sprites#add_object_type;
-	let inter=(snd interaction_parser#get_val)() in
-	  o#set_interaction inter;
+(*	let inter=(snd interaction_parser#get_val)() in
+	  o#set_interaction inter;*)
+	interaction_parser#init o#get_interaction#add_interaction;
 	self#init_object (o:>stage);
 	(o:>stage)	  
     in      

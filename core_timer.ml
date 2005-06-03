@@ -154,6 +154,8 @@ object(self)
 	      self#del_task ti
 	 )
       );
+
+
     lua#set_val (OLuaVal.String "add_task") 
       (OLuaVal.efunc (OLuaVal.table **-> OLuaVal.value **->> OLuaVal.unit) 
 	 (fun t f->
@@ -168,5 +170,23 @@ object(self)
 		  
 	 )
       );
+
+
+    lua#set_val (OLuaVal.String "add_timer_from_now") 
+      (OLuaVal.efunc (OLuaVal.table **-> OLuaVal.value **->> OLuaVal.unit) 
+	 (fun t f->
+	    let g()=
+	      match f with
+		| OLuaVal.Function (s,f)->
+		    f [OLuaVal.Nil];()
+		| _ -> () in
+
+	    let ti=self#time_of_lua t in
+
+		self#add_timer_from_now ti g
+		  
+	 )
+      );
+
     lo#lua_init();
 end;;

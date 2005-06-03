@@ -20,6 +20,8 @@ object
   method virtual jump : int -> int -> unit
 end;;
 
+(* FIXME : must be in pocgame ! *)
+
 class virtual game_object_fun=
 object
   inherit sprite_fun
@@ -34,11 +36,27 @@ object
   method virtual turn : int -> unit
 end;;
 
+class virtual game_object_map_fun=
+object
+  method virtual add_object_from_type : string option -> string -> int -> int -> string
+  method virtual delete_object : string -> unit
+end;;
+
+class virtual game_map_fun=
+object
+  method virtual resize : int -> int -> unit
+  method virtual load_from_file : string -> unit
+  method virtual save_to_file : string -> unit
+end;;
+
 type functionizer=
     [
       `GraphicFun of graphic_fun
     | `SpriteFun of sprite_fun	
     | `GameObjectFun of game_object_fun
+    | `GameObjectMapFun of game_object_map_fun
+    | `GameMapFun of game_map_fun
+
     | `NoFun
     ];;
 

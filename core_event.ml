@@ -17,6 +17,7 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
+open Value_common;;
 
 type key_type=
 | KeyTab
@@ -97,6 +98,7 @@ open Value_lua;;
 
 class virtual interaction_object=
 object(self)
+  inherit generic_object
 
   method virtual on_keypress : (key_type*key_type)->unit
   method virtual on_keyrelease : (key_type*key_type)->unit
@@ -168,3 +170,17 @@ ignore(lua#exec_val_fun (OLuaVal.String "on_mouserelease") [OLuaVal.Number (floa
 
 
 end;;
+
+class interaction_objects=
+object(self)
+  inherit [interaction_lua] generic_object_handler
+  inherit lua_object as lo
+  method get_id="interactions"
+
+  method add_interaction id i=
+    let ni=self#add_object (Some id) i in
+    ignore(i#lua_init());
+    self#lua_parent_of ni (i:>lua_object);
+
+end;;
+
