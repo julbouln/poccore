@@ -31,8 +31,10 @@ open Core_stage;;
 open Core_main;;
 open Core_font;;
 open Core_event;;
+open Core_interaction;;
 open Core_sprite;;
 open Core_cursor;;
+
 
 open Binding;;
 

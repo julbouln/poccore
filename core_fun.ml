@@ -49,6 +49,12 @@ object
   method virtual save_to_file : string -> unit
 end;;
 
+class virtual game_visual_fun=
+object
+  method virtual set_position: int->int->unit
+  method virtual scroll:int->int->unit
+end;;
+
 type functionizer=
     [
       `GraphicFun of graphic_fun
@@ -56,6 +62,7 @@ type functionizer=
     | `GameObjectFun of game_object_fun
     | `GameObjectMapFun of game_object_map_fun
     | `GameMapFun of game_map_fun
+    | `GameVisualFun of game_visual_fun
 
     | `NoFun
     ];;
@@ -74,6 +81,10 @@ let sprite_of_fun=function
 let game_object_of_fun=function
   | `GameObjectFun spr-> spr
   | _->raise (Bad_fun_type "game_object_fun");;
+
+let game_visual_of_fun=function
+  | `GameVisualFun vis-> vis
+  | _->raise (Bad_fun_type "game_visual_fun");;
   
 
 

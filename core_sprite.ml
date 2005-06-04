@@ -10,6 +10,7 @@ open Core_graphic;;
 open Core_action;;
 open Core_type;;
 open Core_event;;
+open Core_interaction;;
 open Core_video;;
 
 open Core_fun;;
@@ -370,6 +371,10 @@ object(self)
   method on_loop()=
     super#on_loop();
     sprites#update();
+    interaction#foreach_object (
+      fun ii i->
+	i#on_loop()
+    );
 
   method on_loop_graphic()=
     canvas#refresh 0 0 32 32; 
