@@ -1,5 +1,6 @@
 open Value_common;;
 open Core_event;;
+open Core_fun;;
 
 (* FIXME : Go in core_interaction.ml *)
 (** interaction *)
@@ -52,7 +53,8 @@ object(self)
   inherit interaction_object
   inherit lua_object as super
 
-  method get_id="interaction"
+  val mutable fnode=new core_fun_node
+  method get_fnode=fnode
 
   method on_keypress (e:(key_type*key_type))=
     ignore(lua#exec_val_fun (OLuaVal.String "on_keypress") [OLuaVal.String (string_of_key (fst e))])
@@ -91,10 +93,18 @@ class interaction_objects=
 object(self)
   inherit [interaction_lua] generic_object_handler
   inherit lua_object as lo
+
+  val mutable fnode=new core_fun_node
+  method get_fnode=fnode
+
   method get_id="interactions"
 
   method add_interaction id i=
     let ni=self#add_object (Some id) i in
+
+    i#get_fnode#set_parent fnode;
+    fnode#get_children#add_object (Some id) i#get_fnode;
+
     ignore(i#lua_init());
     self#lua_parent_of ni (i:>lua_object);
 

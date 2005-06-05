@@ -4,6 +4,7 @@ open Value_common;;
 open Value_val;;
 open Value_lua;;
 
+open Core_val;;
 open Core_rect;;
 open Core_video;;
 open Core_medias;;
@@ -27,6 +28,10 @@ class graphic_object=
     inherit generic_object as go
     inherit canvas_object
     inherit lua_object as lo
+
+    val mutable cargs=new val_ext_handler
+    method set_args a=cargs<-a
+    method get_args=cargs
 
     val mutable fnode=new core_fun_node
     method get_fnode=fnode
@@ -105,12 +110,16 @@ class graphic_object=
       lua#set_val (OLuaVal.String "get_h") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.int) (fun()->rect#get_h));
       lua#set_val (OLuaVal.String "set_cur_drawing") (OLuaVal.efunc (OLuaVal.int **->> OLuaVal.unit) self#set_cur_drawing);
       lua#set_val (OLuaVal.String "get_cur_drawing") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.int) (fun()->self#get_cur_drawing));
+
+     lua#set_val (OLuaVal.String "get_drawing_id") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.string) (fun()->self#get_drawing_id));
       lua#set_val (OLuaVal.String "get_drawings_size") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.int) (fun()->self#get_drawings_size));
 
       lua#set_val (OLuaVal.String "show") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.unit) self#show);
       lua#set_val (OLuaVal.String "hide") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.unit) self#hide);
 
       lua#set_val (OLuaVal.String "set_layer") (OLuaVal.efunc (OLuaVal.int **->> OLuaVal.unit) self#set_layer);
+
+      lua#set_val (OLuaVal.String "creation_args") (OLuaVal.Table cargs#to_lua#to_table);
 
       lo#lua_init();
       update_fun<-lua#get_fun (OLuaVal.String "on_update");

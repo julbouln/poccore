@@ -273,6 +273,12 @@ object(self)
     let dr=(self#get_dr n) in
       Array.length dr
 
+  method create_from_vault vid=
+    let did=(random_string "drscr" 20) in
+    let drs=(drawing_vault#get_cache vid) in
+      self#add_dr did drs;
+      did
+
   method op_create name args=
     let did=(random_string "drscr" 20) in
     let dr=drawing_vault#new_drawing() in
@@ -308,6 +314,10 @@ object(self)
     self#register ds;
 
   method lua_init()=
+    lua#set_val (OLuaVal.String "create_from_vault") 
+      (OLuaVal.efunc (OLuaVal.string **->> OLuaVal.string) 
+	 (self#create_from_vault));
+
     lua#set_val (OLuaVal.String "create") 
       (OLuaVal.efunc (OLuaVal.string **-> OLuaVal.table **->> OLuaVal.string) 
 	 (fun n a->

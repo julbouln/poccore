@@ -298,6 +298,7 @@ object (self)
     let args=args_parser#get_val in
       if args#is_val (`String "layer") then
 	o#set_layer (int_of_val(args#get_val (`String "layer")));
+      o#set_args args;
       
 end;;
 
@@ -357,11 +358,14 @@ object(self)
 	let args=args_parser#get_val in
 	let ds=text_of_val(args#get_val (`String "drawing_script")) in
 	  ignore(drs#lua_init()); 
+
 	  new graphic_from_drawing (random_string "dscr" 15)
 	    (fun()->
-		(drs#register ds)
-	    )
+	       (drs#register ds)
+	    );
+
       in
+	o#lua_parent_of "drawing_script" (drs:>lua_object);
 	self#init_object o;
 	o	  
     in      
@@ -807,7 +811,7 @@ object (self)
   inherit xml_stage_parser as super
 
   val mutable sprite_type_parser=new xml_sprite_object_types_parser
-  val mutable interaction_parser=new xml_interaction_objects_parser
+  val mutable interaction_parser=(Global.get xml_default_interactions_parser)()
 
   method parse_child k v=
     super#parse_child k v;

@@ -39,6 +39,7 @@ end;;
 class virtual game_object_map_fun=
 object
   method virtual add_object_from_type : string option -> string -> int -> int -> string
+  method virtual get_object_id_at_position : int -> int -> string option
   method virtual delete_object : string -> unit
 end;;
 
@@ -81,6 +82,14 @@ let sprite_of_fun=function
 let game_object_of_fun=function
   | `GameObjectFun spr-> spr
   | _->raise (Bad_fun_type "game_object_fun");;
+
+let game_object_map_of_fun=function
+  | `GameObjectMapFun gom-> gom
+  | _->raise (Bad_fun_type "game_object_map_fun");;
+
+let game_map_of_fun=function
+  | `GameMapFun gm-> gm
+  | _->raise (Bad_fun_type "game_map_fun");;
 
 let game_visual_of_fun=function
   | `GameVisualFun vis-> vis
@@ -139,6 +148,7 @@ end;;
 class core_fun_object=
 object
   val mutable fnode=new core_fun_node
+  method get_fnode=fnode
   
   method fun_init()=
     fnode#set_children (new core_fun_node_handler);

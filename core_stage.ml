@@ -27,6 +27,7 @@ open Core_timer;;
 open Core_graphic;;
 open Core_font;;
 open Core_timer;;
+open Core_fun;;
 
 open Binding;;
 
@@ -100,6 +101,12 @@ class stage  (cursor:cursors)=
 object (self)
   inherit generic_object
   inherit lua_object as super
+
+  val mutable fnode=new core_fun_node
+  method get_fnode=fnode
+
+  method fun_init()=()
+
   val mutable initialized=false
   val curs=cursor
 

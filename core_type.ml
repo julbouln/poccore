@@ -36,4 +36,19 @@ object(self)
     method foreach_object_type f= 
       Hashtbl.iter f object_types
 
+    method foreach_object f= 
+      Hashtbl.iter f objects
+
+    method lua_init()=
+   lua#set_val (OLuaVal.String "foreach_object") 
+     (OLuaVal.efunc (OLuaVal.value **->> OLuaVal.unit) 
+	(fun f->
+	   let g k v=
+	     match f with
+	       | OLuaVal.Function (s,f)->
+		   f [OLuaVal.String k;OLuaVal.Table v#get_lua#to_table];()
+	       | _ -> () in
+	     self#foreach_object g
+	));
+      lo#lua_init()
 end;;
