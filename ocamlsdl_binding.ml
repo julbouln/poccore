@@ -48,7 +48,7 @@ object(self)
     method sizeof_text txt=
 	match font_type with
 	  | FontTTF (f,s)->
-	      size_text self#get_f txt
+	      size_utf8 self#get_f txt
 	  | FontEmbed -> (String.length txt*8,8);
 
   end;;
@@ -188,7 +188,7 @@ object(self)
 	  DrawResultT
 	    (match fnt#get_font_type with
 	       | FontTTF f->
-		   let s=render_text_solid fnt#get_f txt color in
+		   let s=render_utf8_solid fnt#get_f txt color in
 		   let si=surface_info s in
 		   let s2=display_format(create_RGB_surface_format s [`SWSURFACE] si.w si.h) in
 		     fill_rect s2 (map_RGB s2 (255,255,255));
@@ -405,6 +405,8 @@ object(self)
     
     Sdl.init [`EVERYTHING];
     Sdlttf.init();
+    Sdlkey.enable_unicode true;
+
 (*    print_string "BINDING(poclow): init screen";print_newline(); *)
     if fs then
       self#set_t (set_video_mode ~w:w ~h:h ~bpp:bpp [`HWSURFACE;`DOUBLEBUF;`FULLSCREEN])
@@ -490,7 +492,7 @@ let drawing_vault=new sdl_drawing_vault 10000 (1./.25.);;
 open Sdlevent;;
 
 let parse_unicode k=
-  KeyUnicode (UChar.chr k);;
+  KeyUnicode (UChar.of_char k);;
 
 let parse_key k=
 (*  print_string "poclow_key : ";print_int k;print_newline(); *)
@@ -587,11 +589,25 @@ let sdl_event_to_event a=
      | MOUSEMOTION m->EventMouse (MouseMotion(m.mme_x,m.mme_y))
      | MOUSEBUTTONUP m->EventMouse (MouseRelease(m.mbe_x,m.mbe_y,(sdl_mousebut_to_int m.mbe_button)))
      | MOUSEBUTTONDOWN m->EventMouse (MouseClick(m.mbe_x,m.mbe_y,(sdl_mousebut_to_int m.mbe_button)));
-     | KEYDOWN m->EventKeyboard(KeyboardPress (parse_key (Sdlkey.int_of_key m.keysym),parse_unicode (Sdlkey.int_of_key m.keysym)))
-     | KEYUP m->EventKeyboard(KeyboardRelease (parse_key (Sdlkey.int_of_key m.keysym),parse_unicode (Sdlkey.int_of_key m.keysym)))
+     | KEYDOWN m->
+(*print_char m.keycode;print_newline();*)
+(* print_int m.keyunicode;print_newline(); *)	     
+EventKeyboard(KeyboardPress (parse_key (Sdlkey.int_of_key m.keysym),
+
+ parse_unicode m.keycode 
+(* parse_unicode (Sdlkey.int_of_key m.keysym) *)
+))
+     | KEYUP m->EventKeyboard(KeyboardRelease (parse_key (Sdlkey.int_of_key m.keysym),
+ parse_unicode m.keycode
+(*parse_unicode (Sdlkey.int_of_key m.keysym) *)
+))
      | _ -> EventError
   );;
 
+(*
+if Sdlkey.query_unicode() then(
+  print_string "unicode enabled";print_newline());
+*)
 class sdl_event_manager =
 object(self) 
   inherit event_manager
