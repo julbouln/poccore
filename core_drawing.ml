@@ -362,7 +362,8 @@ object(self)
   method add_cache_from_drawing_fun_fmt_auto (fargs:(val_ext) val_format)=
     let args=val_ext_handler_of_format fargs in
     let largs=list_of_val_ext_handler args in
-    let n=ref "cache" in
+    let n=ref ("cache") in
+(*^string_of_int (randomize 2048)) in *)
       List.iter (
 	fun v->
 	  match v with

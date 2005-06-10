@@ -149,6 +149,13 @@ object(self)
     let dra=drawing_vault#get_cache_simple did in
       rect#set_size (dra#get_w) (dra#get_h);
       self#set_drawing_id did;
+
+  method private reinit args=
+  let did=drawing_vault#add_cache_from_drawing_fun_fmt_auto args in
+    let dra=drawing_vault#get_cache_simple did in
+      rect#set_size (dra#get_w) (dra#get_h);
+      self#set_drawing_id did;
+
 end;;
 
 
