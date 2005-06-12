@@ -160,7 +160,7 @@ end;;
 
 
 class graphic_from_drawing_fun did args=
-object
+object(self)
   inherit graphic_object
 
   initializer
@@ -168,7 +168,14 @@ object
 
     let dra=drawing_vault#get_cache_simple did in
       rect#set_size (dra#get_w) (dra#get_h);
+      self#set_drawing_id did;
 
+  method private reinit ndid nargs=
+    drawing_vault#add_cache_from_drawing_fun ndid nargs;
+
+    let dra=drawing_vault#get_cache_simple ndid in
+      rect#set_size (dra#get_w) (dra#get_h);
+      self#set_drawing_id ndid;
 end;;
 
 
