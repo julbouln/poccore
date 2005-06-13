@@ -40,7 +40,7 @@ open Binding;;
 
 (** Core xml interface *)
 
-(** globals *)
+(** {2 Globals} *)
 
 (** global default graphics parser, can be overided *)
 let xml_default_graphics_parser=
@@ -60,7 +60,7 @@ let xml_default_interactions_parser=
 
 
 
-(** XML part *)
+(** {2 XML parser} *)
 
 (** xml font parser : <font path="fontfile" size="sizeoffont"/> *)
 class xml_font_parser=
@@ -239,7 +239,7 @@ end;;
 
 
 
-
+(** generic Core object parser*)
 class ['ot] xml_object_parser (new_obj:unit->'ot)= 
 object (self)
   inherit xml_parser
@@ -248,13 +248,13 @@ object (self)
 (** object unique id *)
   val mutable id=""
   method get_id=id
+
 (** object type *)
   val mutable nm=""
   method get_type=nm
 
 (** lua code for this object *)
   val mutable lua=""
-(** object properties *)
 
   method parse_attr k v=
     match k with
@@ -284,6 +284,9 @@ object (self)
 
 end;;
 
+(** {3 Graphic} *)
+
+(** graphic generic parser *)
 class xml_graphic_object_parser=
 object (self)
   inherit [graphic_object] xml_object_parser (fun()->new graphic_object) as super
@@ -302,6 +305,8 @@ object (self)
       
 end;;
 
+
+(** graphic parser from file *)
 class xml_graphic_from_file_parser=
 object(self)
   inherit xml_graphic_object_parser
@@ -324,7 +329,7 @@ object(self)
 end;;
 
 
-
+(** graphic parser from fun *)
 class xml_graphic_from_drawing_fun_parser=
 object(self)
   inherit xml_graphic_object_parser
@@ -345,7 +350,7 @@ end;;
 
 
 
-
+(** graphic parser from lua drawing script *)
 class xml_graphic_from_drawing_script_parser=
 object(self)
   inherit xml_graphic_object_parser
@@ -401,8 +406,7 @@ end;;
 
 
 
-
-
+(** textual graphic parser *)
 class xml_graphic_text_parser=
 object(self)
   inherit xml_graphic_object_parser
@@ -425,7 +429,7 @@ object(self)
 
 end;;
 
-
+(** graphic from pattern parser *)
 class xml_graphic_pattern_parser=
 object(self)
   inherit xml_graphic_object_parser
@@ -450,7 +454,7 @@ object(self)
 end;;
 
 
-
+(** graphics container parser *)
 class xml_graphics_parser=
 object(self)
   inherit [xml_graphic_object_parser,graphic_object] xml_container_parser "graphic" (fun()->new xml_graphic_object_parser)
@@ -459,8 +463,7 @@ end;;
 
 
 
-(* factory parser *)
-
+(** factory parser *)
 let xml_factory_graphics_parser()=
   let p=new xml_graphics_parser in
     p#parser_add "graphic_from_file" (fun()->new xml_graphic_from_file_parser);
@@ -476,13 +479,16 @@ Global.set xml_default_graphics_parser xml_factory_graphics_parser;;
 
 
 
+(** {3 Action} *)
+
+(** generic action parser *)
 class xml_action_object_parser=
 object(self)
   inherit [action_lua] xml_object_parser (fun()->new action_lua)
 end;;
 
 
-
+(** action timed parser *)
 class xml_action_timed_parser=
 object(self)
   inherit xml_action_object_parser
@@ -500,7 +506,7 @@ object(self)
 
 end;;
 
-
+(** action in time parser *)
 class xml_action_intime_parser=
 object(self)
   inherit xml_action_object_parser
@@ -519,7 +525,7 @@ object(self)
 end;;
 
 
-
+(** action with anim parser *)
 class xml_action_anim_parser=
 object(self)
   inherit xml_action_object_parser
@@ -548,13 +554,14 @@ object(self)
 
 end;;
 
-
+(** action movement parser *)
 class xml_action_movement_parser=
 object(self)
   inherit [action_lua] xml_object_parser (fun()->new action_movement)
 end;;
 
 
+(** actions container parser *)
 class xml_actions_parser=
 object(self)
   inherit [xml_action_object_parser,action_lua] xml_container_parser "action" (fun()->new xml_action_object_parser)
@@ -580,7 +587,6 @@ object(self)
 end;;
 
 (** Global parser def *)
-
 let xml_factory_actions_parser()=
   let p=new xml_actions_parser in
     p#parser_add "action_lua" (fun()->new xml_action_object_parser);
@@ -592,6 +598,8 @@ let xml_factory_actions_parser()=
 
 Global.set xml_default_actions_parser xml_factory_actions_parser;;
   
+
+(** {3 States} *)
 
 class xml_state_actions_parser=
 object(self)
@@ -610,7 +618,7 @@ object(self)
 
 end;;
 
-(** interaction *)
+(** {3 Interaction} *)
 
 class xml_interaction_object_parser=
 object(self)
@@ -663,7 +671,7 @@ let xml_generic_interactions_parser()=
 Global.set xml_default_interactions_parser  xml_generic_interactions_parser;;
 
 
-(** sprite *)
+(** {3 Sprite} *)
 
 class xml_sprite_object_type_parser=
 object(self)
@@ -731,7 +739,7 @@ object(self)
 end;;
 
 
-(** stages *)
+(** {3 Stage} *)
 
 class xml_stage_parser=
 object (self)
@@ -805,6 +813,7 @@ object(self)
 end;;
 
 
+(** {3 Engine} *)
 
 class xml_sprite_engine_stage_parser=
 object (self)
@@ -905,7 +914,8 @@ Global.set xml_default_stages_parser xml_factory_stages_parser;;
 
 
 
-(** the XPOC parser! *)
+(** {3 XPOC!} *)
+
 class xpoc_parser=
 object(self)
   inherit xml_parser

@@ -34,6 +34,10 @@ type key_type=
 | KeyRight
 | KeyLeft
 | KeyShift
+
+| KeyNumLock
+| KeyCapsLock
+
 | KeyUnicode of UChar.t
 | KeyChar of string
 | KeyUnknow;;

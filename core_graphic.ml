@@ -22,6 +22,8 @@ open Binding;;
 
 exception Drawing_id_not_set;;
 
+(** {2 Graphic} *)
+
 (** Graphic object class parent *)
 class graphic_object=
   object (self)
@@ -127,6 +129,7 @@ class graphic_object=
   end;;
 
 
+(** Graphic from drawing *)
 class graphic_from_drawing did (f)=
 object(self)
   inherit graphic_object
@@ -139,7 +142,7 @@ object(self)
     
 end;;
 
-
+(** Graphic from drawing fun (with format)*)
 class graphic_from_drawing_fun_fmt args=
 object(self)
   inherit graphic_object
@@ -158,7 +161,7 @@ object(self)
 
 end;;
 
-
+(** Graphic from drawing fun *)
 class graphic_from_drawing_fun did args=
 object(self)
   inherit graphic_object
@@ -178,7 +181,7 @@ object(self)
       self#set_drawing_id ndid;
 end;;
 
-
+(** Graphic from a file *)
 class graphic_from_file file w h=
 object(self)
 (*  inherit graphic_from_drawing_fun file 
@@ -201,6 +204,7 @@ object(self)
     ])
 end;;
 
+(** Graphic resized from a file *)
 class graphic_resized_from_file file i w h iw ih=
 object
   val fgr=new graphic_from_file file iw ih
@@ -217,6 +221,7 @@ object
     )
 end;;
 
+(** Graphic resized from a drawing *)
 class graphic_resized pdraw i fw fh=
 object
   inherit graphic_from_drawing (pdraw^"_"^string_of_int i^"_resized") 
@@ -231,7 +236,7 @@ object
     )
 end;;
 
-
+(** {2 Text} *)
 
 (** utf8 *)
 class utf8=
@@ -466,6 +471,7 @@ object(self)
 
 end;;
 
+(** {2 Pattern} *)
 
 (** special graphic pattern resize with 9 tiles *)
 class graphic_pattern_old pdrawid=

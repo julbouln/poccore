@@ -1,3 +1,9 @@
+
+(** Functional capacity *)
+
+(** {2 Funtional classes} *)
+
+(** functional graphic class *)
 class virtual graphic_fun=
 object
   method virtual move: int->int->unit
@@ -13,6 +19,9 @@ object
   method virtual set_layer: int->unit
 end;;
 
+
+
+(** functional sprite class *)
 class virtual sprite_fun=
 object
   method virtual get_x : unit->int
@@ -21,7 +30,7 @@ object
 end;;
 
 (* FIXME : must be in pocgame ! *)
-
+(** functional game_object class *)
 class virtual game_object_fun=
 object
   inherit sprite_fun
@@ -36,6 +45,7 @@ object
   method virtual turn : int -> unit
 end;;
 
+(** functional game object map class *)
 class virtual game_object_map_fun=
 object
   method virtual add_object_from_type : string option -> string -> int -> int -> string
@@ -43,6 +53,7 @@ object
   method virtual delete_object : string -> unit
 end;;
 
+(** functional game map class *)
 class virtual game_map_fun=
 object
   method virtual resize : int -> int -> unit
@@ -50,11 +61,14 @@ object
   method virtual save_to_file : string -> unit
 end;;
 
+(** functional game visual class *)
 class virtual game_visual_fun=
 object
   method virtual set_position: int->int->unit
   method virtual scroll:int->int->unit
 end;;
+
+(** {2 Type} *)
 
 type functionizer=
     [
@@ -67,6 +81,9 @@ type functionizer=
 
     | `NoFun
     ];;
+
+
+(** {2 Convertion} *)
 
 exception Bad_fun_type of string;;
 
@@ -96,6 +113,8 @@ let game_visual_of_fun=function
   | _->raise (Bad_fun_type "game_visual_fun");;
   
 
+
+(** {2 Functional tree} *)
 
 open Value_common;;
 
@@ -138,6 +157,7 @@ object
   inherit [_core_fun_node] generic_object_handler 
 end;;
 
+(** Functional Node *)
 class core_fun_node=
 object(self)
   inherit [functionizer] fun_node
@@ -145,6 +165,8 @@ object(self)
     self#set_children (new core_fun_node_handler);
 end;;
 
+
+(** UNUSED *)
 class core_fun_object=
 object
   val mutable fnode=new core_fun_node

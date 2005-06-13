@@ -508,6 +508,9 @@ let parse_key k=
     | 275 -> KeyRight
     | 276 -> KeyLeft
 
+    | 300 -> KeyNumLock
+    | 301 -> KeyCapsLock
+
     | 304 -> KeyShift
     | 306 -> KeyCtrl
 
@@ -539,6 +542,27 @@ let parse_key k=
     | 55 -> KeyChar "7";
     | 56 -> KeyChar "8";
     | 57 -> KeyChar "9";
+
+(* huhu *)
+    | 256 -> KeyChar "0"
+    | 257 -> KeyChar "1";
+    | 258 -> KeyChar "2";
+    | 259 -> KeyChar "3";
+    | 260 -> KeyChar "4";
+    | 261 -> KeyChar "5";
+    | 262 -> KeyChar "6";
+    | 263 -> KeyChar "7";
+    | 264 -> KeyChar "8";
+    | 265 -> KeyChar "9";
+    | 270 -> KeyChar ".";
+
+    | 267 -> KeyChar "/";
+    | 268 -> KeyChar "*";
+    | 269 -> KeyChar "-";
+    | 270 -> KeyChar "+";
+
+    | 271 -> KeyReturn;
+
 
     | 58 -> KeyChar ":";
     | 59 -> KeyChar ";";
