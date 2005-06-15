@@ -13,8 +13,8 @@ object(self)
       | Some d->d
       | None->raise Sql_not_connected
 	  
-  method connect host dbn p pass user=
-    db<-Some (Mysql.quick_connect ~host:host ~database:dbn ~port:p ~password:pass ~user:user ());
+  method connect host dbn pass user=
+    db<-Some (Mysql.quick_connect ~host:host ~database:dbn ~password:pass ~user:user ());
 
   method select_db dbn=
     Mysql.select_db self#get_db dbn
@@ -46,11 +46,16 @@ object(self)
 	); 
       !r
 
+  method private escape_str s=
+    Str.global_replace  (Str.regexp "\"") "\\\"" s
+
   method add_node tbl id (node:xml_node)=
-    conn#exec ("insert into " ^ tbl ^ " values (\"" ^id^ "\",\"" ^ node#to_string ^ "\")") (fun s->());
+    let q=("insert into " ^ tbl ^ " values (\"" ^id^ "\",\"" ^ self#escape_str node#to_string ^ "\")") in
+(*      print_string q;print_newline(); *)
+    conn#exec q (fun s->());
 
   method save_node tbl id (node:xml_node)=
-    conn#exec ("update " ^ tbl ^ " set xml=\"" ^ node#to_string ^ "\" where id=\"" ^id^ "\"") (fun s->());
+    conn#exec ("update " ^ tbl ^ " set xml=\"" ^ self#escape_str node#to_string ^ "\" where id=\"" ^id^ "\"") (fun s->());
 
   method load_node tbl id=
     let x=new xml_node in
