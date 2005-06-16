@@ -50,22 +50,30 @@ object(self)
     Str.global_replace  (Str.regexp "\"") "\\\"" s
 
   method add_node tbl id (node:xml_node)=
-    let q=("insert into " ^ tbl ^ " values (\"" ^id^ "\",\"" ^ self#escape_str node#to_string ^ "\")") in
+    let q=("insert into " ^ tbl ^ " values (0,\"" ^id^ "\",\"" ^ self#escape_str node#to_string ^ "\")") in
 (*      print_string q;print_newline(); *)
     conn#exec q (fun s->());
 
-  method save_node tbl id (node:xml_node)=
-    conn#exec ("update " ^ tbl ^ " set xml=\"" ^ self#escape_str node#to_string ^ "\" where id=\"" ^id^ "\"") (fun s->());
+  method save_node tbl k id (node:xml_node)=
+    match k with
+      | Some n->
+	  conn#exec ("update " ^ tbl ^ " set xml=\"" ^ self#escape_str node#to_string ^ "\" where key="^string_of_int n^" id=\"" ^id^ "\"") (fun s->());
+      | None ->
+	  conn#exec ("update " ^ tbl ^ " set xml=\"" ^ self#escape_str node#to_string ^ "\" where id=\"" ^id^ "\"") (fun s->());
 
   method load_node tbl id=
-    let x=new xml_node in
+(*    let x=new xml_node in *)
+    let na=DynArray.create() in
       conn#exec ("select xml from "^tbl^" where id=\""^id^"\"")
 	(fun s->(
 	   match s.(0) with
-	       | Some v->x#of_string v
+	       | Some v->
+		   let x=new xml_node in
+		     x#of_string v;
+		     DynArray.add na x
 	       | None -> ()
 	 )
 	); 
-      x
+      DynArray.to_array na
 end
 
