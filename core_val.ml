@@ -441,49 +441,6 @@ let rec val_ext_of_lua=function
 
 
 
-let core_lua_globals=
-  generic_lua_globals@
-  [
-    ("val_position", (OLuaVal.efunc (OLuaVal.int **-> OLuaVal.int **->> OLuaVal.table) 
-		    (fun x y->
-		       lua_of_position (x,y)
-		    )
-		 )
-    );
-
-    ("val_size", (OLuaVal.efunc (OLuaVal.int **-> OLuaVal.int **->> OLuaVal.table) 
-		    (fun w h->
-		       lua_of_size (w,h)
-		    )
-		 )
-    );
-
-    ("val_color", (OLuaVal.efunc (OLuaVal.int **-> OLuaVal.int **-> OLuaVal.int **->> OLuaVal.table) 
-		    (fun r g b->
-		       lua_of_color (r,g,b)
-		    )
-		 )
-    );
-
-    ("val_time", (OLuaVal.efunc (OLuaVal.int **-> OLuaVal.int **-> OLuaVal.int **-> OLuaVal.int **->> OLuaVal.table) 
-		    (fun h m s f->
-		       lua_of_time {h=h;m=m;s=s;f=f}
-		    )
-		 )
-    );
-
-    ("val_direction", (OLuaVal.efunc (OLuaVal.string **->> OLuaVal.table) 
-		    (fun d->
-		       lua_of_direction (direction_of_string d)
-		    )
-		 )
-    );
-
-
-  ];;
-
-
-Global.set lua_globals core_lua_globals;;
 
 
 (* FIXME : dirty *)
@@ -554,3 +511,73 @@ let list_of_val_ext_handler nh=
   nh#to_list();;
 
 
+(* more globals lua func *)
+
+let core_lua_globals=
+  generic_lua_globals@
+  [
+    ("val_position", (OLuaVal.efunc (OLuaVal.int **-> OLuaVal.int **->> OLuaVal.table) 
+		    (fun x y->
+		       lua_of_position (x,y)
+		    )
+		 )
+    );
+
+    ("val_size", (OLuaVal.efunc (OLuaVal.int **-> OLuaVal.int **->> OLuaVal.table) 
+		    (fun w h->
+		       lua_of_size (w,h)
+		    )
+		 )
+    );
+
+    ("val_color", (OLuaVal.efunc (OLuaVal.int **-> OLuaVal.int **-> OLuaVal.int **->> OLuaVal.table) 
+		    (fun r g b->
+		       lua_of_color (r,g,b)
+		    )
+		 )
+    );
+
+    ("val_time", (OLuaVal.efunc (OLuaVal.int **-> OLuaVal.int **-> OLuaVal.int **-> OLuaVal.int **->> OLuaVal.table) 
+		    (fun h m s f->
+		       lua_of_time {h=h;m=m;s=s;f=f}
+		    )
+		 )
+    );
+
+    ("val_direction", (OLuaVal.efunc (OLuaVal.string **->> OLuaVal.table) 
+		    (fun d->
+		       lua_of_direction (direction_of_string d)
+		    )
+		 )
+    );
+
+
+  ("save_lua",
+      (OLuaVal.efunc (OLuaVal.string **->  OLuaVal.table **->> OLuaVal.unit) 
+	 (fun f v->
+	    let lo=new lua_obj in
+	      lo#from_table v;
+	      let vh=new val_ext_handler in
+		vh#set_id "values";
+		vh#from_lua lo;
+		vh#to_xml#to_file f
+	 )
+      )
+  );
+
+  ("load_lua",
+      (OLuaVal.efunc (OLuaVal.string **->>  OLuaVal.table) 
+	 (fun f->
+	    let vh=new val_ext_handler in
+	    let x=new xml_node in
+	      x#of_file f;
+	      vh#from_xml x;
+	      vh#to_lua#to_table
+	 )
+      )
+  );
+
+  ];;
+
+
+Global.set lua_globals core_lua_globals;;
