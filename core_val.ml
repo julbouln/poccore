@@ -577,6 +577,17 @@ let core_lua_globals=
       )
   );
 
+  ("file_exists",
+      (OLuaVal.efunc (OLuaVal.string **->>  OLuaVal.value) 
+	 (fun f->
+	    if Sys.file_exists f then
+	      OLuaVal.Number (1.0)
+	    else
+	      OLuaVal.Nil
+	 )
+      )
+  );
+
   ];;
 
 
