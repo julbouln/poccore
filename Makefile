@@ -12,7 +12,7 @@ RESULT  = poccore
 
 THREADS=yes
 
-OCAMLDOC=ocamlfind ocamldoc -package "$(PACKS)"
+OCAMLDOC=ocamlfind ocamldoc -package "threads $(PACKS)"
 DOC_FILES=$(SOURCES)
 
 all : binding.ml ncl bcl

@@ -6,6 +6,8 @@ open Core_timer;;
 
 (** Extended val type *)
 
+(** {2 Types} *)
+
 type direction=
   | NORTH
   | NORTH_WEST
@@ -16,7 +18,28 @@ type direction=
   | EAST
   | NORTH_EAST
 
+type val_ext=
+    [
+      val_generic
+    | `Position of (int*int)
+    | `Size of (int*int)
+    | `Color of (int*int*int)
+    | `Time of time
+    | `List of val_ext list 
+    | `Direction of direction
+    | `Hash of (string,val_ext) Hashtbl.t
+
+(*    | `Function of val_ext list-> val_ext list *)
+    ]
+;;
+
+(** {2 Exceptions} *)
+
 exception Not_a_direction of string
+
+(** {2 Functions} *)
+
+(** {3 Direction conversion functions} *)
 
 let direction_of_string s=
   (match s with
@@ -43,21 +66,7 @@ let string_of_direction d=
      | NORTH_EAST -> "north_east")
 
 
-type val_ext=
-    [
-      val_generic
-    | `Position of (int*int)
-    | `Size of (int*int)
-    | `Color of (int*int*int)
-    | `Time of time
-    | `List of val_ext list 
-    | `Direction of direction
-    | `Hash of (string,val_ext) Hashtbl.t
-
-(*    | `Function of val_ext list-> val_ext list *)
-    ]
-;;
-
+(** {3 Extended values conversion functions} *)
 
 let size_of_val=function
   | `Size v->v
@@ -66,7 +75,6 @@ let size_of_val=function
 let position_of_val=function
   | `Position v->v
   | _->raise (Bad_val_type "position");;
-
 
 let color_of_val=function
   | `Color v->v
@@ -83,6 +91,8 @@ let list_of_val=function
 let direction_of_val=function
   | `Direction v->v
   | _->raise (Bad_val_type "direction");;
+
+(** {3 XML conversion} *)
 
 let rec xml_of_val_ext v=
   let ron=ref (new xml_node) in
@@ -190,6 +200,8 @@ let rec val_ext_of_xml x=
   | _ -> val_of_xml x
 ;;
 
+
+(** {3 Lua conversion} *)
 
 let lua_table_of_list l=
   let tbl=Luahash.create (fun a b->a=b) 2 in
@@ -482,6 +494,8 @@ let rec val_ext_of_lua=function
 
 let ext_of_generic v=(v : val_generic :> val_ext);;
 
+(** {3 Classes} *)
+
 class val_ext_handler=
 object
   inherit [val_ext] val_handler xml_of_val_ext val_ext_of_xml lua_of_val_ext val_ext_of_lua 
@@ -511,8 +525,9 @@ let list_of_val_ext_handler nh=
   nh#to_list();;
 
 
-(* more globals lua func *)
+(** {2 Lua globals} *)
 
+(** more globals lua func *)
 let core_lua_globals=
   generic_lua_globals@
   [
