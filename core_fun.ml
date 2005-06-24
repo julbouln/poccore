@@ -56,6 +56,7 @@ end;;
 (** functional game map class *)
 class virtual game_map_fun=
 object
+  method virtual path_calc : (int*int) -> (int*int) -> (int*int) array
   method virtual resize : int -> int -> unit
   method virtual load_from_file : string -> unit
   method virtual save_to_file : string -> unit
