@@ -19,6 +19,7 @@
 
 
 open Value_common;;
+open Value_object;;
 open Value_lua;;
 open Value_val;;
 open Value_xml;;
@@ -35,7 +36,7 @@ open Core_video;;
 
 open Core_fun;;
 
-(** Sprites *)
+(** (FIXME: must be in pocgame) Sprites *)
 
 (** graphic container *)
 class graphics_container=
@@ -98,8 +99,7 @@ end;;
 
 class sprite_object=
 object(self)
-  inherit generic_object as go
-  inherit lua_object as lo
+  inherit poc_object as go
 
   val mutable fnode=new core_fun_node
   method get_fnode=fnode
@@ -208,7 +208,7 @@ object(self)
     ignore(states#lua_init());    
     self#lua_parent_of "states" (states:>lua_object);
     
-    lo#lua_init()
+    go#lua_init()
 end
 
 class sprite_object_types=

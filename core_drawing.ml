@@ -23,6 +23,7 @@ open Core_rect;;
 open Core_cache;;
 
 open Value_common;;
+open Value_object;;
 open Value_lua;;
 open Value_xml;;
 open Value_val;;
@@ -31,6 +32,7 @@ open Core_val;;
 
 
 (** Drawing operations *)
+(** Drawings are the small graphic entity of pocengine, they are managed with a cache system who can save big dynamic graphic creation into bmp uncompressed disk file, and read it when needed. Four operations types can be performed on drawing : create, copy, write and read. *)
 
 (** {2 Exceptions} *)
 
@@ -57,17 +59,22 @@ type color=(int*int*int);;
     ];;
 *)
 
+(** draw operation types *)
 type draw_op_t=
   | DrawTypeCreate
   | DrawTypeWrite
   | DrawTypeRead
   | DrawTypeCopy;;
 
+(** results of draw operation *)
 type ('t) draw_op_result=
   | DrawResultUnit of unit
   | DrawResultT of 't
   | DrawResultTArray of 't array
   | DrawResultVal of val_ext;;
+
+
+(** result convertion functions *)
 
 let get_draw_op_result_unit ores=match ores with
   | DrawResultUnit x->x
@@ -84,18 +91,23 @@ let get_draw_op_result_val ores=match ores with
 
 (** {2 Classes} *)
 
+(** draw opertations class *)
 class ['t] draw_ops=
 object(self)
+  (** operations *)
   val mutable ops=Hashtbl.create 2
 
+  (** add an operation *)
   method add_op (n:string) (o_t:draw_op_t) (o:(val_ext_handler->('t) draw_op_result))=
     Hashtbl.add ops n (o_t,o)
 
+  (** get an operation *)
   method get_op n=
     (try
        Hashtbl.find ops n
      with Not_found -> raise (Draw_op_not_found n))
 
+  (** add an operation from a list *)
   method add_op_from_list n o_t o=
     let no (l:val_ext_handler)=
       o (list_of_val_ext_handler l) in  
@@ -109,19 +121,26 @@ object(self)
 *)
 end;;
 
+(** drawing class *)
 class virtual ['t] drawing_object=
 object(self)
-  inherit generic_object
+  inherit poc_object
   inherit ['t] draw_ops
 
+  (** data *)
   val mutable t=None
+
+  (** get data, raise Drawing_not_initialized if no data *)
   method get_t=
     match t with
       | Some v->v
       | None -> raise Drawing_not_initialized;
+  (** set data *)
   method set_t (nt:'t)=t<-(Some nt)
 
-
+  (** {3 Operations} *)
+      
+  (** exec an operation on drawing with name and arguments *)
   method exec_op n args=
     let (op_t,op)=self#get_op n in
     let r=op args in
@@ -134,16 +153,19 @@ object(self)
      ) in
       (nr:('t) draw_op_result)
 
-
+  (** exec a create operation with name and arguments *)
   method exec_op_create n args=
     get_draw_op_result_unit (self#exec_op n args)
 
+  (** exec a write operation with name and arguments *)
   method exec_op_write n args=
     get_draw_op_result_unit (self#exec_op n args)
 
+  (** exec a read operation with name and arguments *)
   method exec_op_read n args=
     get_draw_op_result_val (self#exec_op n args)
 
+  (** exec a copy operation with name and arguments *)
   method exec_op_copy n args=
     let cr=(match (self#exec_op n args) with
 	      | DrawResultT ct ->[|self#new_t ct|];
@@ -156,11 +178,10 @@ object(self)
       cr
 
 
-(** from list *)
+(** {3 Operations from list} *)
 
   method exec_op_from_list n args=
     self#exec_op n (val_ext_handler_of_list args)
-
 
   method exec_op_create_from_list n args=
     get_draw_op_result_unit (self#exec_op_from_list n args)
@@ -182,7 +203,7 @@ object(self)
 	      | _ -> raise Draw_op_error) in
       cr
 
-(** from format *)
+(** {3 Operations from format} *)
 
   method exec_op_from_format n args=
     self#exec_op n (val_ext_handler_of_format args)
@@ -211,10 +232,15 @@ object(self)
 
 (*    get_draw_op_result_drawing (self#exec_op n args)
 *)
+
+(** {3 Generic operations} *)
+
   method virtual get_t: 't
   method virtual set_t: 't->unit
 
+(** get width of drawing *)
   method virtual get_w:int
+(** get height of drawing *)
   method virtual get_h:int
 
 (** create drawing from 't *)
@@ -229,10 +255,8 @@ object(self)
 (** first Read draw_op *)
   method virtual get_pixel:int->int->color
 
+(** compose drawing from another drawing *)
   method virtual compose:('t) drawing_object -> int -> int -> unit
-
-  val mutable lua=new lua_obj
-  method get_lua=lua
 
   initializer
 (*    self#add_op_from_list "create" DrawTypeWrite (
@@ -264,7 +288,7 @@ object(self)
 
 end;;
 
-
+(** drawing representing screen *)
 class virtual ['t] drawing_screen=
 object
   inherit ['t] drawing_object
@@ -279,6 +303,7 @@ object
   method virtual fcompose:('t) drawing_object -> int -> int -> unit
 end;;
 
+(** multiple drawings handler *)
 class virtual ['t] drawing_handler=
 object(self)
   val mutable drs=Hashtbl.create 2
@@ -318,7 +343,7 @@ object(self)
   method exec_drawing_fun (n:string) (args:val_ext_handler)=
     let drf=self#get_drawing_fun n in
       drf args
-
+ 
   method exec_drawing_fun_from_list (n:string) (args:val_ext list)=
     self#exec_drawing_fun n (val_ext_handler_of_list args)
 
@@ -328,11 +353,13 @@ object(self)
 
 end;;
 
+(** cache of drawings *)
 class virtual ['t] drawing_cache s mt=
 object
   inherit [('t) drawing_object] medias_cache s mt
 end;;
 
+(** drawing handler and cache : the drawing vault *)
 class virtual ['t] drawing_vault cache_size mt=
 object(self)
   inherit ['t] drawing_cache cache_size mt as cache

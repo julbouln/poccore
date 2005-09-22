@@ -362,10 +362,16 @@ object(self)
     let ofun()=
       let o=
 	let args=args_parser#get_val in
-	let ds=text_of_val(args#get_val (`String "drawing_script")) in
-	  ignore(drs#lua_init()); 
+	let ds=text_of_val(args#get_val (`String "drawing_script")) and
+	    did=(
+	  if args#is_val (`String "drawing_id") then
+	    (string_of_val(args#get_val (`String "drawing_id")))
+	  else
+	    (random_string "dscr" 15)) in    
 
-	  new graphic_from_drawing (random_string "dscr" 15)
+	ignore(drs#lua_init()); 
+
+	  new graphic_from_drawing did
 	    (fun()->
 	       (drs#register ds)
 	    );

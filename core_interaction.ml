@@ -19,8 +19,10 @@
 
 
 open Value_common;;
+open Value_object;;
 open Core_event;;
 open Core_fun;;
+
 
 (* FIXME : Go in core_interaction.ml *)
 (** interaction *)

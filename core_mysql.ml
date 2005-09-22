@@ -20,6 +20,7 @@
 
 open Mysql;;
 
+(** Mysql interaction *)
 
 exception Sql_not_connected;;
 

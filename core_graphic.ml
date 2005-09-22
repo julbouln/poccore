@@ -21,8 +21,10 @@
 open Str;;
 
 open Value_common;;
+open Value_object;;
 open Value_val;;
 open Value_lua;;
+
 
 open Core_val;;
 open Core_rect;;
@@ -47,9 +49,8 @@ exception Drawing_id_not_set;;
 (** Graphic object class parent *)
 class graphic_object=
   object (self)
-    inherit generic_object as go
+    inherit poc_object as go
     inherit canvas_object
-    inherit lua_object as lo
 
     val mutable cargs=new val_ext_handler
     method set_args a=cargs<-a
@@ -143,7 +144,7 @@ class graphic_object=
 
       lua#set_val (OLuaVal.String "creation_args") (OLuaVal.Table cargs#to_lua#to_table);
 
-      lo#lua_init();
+      go#lua_init();
       update_fun<-lua#get_fun (OLuaVal.String "on_update");
 
   end;;

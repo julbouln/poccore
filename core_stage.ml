@@ -19,6 +19,7 @@
 
 
 open Value_common;;
+open Value_object;;
 
 open Core_event;;
 open Core_video;;

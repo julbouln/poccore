@@ -19,7 +19,7 @@
 
 
 open Value_common;;
-
+open Value_object;;
 
 (** Time manager *)
 

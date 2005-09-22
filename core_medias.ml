@@ -269,6 +269,13 @@ object(self)
   val mutable drv=Hashtbl.create 2
   method add_dr n dr=Hashtbl.add drv n dr
   method get_dr n=Hashtbl.find drv n
+  method del_dr n=Hashtbl.remove drv n
+  method repl_dr n dr=Hashtbl.replace drv n dr
+
+  method rename on nn=
+    let o=self#get_dr on in
+    self#add_dr nn o;
+    self#del_dr on;
 
   method dr_size n=
     let dr=(self#get_dr n) in
@@ -293,6 +300,19 @@ object(self)
     let ndr=dr#exec_op_copy_from_format name (ValLua args) in
       self#add_dr ndid ndr;
       ndid
+
+  method op_push pid did nd name args=
+    let dr=(self#get_dr did).(nd) in
+    let drr=(self#get_dr pid) in
+    let ndr=dr#exec_op_copy_from_format name (ValLua args) in
+    let na=DynArray.of_array drr in
+    Array.iter (fun v->
+      DynArray.add na v;
+	       ) ndr;
+      self#repl_dr pid (DynArray.to_array na)
+
+(*      self#add_dr pid ndr; *)
+      
 
   method op_write did nd name args=
     let dr=(self#get_dr did).(nd) in
@@ -341,6 +361,17 @@ object(self)
 	 )
       );
 
+    lua#set_val (OLuaVal.String "push") 
+      (OLuaVal.efunc (OLuaVal.string **-> OLuaVal.string **->OLuaVal.int **-> OLuaVal.string **-> OLuaVal.table **->> OLuaVal.unit) 
+	 (fun pid did nd n a->
+	    self#op_push pid did nd n 
+	      (let lo=new lua_obj in
+		 lo#from_table a;
+		 lo
+	      )
+	 )
+      );
+
     lua#set_val (OLuaVal.String "write") 
       (OLuaVal.efunc (OLuaVal.string **->OLuaVal.int **-> OLuaVal.string **-> OLuaVal.table **->> OLuaVal.unit) 
 	 (fun did nd n a->
@@ -367,6 +398,9 @@ object(self)
 
     lua#set_val (OLuaVal.String "size") 
       (OLuaVal.efunc (OLuaVal.string **->> OLuaVal.int) (self#dr_size));
+
+    lua#set_val (OLuaVal.String "rename") 
+      (OLuaVal.efunc (OLuaVal.string **-> OLuaVal.string **->> OLuaVal.unit) (self#rename));
 
 
 

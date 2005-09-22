@@ -19,6 +19,7 @@
 
 
 open Value_common;;
+open Value_object;;
 open Value_lua;;
 
 open Core_rect;;
@@ -34,8 +35,7 @@ open Core_anim;;
 (** Cursor class : handler of graphic cursor *)
 class cursors w h (fc:string option)=
 object(self)
-  inherit generic_object
-  inherit lua_object as lo
+  inherit poc_object as lo
   val mutable g=
       match fc with
 	| Some f->video#hide_cursor();new graphic_from_file f w h

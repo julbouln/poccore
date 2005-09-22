@@ -19,7 +19,11 @@
 
 
 open Value_common;;
+open Value_object;;
+
 open Core_cache;;
+
+
 
 (** Font management *)
 

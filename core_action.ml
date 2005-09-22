@@ -19,6 +19,7 @@
 
 
 open Value_common;;
+open Value_object;;
 open Value_lua;;
 open Value_val;;
 
@@ -36,8 +37,7 @@ open Core_fun;;
 (** action object - repeat some function *)
 class virtual action_object=
 object(self)
-  inherit generic_object as go
-  inherit lua_object as lo
+  inherit poc_object as go
 
   val mutable fnode=new core_fun_node
   method get_fnode=fnode
