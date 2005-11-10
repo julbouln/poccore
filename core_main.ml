@@ -77,8 +77,10 @@ exception Stages_not_set
 
 class main=
 object(self)
+  
   val mutable drawing_vault=new binding_drawing_vault 10000 (1./.25.)
   method get_drawing_vault=drawing_vault
+  
   val mutable stages=None
 
   initializer
@@ -92,8 +94,8 @@ object(self)
   val mutable info=new info
   method info=info
 
-    val mutable interp=new lua_interp
-    method get_interp=interp
+  val mutable interp=new lua_interp
+  method get_interp=interp
 
 
 (*
