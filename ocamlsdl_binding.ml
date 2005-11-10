@@ -691,3 +691,14 @@ at_exit (Sdl.quit);;
 (* the event manager *)
 let eventm=new sdl_event_manager;;
 
+class media_vault=
+object
+  val mutable drawing_vault=new sdl_drawing_vault 10000 (1./.25.)
+  val mutable font_vault=new font_vault 100
+  val mutable eventm=new sdl_event_manager
+
+  method drawing_vault=drawing_vault
+  method font_vault=font_vault
+  method eventm=eventm
+
+end;;
