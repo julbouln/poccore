@@ -288,9 +288,9 @@ end;;
 (** {3 Graphic} *)
 
 (** graphic generic parser *)
-class xml_graphic_object_parser=
+class xml_graphic_object_parser drawing_vault=
 object (self)
-  inherit [graphic_object] xml_object_parser (fun()->new graphic_object) as super
+  inherit [graphic_object] xml_object_parser (fun()->new graphic_object drawing_vault) as super
     
   method parse_child k v=
     super#parse_child k v;
@@ -308,9 +308,9 @@ end;;
 
 
 (** graphic parser from file *)
-class xml_graphic_from_file_parser=
+class xml_graphic_from_file_parser drawing_vault=
 object(self)
-  inherit xml_graphic_object_parser
+  inherit xml_graphic_object_parser drawing_vault
 
 
   method get_val=
@@ -319,7 +319,7 @@ object(self)
 	let args=args_parser#get_val in
 	  let fn=string_of_val (args#get_val (`String "filename")) and
 	      (nw,nh)=size_of_val (args#get_val (`String "size")) in
-	    new graphic_from_file fn nw nh
+	    new graphic_from_file drawing_vault fn nw nh
       in
 	self#init_object o;
 	o	  
@@ -331,15 +331,15 @@ end;;
 
 
 (** graphic parser from fun *)
-class xml_graphic_from_drawing_fun_parser=
+class xml_graphic_from_drawing_fun_parser drawing_vault=
 object(self)
-  inherit xml_graphic_object_parser
+  inherit xml_graphic_object_parser drawing_vault
 
   method get_val=
     let ofun()=
       let o=
 	let args=args_parser#get_val in
-	new graphic_from_drawing_fun_fmt (ValList (args#to_list()))
+	new graphic_from_drawing_fun_fmt drawing_vault (ValList (args#to_list()))
       in
 	self#init_object o;
 	o	  
@@ -352,11 +352,11 @@ end;;
 
 
 (** graphic parser from lua drawing script *)
-class xml_graphic_from_drawing_script_parser=
+class xml_graphic_from_drawing_script_parser drawing_vault=
 object(self)
-  inherit xml_graphic_object_parser
+  inherit xml_graphic_object_parser drawing_vault
 
-  val mutable drs=new drawing_script
+  val mutable drs=new drawing_script drawing_vault
 
   method get_val=
     let ofun()=
@@ -371,7 +371,7 @@ object(self)
 
 	ignore(drs#lua_init()); 
 
-	  new graphic_from_drawing did
+	  new graphic_from_drawing drawing_vault did
 	    (fun()->
 	       (drs#register ds)
 	    );
@@ -385,9 +385,9 @@ object(self)
 
 end;;
 
-class xml_graphic_from_drawing_create_parser=
+class xml_graphic_from_drawing_create_parser drawing_vault=
 object(self)
-  inherit xml_graphic_object_parser
+  inherit xml_graphic_object_parser drawing_vault
 
   method get_val=
     let ofun()=
@@ -395,7 +395,7 @@ object(self)
 	let args=args_parser#get_val in
 	let opname=string_of_val(args#get_val (`String "operation")) and
 	    opargs=list_of_val (args#get_val (`String "args")) in	  
-	new graphic_from_drawing (random_string "create_op" 15)
+	new graphic_from_drawing drawing_vault (random_string "create_op" 15)
 	  (
 	    fun()->
 	      let dr=drawing_vault#new_drawing() in
@@ -414,9 +414,9 @@ end;;
 
 
 (** textual graphic parser *)
-class xml_graphic_text_parser=
+class xml_graphic_text_parser drawing_vault=
 object(self)
-  inherit xml_graphic_object_parser
+  inherit xml_graphic_object_parser drawing_vault
 
 
   method get_val=
@@ -426,7 +426,7 @@ object(self)
 	  let fn=string_of_val (args#get_val (`String "font_file")) and
 	      fs=int_of_val (args#get_val (`String "font_size")) and
 	      fc=color_of_val (args#get_val (`String "font_color")) in
-	    new graphic_text id (FontTTF(fn,fs)) fc
+	    new graphic_text drawing_vault id (FontTTF(fn,fs)) fc
       in
 	self#init_object (o:>graphic_object);
 	(o:>graphic_object)	  
@@ -437,9 +437,9 @@ object(self)
 end;;
 
 (** graphic from pattern parser *)
-class xml_graphic_pattern_parser=
+class xml_graphic_pattern_parser drawing_vault=
 object(self)
-  inherit xml_graphic_object_parser
+  inherit xml_graphic_object_parser drawing_vault
 
   method get_val=
     let ofun()=
@@ -448,7 +448,7 @@ object(self)
 	let file=string_of_val(args#get_val (`String "file")) and
 	(w,h)=size_of_val(args#get_val (`String "size")) in
 
-	(let no=new graphic_pattern_file file in
+	(let no=new graphic_pattern_file drawing_vault file in
 	   no#get_rect#set_size w h;
 	   no:>graphic_object)
       in
@@ -462,23 +462,23 @@ end;;
 
 
 (** graphics container parser *)
-class xml_graphics_parser=
+class xml_graphics_parser drawing_vault=
 object(self)
-  inherit [xml_graphic_object_parser,graphic_object] xml_container_parser "graphic" (fun()->new xml_graphic_object_parser)
+  inherit [xml_graphic_object_parser,graphic_object] xml_container_parser "graphic" (fun()->new xml_graphic_object_parser drawing_vault)
 
 end;;
 
 
 
 (** factory parser *)
-let xml_factory_graphics_parser()=
-  let p=new xml_graphics_parser in
-    p#parser_add "graphic_from_file" (fun()->new xml_graphic_from_file_parser);
-    p#parser_add "graphic_from_drawing_fun" (fun()->new xml_graphic_from_drawing_fun_parser);
-    p#parser_add "graphic_from_drawing_create" (fun()->new xml_graphic_from_drawing_create_parser);
-    p#parser_add "graphic_from_drawing_script" (fun()->new xml_graphic_from_drawing_script_parser);
-    p#parser_add "graphic_text" (fun()->new xml_graphic_text_parser);
-    p#parser_add "graphic_pattern" (fun()->new xml_graphic_pattern_parser);
+let xml_factory_graphics_parser drawing_vault=
+  let p=new xml_graphics_parser drawing_vault in
+    p#parser_add "graphic_from_file" (fun()->new xml_graphic_from_file_parser drawing_vault );
+    p#parser_add "graphic_from_drawing_fun" (fun()->new xml_graphic_from_drawing_fun_parser drawing_vault );
+    p#parser_add "graphic_from_drawing_create" (fun()->new xml_graphic_from_drawing_create_parser drawing_vault );
+    p#parser_add "graphic_from_drawing_script" (fun()->new xml_graphic_from_drawing_script_parser drawing_vault );
+    p#parser_add "graphic_text" (fun()->new xml_graphic_text_parser drawing_vault );
+    p#parser_add "graphic_pattern" (fun()->new xml_graphic_pattern_parser drawing_vault );
     p;;
 
 
@@ -680,12 +680,12 @@ Global.set xml_default_interactions_parser  xml_generic_interactions_parser;;
 
 (** {3 Sprite} *)
 
-class xml_sprite_object_type_parser=
+class xml_sprite_object_type_parser drawing_vault=
 object(self)
   inherit [sprite_object] xml_object_parser (fun()->new sprite_object) as super
   val mutable props_parser=new xml_val_ext_list_parser "properties"
 
-  val mutable graphics_parser=(Global.get xml_default_graphics_parser)()
+  val mutable graphics_parser=(Global.get xml_default_graphics_parser) drawing_vault
   val mutable states_parser=new xml_state_actions_parser    
   
   method get_type=nm
@@ -730,9 +730,9 @@ object(self)
 
 end;;
 
-class xml_sprite_object_types_parser=
+class xml_sprite_object_types_parser drawing_vault=
 object(self)
-  inherit [(unit->sprite_object)] xml_stringhash_parser "sprite_type" (fun()->new xml_sprite_object_type_parser) as super
+  inherit [(unit->sprite_object)] xml_stringhash_parser "sprite_type" (fun()->new xml_sprite_object_type_parser drawing_vault) as super
 
   method parse_child k v=
     super#parse_child k v;
@@ -748,11 +748,11 @@ end;;
 
 (** {3 Stage} *)
 
-class xml_stage_parser=
+class xml_stage_parser drawing_vault=
 object (self)
-  inherit [stage] xml_object_parser (fun()->new stage generic_cursor) as super
+  inherit [stage] xml_object_parser (fun()->new stage drawing_vault (generic_cursor drawing_vault)) as super
 
-  val mutable curs=generic_cursor
+  val mutable curs=generic_cursor drawing_vault
 
   method private init_cursor()=
     let args=args_parser#get_val in
@@ -761,7 +761,7 @@ object (self)
     then (
       let (w,h)=(size_of_val(args#get_val (`String "cursor_size"))) and
 	  fi=(string_of_val(args#get_val (`String "cursor_file"))) in
-      curs<-new cursors w h (Some fi)
+      curs<-new cursors drawing_vault w h (Some fi)
     )
 (** object initial init *)
   method init_object o=
@@ -776,23 +776,23 @@ object (self)
 end;;
 
 
-class xml_stages_parser=
+class xml_stages_parser drawing_vault=
 object(self)
-  inherit [xml_stage_parser,stage] xml_container_parser "stage" (fun()->new xml_stage_parser)
+  inherit [xml_stage_parser,stage] xml_container_parser "stage" (fun()->new xml_stage_parser drawing_vault)
 
 end;;
 
-let xml_generic_stages_parser()=
-  let p=new xml_stages_parser in
-    p#parser_add "stage" (fun()->new xml_stage_parser);
+let xml_generic_stages_parser drawing_vault=
+  let p=new xml_stages_parser drawing_vault in
+    p#parser_add "stage" (fun()->new xml_stage_parser drawing_vault);
     p;;
 
 Global.set xml_default_stages_parser  xml_generic_stages_parser;;
 
-class xml_multi_stage_parser=
+class xml_multi_stage_parser drawing_vault=
 object(self)
-  inherit xml_stage_parser as super
-  val mutable stages_parser=(Global.get xml_default_stages_parser)()
+  inherit xml_stage_parser drawing_vault as super
+  val mutable stages_parser=(Global.get xml_default_stages_parser) drawing_vault
 
 
   method parse_child k v=
@@ -808,7 +808,7 @@ object(self)
     let ofun()=
       let o=
 	self#init_cursor();
-	new multi_stage curs
+	new multi_stage drawing_vault curs
       in
 	
 	self#init_multi_stage o;
@@ -822,11 +822,11 @@ end;;
 
 (** {3 Engine} *)
 
-class xml_sprite_engine_stage_parser=
+class xml_sprite_engine_stage_parser drawing_vault=
 object (self)
-  inherit xml_stage_parser as super
+  inherit xml_stage_parser drawing_vault as super
 
-  val mutable sprite_type_parser=new xml_sprite_object_types_parser
+  val mutable sprite_type_parser=new xml_sprite_object_types_parser drawing_vault
   val mutable interaction_parser=(Global.get xml_default_interactions_parser)()
 
   method parse_child k v=
@@ -841,7 +841,7 @@ object (self)
     let ofun()=
       let o=
 	self#init_cursor();
-	new sprite_engine curs
+	new sprite_engine drawing_vault curs
       in
 	sprite_type_parser#init o#get_sprites#add_object_type;
 (*	let inter=(snd interaction_parser#get_val)() in
@@ -857,9 +857,9 @@ end;;
 
 open Core_net;;
 
-class xml_net_client_sprite_engine_stage_parser=
+class xml_net_client_sprite_engine_stage_parser drawing_vault=
 object (self)
-  inherit xml_sprite_engine_stage_parser as super
+  inherit xml_sprite_engine_stage_parser drawing_vault as super
 
   method get_val=
     let ofun()=
@@ -869,7 +869,7 @@ object (self)
 	    sport=(int_of_val(args#get_val (`String "server_port"))) and
 	    cport=(int_of_val(args#get_val (`String "client_port"))) in
 	self#init_cursor();
-	new net_client_sprite_engine curs saddr sport cport
+	new net_client_sprite_engine drawing_vault curs saddr sport cport
       in
 	sprite_type_parser#init o#get_sprites#add_object_type;
 (*	let inter=(snd interaction_parser#get_val)() in
@@ -884,9 +884,9 @@ object (self)
 end;;
 
 
-class xml_net_server_sprite_engine_stage_parser=
+class xml_net_server_sprite_engine_stage_parser drawing_vault=
 object (self)
-  inherit xml_sprite_engine_stage_parser as super
+  inherit xml_sprite_engine_stage_parser drawing_vault as super
 
   method get_val=
     let ofun()=
@@ -894,7 +894,7 @@ object (self)
 	let args=args_parser#get_val in
 	let sport=(int_of_val(args#get_val (`String "server_port"))) in
 	  self#init_cursor();
-	  new net_server_sprite_engine sport
+	  new net_server_sprite_engine drawing_vault sport
       in
 	sprite_type_parser#init o#get_sprites#add_object_type;
 (*	let inter=(snd interaction_parser#get_val)() in
@@ -907,13 +907,13 @@ object (self)
 
 end;;
 
-let xml_factory_stages_parser()=
-  let p=new xml_stages_parser in
-    p#parser_add "stage" (fun()->new xml_stage_parser);
-    p#parser_add "multi_stage" (fun()->new xml_multi_stage_parser);
-    p#parser_add "sprite_engine" (fun()->new xml_sprite_engine_stage_parser);
-    p#parser_add "net_client_sprite_engine" (fun()->new xml_net_client_sprite_engine_stage_parser);
-    p#parser_add "net_server_sprite_engine" (fun()->new xml_net_server_sprite_engine_stage_parser);
+let xml_factory_stages_parser drawing_vault=
+  let p=new xml_stages_parser drawing_vault in
+    p#parser_add "stage" (fun()->new xml_stage_parser drawing_vault);
+    p#parser_add "multi_stage" (fun()->new xml_multi_stage_parser drawing_vault);
+    p#parser_add "sprite_engine" (fun()->new xml_sprite_engine_stage_parser drawing_vault);
+    p#parser_add "net_client_sprite_engine" (fun()->new xml_net_client_sprite_engine_stage_parser drawing_vault);
+    p#parser_add "net_server_sprite_engine" (fun()->new xml_net_server_sprite_engine_stage_parser drawing_vault);
     p;;
 
 
@@ -923,13 +923,26 @@ Global.set xml_default_stages_parser xml_factory_stages_parser;;
 
 (** {3 XPOC!} *)
 
+exception Stages_parser_not_set;;
+
 class xpoc_parser=
 object(self)
   inherit xml_parser
+
+  val mutable main=new main
+
   val mutable info_parser=new xml_val_ext_list_parser "infos"
   val mutable args_parser=new xml_val_ext_list_parser "args"
-  val mutable stages_parser=(Global.get xml_default_stages_parser)()
+  val mutable stages_parser=None
  
+  method get_stages_parser=
+    match stages_parser with
+    | Some s->s 
+    | None ->raise Stages_parser_not_set
+
+  initializer
+    stages_parser<-Some ((Global.get xml_default_stages_parser) main#get_drawing_vault)
+
   
   method parse_attr k v=()
 
@@ -937,7 +950,7 @@ object(self)
     info_parser#parse_child k v;
     args_parser#parse_child k v;
     match k with
-      | "stages" -> stages_parser#parse v
+      | "stages" -> self#get_stages_parser#parse v
       | _ -> ()
 
   method init()=
@@ -986,11 +999,11 @@ object(self)
     main#parse_args();
     main#medias_init();
 
-    stages_parser#init_simple stages#stage_add;
-    ignore(stages#lua_init());
+    self#get_stages_parser#init_simple main#get_stages#stage_add;
+    ignore(main#get_stages#lua_init());
 
     if args_parser#get_val#is_val (`String "stage_start") then (
-      stages#stage_load (string_of_val (args_parser#get_val#get_val (`String "stage_start")));
+      main#get_stages#stage_load (string_of_val (args_parser#get_val#get_val (`String "stage_start")));
     );
 
 

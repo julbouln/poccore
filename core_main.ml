@@ -73,12 +73,22 @@ class game_args=
 object
 end;;
 
+exception Stages_not_set
 
 class main=
 object(self)
   val mutable drawing_vault=new binding_drawing_vault 10000 (1./.25.)
   method get_drawing_vault=drawing_vault
+  val mutable stages=None
 
+  initializer
+    stages<-Some (new stages drawing_vault (generic_cursor drawing_vault))
+
+  method get_stages=
+    match stages with
+      Some s->s
+    | None -> raise Stages_not_set
+	  
   val mutable info=new info
   method info=info
 
