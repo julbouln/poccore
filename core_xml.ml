@@ -1005,7 +1005,6 @@ object(self)
     if args_parser#get_val#is_val (`String "stage_start") then (
       main#get_stages#stage_load (string_of_val (args_parser#get_val#get_val (`String "stage_start")));
     );
-    main
 
 
 

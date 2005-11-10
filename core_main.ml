@@ -202,14 +202,6 @@ object(self)
 (*    audio#init 44100 2 ; *)
     
     drawing_vault#set_caption ( info#get_name^" "^info#get_version) icon;
-    (*"medias/misc/bfr_rebel.xpm"; *)
-    
-(*    audio#set_audio_vol ((self#this_config.audio_vol*128)/16);
-    audio#set_music_vol ((self#this_config.music_vol*128)/16);
-    
-  frame_init();
-  frame_set(fps);
-*)
 
 end;;
 
