@@ -76,10 +76,10 @@ object
 end;;
 
 (** Animated graphic object *)
-class graphic_anim_from_file w h file frames refresh= 
+class graphic_anim_from_file drawing_vault w h file frames refresh= 
 object
   val mutable anim=new anim_object frames refresh
-  val mutable graph=new graphic_from_file file w h
+  val mutable graph=new graphic_from_file drawing_vault file w h
 
   method get_rect=graph#get_rect
 
@@ -92,10 +92,10 @@ object
 end;;
 
 
-class graphic_anim frames refresh= 
+class graphic_anim drawing_vault frames refresh= 
 object
   val mutable anim=new anim_object frames refresh
-  val mutable graph=new graphic_object
+  val mutable graph=new graphic_object drawing_vault
 
   method get_anim=anim
 

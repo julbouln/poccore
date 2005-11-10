@@ -19,7 +19,7 @@
 
 
 open Core_drawing;;
-open Binding;;
+(*open Binding;;*)
 
 (** Video subsystem *)
 (** The global video class provide some interaction with the video screen like init or refresh it.
@@ -29,7 +29,7 @@ You can define a default size for your screen to automaticly resize tile (see gr
 
 
 (** Video class *)
-class video=
+class ['a] video (drawing_vault : ('a) drawing_vault)=
 object
   val mutable screen=drawing_vault#new_drawing_screen()
   val mutable width=0
@@ -72,7 +72,7 @@ object
 (** get video screen tile *)
   method get_drawing=
     screen
-
+6~
 (** set video screen clip *)
   method set_clip x y w h=
     screen#set_clip x y w h 
@@ -86,4 +86,4 @@ object
 end;;
 
 (** We declare a global video class since we have only one video screen ! *)
-let video=new video;;
+(*let video=new video;;*)

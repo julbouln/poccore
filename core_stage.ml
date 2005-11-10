@@ -22,7 +22,6 @@ open Value_common;;
 open Value_object;;
 
 open Core_event;;
-open Core_video;;
 open Core_medias;;
 open Core_cursor;;
 open Core_timer;;
@@ -40,7 +39,7 @@ let rec usleep sec =
   (try 
      ignore (Unix.select [] [] [] sec)
    with Unix.Unix_error _ -> ());;
-class frame_limiter=
+class frame_limiter drawing_vault=
 object(self)
 
   val mutable t1=0.
@@ -58,12 +57,12 @@ object(self)
   method set_show_fps s=
     show_fps<-s;
     if show_fps then
-      fpsgr<-(Some (new graphic_text "fpsinfo" (FontEmbed) (200,200,200)))
+      fpsgr<-(Some (new graphic_text drawing_vault "fpsinfo" (FontEmbed) (200,200,200)))
       
   method put_fps()=
     match fpsgr with
       | Some g->
-	g#move 8 (video#get_h - 16);
+	g#move 8 (16);
 	g#put();
       | None -> ()
 
@@ -99,7 +98,7 @@ end;;
 (** Stage is a high-level container for interface and game engine. When you define a stage, you specify some thing to do when loading, leaving, on each frame and the event parser. You can handle multiple stage through the stages global class. See exemples for more informations *)
 
 (** stage class *)
-class stage  (cursor:cursors)=
+class stage  drawing_vault (cursor:cursors)=
 object (self)
   inherit generic_object
   inherit lua_object as super
@@ -178,7 +177,7 @@ object (self)
 
   method get_curs=curs
 
-  val mutable frml=new frame_limiter
+  val mutable frml=new frame_limiter drawing_vault
   method get_frame_limiter=frml
   method load()=
     initialized<-true;
@@ -197,7 +196,7 @@ object (self)
 		self#on_loop_graphic();
 	      curs#put();
 	      frml#put_fps();
-	      video#flip();
+	      drawing_vault#flip();
 	    );
 	  frml#finish();	  
       );
@@ -229,10 +228,10 @@ object (self)
 
 end;;
 
-class multi_stage  (cursor:cursors)=
+class multi_stage drawing_vault (cursor:cursors)=
 object(self)
   inherit [stage] generic_object_handler3
-  inherit stage cursor as super
+  inherit stage drawing_vault cursor as super
 
   method add_stage n o=
     ignore(self#add_object (Some n) o);
@@ -313,7 +312,7 @@ end;;
 exception Stage_not_found of string;;
 
 (** General stages handler *)
-class stages curs=
+class stages drawing_vault curs=
 object(self)
   inherit lua_object as lo
   method get_id="stages"
@@ -321,7 +320,7 @@ object(self)
 
 
   (* create an Hashtbl of stages *)
-  val mutable stages=let a=Hashtbl.create 2 in Hashtbl.add a "none" (new stage curs);a;
+  val mutable stages=let a=Hashtbl.create 2 in Hashtbl.add a "none" (new stage drawing_vault curs);a;
 
   (** add a stage in stages *)
   method stage_add n s=
@@ -382,8 +381,8 @@ object(self)
 end;;
 
 
-let generic_cursor=new cursors 30 30 None;;
-let stages=new stages generic_cursor;;
+let generic_cursor drawing_vault =new cursors drawing_vault 30 30 None;;
+(*let stages=new stages generic_cursor;;*)
 
 
 (* FIXME : must declare stages here like video and audio *)

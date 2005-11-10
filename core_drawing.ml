@@ -363,7 +363,63 @@ end;;
 class virtual ['t] drawing_vault cache_size mt=
 object(self)
   inherit ['t] drawing_cache cache_size mt as cache
-  inherit ['t] drawing_handler
+  inherit ['t] drawing_handler as hdlr
+
+
+
+  val mutable width=0
+  val mutable height=0
+  val mutable depth=0
+  val mutable fullscreen=false
+
+  method virtual get_screen : ('t) drawing_screen
+
+(** init then video screen with width height depth fullscreen *)
+  method init w h bpp fs=
+    width<-w;
+    height<-h;
+    depth<-bpp;
+    fullscreen<-fs;    
+    self#get_screen#init width height depth fullscreen
+
+(** get screen width *)
+  method get_w=width
+(** get screen height *)
+  method get_h=height
+(** get if fullscreen *)
+  method get_fs=fullscreen
+(** get depth *)
+  method get_d=depth
+
+
+(** set title of screen *)
+  method set_caption s i=
+    self#get_screen#set_caption s i
+(*    wm_set_caption s *)
+
+(** refresh screen *)
+  method flip=
+    self#get_screen#refresh
+(*    video_update    *)
+
+(** blank the screen *)
+  method blank=
+    self#get_screen#blank
+
+(** get video screen tile *)
+  method get_drawing=
+    self#get_screen
+
+(** set video screen clip *)
+  method set_clip x y w h=
+    self#get_screen#set_clip x y w h 
+
+  method show_cursor()=
+    self#get_screen#show_cursor();
+
+  method hide_cursor()=
+    self#get_screen#hide_cursor();
+
 
   (* link between cache & handler *)
 (*

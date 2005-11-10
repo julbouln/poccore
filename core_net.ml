@@ -107,9 +107,9 @@ object(self)
 end;;
 
 
-class net_sprite_engine curs=
+class net_sprite_engine drawing_vault curs=
 object(self)
-  inherit sprite_engine curs as super
+  inherit sprite_engine drawing_vault curs as super
 
   method init_message_handler (mph:message_parser_handler)=
     mph#handler_add "set_state" (new set_state_message_handler self#get_sprites#set_sprite_state);
@@ -208,9 +208,9 @@ object(self)
 
 end;;
 
-class net_client_sprite_engine curs saddr sport cport=
+class net_client_sprite_engine drawing_vault curs saddr sport cport=
 object(self)
-  inherit net_sprite_engine curs as super
+  inherit net_sprite_engine drawing_vault curs as super
   val mutable cli=new network_client cport
 
   method on_load()=
@@ -227,9 +227,9 @@ object(self)
 end;;
 
 
-class net_server_sprite_engine sport=
+class net_server_sprite_engine drawing_vault sport=
 object(self)
-  inherit net_sprite_engine generic_cursor as super
+  inherit net_sprite_engine drawing_vault (generic_cursor drawing_vault) as super
   val mutable serv=new network_server sport
 
 (*

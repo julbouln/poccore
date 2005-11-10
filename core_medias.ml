@@ -28,7 +28,6 @@ open Value_xml;;
 
 open Core_val;;
 open Core_rect;;
-open Core_video;;
 
 open Core_font;;
 open Core_drawing;;
@@ -261,7 +260,7 @@ end;;
 
 exception Drawing_script_error;;
 
-class drawing_script=
+class drawing_script (drawing_vault : binding_drawing_vault)=
 object(self)
   inherit lua_object as super
   method get_id="drawing_script"
@@ -410,8 +409,8 @@ object(self)
 end;;
 
 
-let add_drawing_fun_from_drawing_script n s=
-  let drs=new drawing_script in
+let add_drawing_fun_from_drawing_script drawing_vault n s =
+  let drs=new drawing_script drawing_vault in
     ignore(drs#lua_init());
     drawing_vault#add_drawing_fun_from_format n TValLua
       ( fun v->

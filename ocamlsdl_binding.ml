@@ -462,6 +462,10 @@ let digest_of_string txt=
 class sdl_drawing_vault s mt=
 object(self)
   inherit [Sdlvideo.surface] drawing_vault s mt
+
+  val mutable screen=new sdl_drawing_screen
+  method get_screen=screen
+
   method new_drawing()=new sdl_drawing_object
   method new_drawing_screen()=new sdl_drawing_screen
 
@@ -504,8 +508,12 @@ object
 end;;
 
 (* the drawing vault *)
-let drawing_vault=new sdl_drawing_vault 10000 (1./.25.);;
+(*let drawing_vault=new sdl_drawing_vault 10000 (1./.25.);;*)
 
+class binding_drawing_vault s mt=
+object
+inherit sdl_drawing_vault s mt
+end
 
 (* ocamlsdl event *)
 

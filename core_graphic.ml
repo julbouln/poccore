@@ -28,7 +28,6 @@ open Value_lua;;
 
 open Core_val;;
 open Core_rect;;
-open Core_video;;
 open Core_medias;;
 open Core_font;;
 open Core_drawing;;
@@ -47,7 +46,7 @@ exception Drawing_id_not_set;;
 (** {2 Graphic} *)
 
 (** Graphic object class parent *)
-class graphic_object=
+class graphic_object (drawing_vault : binding_drawing_vault)=
   object (self)
     inherit poc_object as go
     inherit canvas_object
@@ -93,7 +92,7 @@ class graphic_object=
     method put()=
       if self#is_showing then (
 	let t=self#get_drawing cur_drawing in
-	  video#get_drawing#compose t rect#get_x rect#get_y
+	  drawing_vault#get_drawing#compose t rect#get_x rect#get_y
       )
 
 
@@ -151,9 +150,9 @@ class graphic_object=
 
 
 (** Graphic from drawing *)
-class graphic_from_drawing did (f)=
+class graphic_from_drawing drawing_vault did (f)=
 object(self)
-  inherit graphic_object
+  inherit graphic_object drawing_vault
 
   initializer
     self#set_drawing_id did;
@@ -164,9 +163,9 @@ object(self)
 end;;
 
 (** Graphic from drawing fun (with format)*)
-class graphic_from_drawing_fun_fmt args=
+class graphic_from_drawing_fun_fmt drawing_vault args=
 object(self)
-  inherit graphic_object
+  inherit graphic_object drawing_vault
 
   initializer
   let did=drawing_vault#add_cache_from_drawing_fun_fmt_auto args in
@@ -183,9 +182,9 @@ object(self)
 end;;
 
 (** Graphic from drawing fun *)
-class graphic_from_drawing_fun did args=
+class graphic_from_drawing_fun drawing_vault did args=
 object(self)
-  inherit graphic_object
+  inherit graphic_object drawing_vault
 
   initializer
     drawing_vault#add_cache_from_drawing_fun did args;
@@ -203,7 +202,7 @@ object(self)
 end;;
 
 (** Graphic from a file *)
-class graphic_from_file file w h=
+class graphic_from_file drawing_vault file w h=
 object(self)
 (*  inherit graphic_from_drawing_fun file 
     [
@@ -215,7 +214,7 @@ object(self)
     ]
 *)
 
-  inherit graphic_from_drawing_fun_fmt
+  inherit graphic_from_drawing_fun_fmt drawing_vault
     (ValList [
       `String "with_alpha";
       `Color(255,255,255);
@@ -226,10 +225,10 @@ object(self)
 end;;
 
 (** Graphic resized from a file *)
-class graphic_resized_from_file file i w h iw ih=
+class graphic_resized_from_file drawing_vault file i w h iw ih=
 object
-  val fgr=new graphic_from_file file iw ih
-  inherit graphic_from_drawing (file^"_"^string_of_int i^"_resized") 
+  val fgr=new graphic_from_file drawing_vault file iw ih
+  inherit graphic_from_drawing drawing_vault (file^"_"^string_of_int i^"_resized") 
     (fun()->
        let dr=(drawing_vault#get_cache_entry file i)#copy() in
 	 dr#exec_op_copy_from_list "resize" 
@@ -243,9 +242,9 @@ object
 end;;
 
 (** Graphic resized from a drawing *)
-class graphic_resized pdraw i fw fh=
+class graphic_resized drawing_vault pdraw i fw fh=
 object
-  inherit graphic_from_drawing (pdraw^"_"^string_of_int i^"_resized") 
+  inherit graphic_from_drawing drawing_vault (pdraw^"_"^string_of_int i^"_resized") 
     (fun()->
        let dr=(drawing_vault#get_cache_entry pdraw i)#copy() in
 	 dr#exec_op_copy_from_list "resize" [
@@ -292,9 +291,9 @@ let string_of_fnt_t f=
     | FontEmbed -> "font_embed8";;
 
 
-class graphic_object_text fnt_t (txt:string list) color=
+class graphic_object_text drawing_vault fnt_t (txt:string list) color=
 object
-  inherit graphic_from_drawing 
+  inherit graphic_from_drawing drawing_vault
 ("text_"^string_of_fnt_t fnt_t^"_"^string_of_color color^"_"^digest_of_string_list txt)
 (*((random_string "text_" 10)^digest_of_string_list txt)*)
     (fun()->
@@ -328,14 +327,14 @@ end;;
 
 
 (** graphic text object *)
-class graphic_text did fnt_t (col:color)=
+class graphic_text drawing_vault did fnt_t (col:color)=
 object(self)
-  inherit graphic_object as super
+  inherit graphic_object drawing_vault as super
 
   initializer 
     self#set_drawing_id did
 
-  val mutable graphic=new graphic_object_text fnt_t ([did]) col;
+  val mutable graphic=new graphic_object_text drawing_vault fnt_t ([did]) col;
   val mutable fnt=(font_vault#get_cache_simple ((get_font_id fnt_t)^string_of_int (get_font_size fnt_t)))
  
   val mutable color=col
@@ -445,11 +444,11 @@ object(self)
 
     if t="" then (
       text<-[""];
-      graphic<-new graphic_object;
+      graphic<-new graphic_object drawing_vault;
     )
     else (
       text<-self#cut_string2 t;
-      graphic<-new graphic_object_text fnt_t (self#get_text) self#get_color;
+      graphic<-new graphic_object_text drawing_vault fnt_t (self#get_text) self#get_color;
     );
 
 (*    print_string "taille: ";
@@ -495,11 +494,11 @@ end;;
 (** {2 Pattern} *)
 
 (** special graphic pattern resize with 9 tiles *)
-class graphic_pattern_old pdrawid=
+class graphic_pattern_old drawing_vault pdrawid=
 object(self)
-  inherit graphic_object as super
+  inherit graphic_object drawing_vault as super
 
-  val mutable gr=new graphic_object
+  val mutable gr=new graphic_object drawing_vault
 
   val mutable crect=new rectangle 0 0 0 0
   method get_crect=crect
@@ -511,7 +510,7 @@ object(self)
 	ch=pdrawing#get_h in
       crect#set_size (cw/3) (ch/3);
 
-      gr<-new graphic_from_drawing_fun_fmt
+      gr<-new graphic_from_drawing_fun_fmt drawing_vault
 	(ValList [
 	  `String "with_alpha";
 	  `Color(255,255,255);
@@ -561,11 +560,11 @@ end;;
 
 
 (** special graphic pattern resize with 9 tiles *)
-class graphic_pattern pdrawid=
+class graphic_pattern drawing_vault pdrawid=
 object(self)
-  inherit graphic_object as super
+  inherit graphic_object drawing_vault as super
 
-  val mutable gr=new graphic_object
+  val mutable gr=new graphic_object drawing_vault
 
   val mutable crect=new rectangle 0 0 0 0
   method get_crect=crect
@@ -577,7 +576,7 @@ object(self)
 	ch=pdrawing#get_h in
       crect#set_size (cw/3) (ch/3);
 
-      gr<-new graphic_from_drawing_fun_fmt
+      gr<-new graphic_from_drawing_fun_fmt drawing_vault
 	(ValList [
 (*	  `String "with_alpha";
 	  `Color(255,255,255);
@@ -649,7 +648,7 @@ object(self)
 
 end;; 
 
-class graphic_pattern_file pfile=
+class graphic_pattern_file drawing_vault pfile=
 
   
   let did=drawing_vault#add_cache_from_drawing_fun_fmt_auto 
@@ -660,7 +659,7 @@ class graphic_pattern_file pfile=
        `String pfile
        ]) in
 object(self)
-  inherit graphic_pattern did
+  inherit graphic_pattern drawing_vault did
 
 end;;
 

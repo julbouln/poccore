@@ -20,12 +20,13 @@
 
 open Core_timer;;
 open Core_val;;
-open Core_video;;
 open Core_stage;;
 
 open Value_lua;;
 open Value_val;;
 open Value_xml;;
+
+open Binding;;
 
 (** Main app part *)
 
@@ -75,6 +76,9 @@ end;;
 
 class main=
 object(self)
+  val mutable drawing_vault=new binding_drawing_vault 10000 (1./.25.)
+  method get_drawing_vault=drawing_vault
+
   val mutable info=new info
   method info=info
 
@@ -181,11 +185,11 @@ object(self)
     
     Global.set default_fps fps;
 
-    video#init (scr_w) (scr_h) (depth) (!fullscreen);
+    drawing_vault#init (scr_w) (scr_h) (depth) (!fullscreen);
     
 (*    audio#init 44100 2 ; *)
     
-    video#set_caption ( info#get_name^" "^info#get_version) icon;
+    drawing_vault#set_caption ( info#get_name^" "^info#get_version) icon;
     (*"medias/misc/bfr_rebel.xpm"; *)
     
 (*    audio#set_audio_vol ((self#this_config.audio_vol*128)/16);
@@ -199,7 +203,7 @@ end;;
 
 
 
-let main=new main;;
+(*let main=new main;;*)
 
 
 

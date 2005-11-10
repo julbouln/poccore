@@ -32,7 +32,6 @@ open Core_action;;
 open Core_type;;
 open Core_event;;
 open Core_interaction;;
-open Core_video;;
 
 open Core_fun;;
 
@@ -352,9 +351,9 @@ end;;
 
 open Core_stage;;
 
-class sprite_engine curs=
+class sprite_engine drawing_vault curs=
 object(self)
-  inherit stage curs as super
+  inherit stage drawing_vault curs as super
 
   val mutable interaction=new interaction_objects
   method set_interaction i=interaction<-i
