@@ -241,7 +241,7 @@ let get_font_size fnt_t=
      | FontEmbed->8);;
 
 
-class font_ttf f s=
+class font_ttf font_vault f s=
 object
   val mutable font_t=FontTTF(f,s)
   method get_font_t=font_t

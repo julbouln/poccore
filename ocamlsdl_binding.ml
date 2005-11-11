@@ -86,13 +86,13 @@ end;;
 
 
 (* the font vault *)
-let font_vault=new font_vault 100;;
+(*let font_vault=new font_vault 100;;*)
 
 
 
 (** ocamlsdl drawing *)
 
-class sdl_drawing_object=
+class sdl_drawing_object font_vault=
 object(self)
   inherit [Sdlvideo.surface] drawing_object
 
@@ -102,7 +102,7 @@ object(self)
     (surface_info self#get_t).h
 
   method new_t nt=
-    let nd=new sdl_drawing_object in
+    let nd=new sdl_drawing_object font_vault in
       nd#set_t (nt);
       nd
 
@@ -416,10 +416,11 @@ object(self)
 
 end;;
 
-class sdl_drawing_screen=
+class sdl_drawing_screen font_vault=
 object(self)
+(*  inherit [Sdlvideo.surface] drawing_screen *)
 (*  inherit [tile] drawing_screen *)
-  inherit sdl_drawing_object
+  inherit sdl_drawing_object font_vault
 
   method init w h bpp (fs:bool)=
     
@@ -463,11 +464,20 @@ class sdl_drawing_vault s mt=
 object(self)
   inherit [Sdlvideo.surface] drawing_vault s mt
 
-  val mutable screen=new sdl_drawing_screen
-  method get_screen=screen
+  val mutable font_vault=new font_vault 100
+  method get_font_vault=font_vault
 
-  method new_drawing()=new sdl_drawing_object
-  method new_drawing_screen()=new sdl_drawing_screen
+
+(*  val mutable screen=new sdl_drawing_screen *)
+
+  val mutable screen=None
+  method get_screen=
+    match screen with
+      | Some s->s
+      | None -> let s=self#new_drawing_screen() in screen<-Some s;s
+
+  method new_drawing()=new sdl_drawing_object font_vault
+  method new_drawing_screen()=new sdl_drawing_screen font_vault
 
   method cache_file_save f dl=
     (* if no cache dir, create it *)
@@ -502,9 +512,9 @@ object(self)
     
 end;;
 
-class default_drawing_object=
+class default_drawing_object font_vault=
 object
-  inherit sdl_drawing_object
+  inherit sdl_drawing_object font_vault
 end;;
 
 (* the drawing vault *)
@@ -691,14 +701,3 @@ at_exit (Sdl.quit);;
 (* the event manager *)
 let eventm=new sdl_event_manager;;
 
-class media_vault=
-object
-  val mutable drawing_vault=new sdl_drawing_vault 10000 (1./.25.)
-  val mutable font_vault=new font_vault 100
-  val mutable eventm=new sdl_event_manager
-
-  method drawing_vault=drawing_vault
-  method font_vault=font_vault
-  method eventm=eventm
-
-end;;

@@ -335,7 +335,7 @@ object(self)
     self#set_drawing_id did
 
   val mutable graphic=new graphic_object_text drawing_vault fnt_t ([did]) col;
-  val mutable fnt=(font_vault#get_cache_simple ((get_font_id fnt_t)^string_of_int (get_font_size fnt_t)))
+  val mutable fnt=(drawing_vault#get_font_vault#get_cache_simple ((get_font_id fnt_t)^string_of_int (get_font_size fnt_t)))
  
   val mutable color=col
   method get_color=color
