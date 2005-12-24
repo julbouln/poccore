@@ -311,6 +311,56 @@ end;;
 
 
 
+(** action with movement capabilities and lua func definition *)
+class action_translation=
+object(self)
+  inherit action_lua as al
+
+  val mutable time=0
+  val mutable dx=0
+  val mutable dy=0
+
+  val mutable cx=0
+  val mutable cy=0
+
+
+  method on_start ve=
+
+  let pos=position_of_val (ve#get_val (`Int 0)) in
+    dx<-fst pos;
+    dy<-snd pos;
+    time<-int_of_val (ve#get_val (`Int 1));
+
+
+    al#on_start ve;
+
+
+  method on_loop()=
+
+    if time<>0 then (
+      cx<-self#get_sprite#get_x();
+      cy<-self#get_sprite#get_y();
+
+      let diffx=(dx-cx)/time and
+	diffy=(dy-cy)/time in
+      
+
+
+	self#get_sprite#jump (cx+diffx) (cy+diffy);
+	
+	time<-time-1;
+    );
+    al#on_loop();
+
+
+  method lua_init()=
+    al#lua_init();
+
+
+end;;
+
+
+
 (** action repeat over specified time *)
 class action_timed max_time=
 object
