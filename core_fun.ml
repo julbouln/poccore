@@ -17,8 +17,9 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
-open Value_object;;
 
+open Value_object;;
+open Core_rect;;
 
 (** Functional capacity *)
 
@@ -45,10 +46,19 @@ end;;
 (** functional sprite class *)
 class virtual sprite_fun=
 object
+  method virtual get_id : string
   method virtual get_x : unit->int
   method virtual get_y : unit->int
   method virtual jump : int -> int -> unit
+  method virtual get_prect : rectangle
+
 end;;
+
+class virtual sprite_vault_fun=
+object
+  method virtual foreach_sprite : (sprite_fun -> unit) -> unit
+end;;
+
 
 (* FIXME : must be in pocgame ! *)
 (** functional game_object class *)
@@ -96,6 +106,7 @@ type functionizer=
     [
       `GraphicFun of graphic_fun
     | `SpriteFun of sprite_fun	
+    | `SpriteVaultFun of sprite_vault_fun
     | `GameObjectFun of game_object_fun
     | `GameObjectMapFun of game_object_map_fun
     | `GameMapFun of game_map_fun
@@ -117,6 +128,10 @@ let sprite_of_fun=function
   | `SpriteFun spr-> spr
   | `GameObjectFun spr-> (spr:>sprite_fun)
   | _->raise (Bad_fun_type "sprite_fun");;
+
+let sprite_vault_of_fun=function
+  | `SpriteVaultFun spr-> spr
+  | _->raise (Bad_fun_type "sprite_vault_fun");;
 
 let game_object_of_fun=function
   | `GameObjectFun spr-> spr

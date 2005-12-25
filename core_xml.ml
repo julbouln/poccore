@@ -572,9 +572,14 @@ object(self)
   inherit [action_lua] xml_object_parser (fun()->new action_translation)
 end;;
 
-class xml_action_2d_move_parser=
+class xml_action_2d_physics_parser=
 object(self)
-  inherit [action_lua] xml_object_parser (fun()->new action_2d_move)
+  inherit [action_lua] xml_object_parser (fun()->new action_2d_physics)
+end;;
+
+class xml_action_collision=
+object(self)
+  inherit [action_lua] xml_object_parser (fun()->new action_collision)
 end;;
 
 
@@ -612,7 +617,8 @@ let xml_factory_actions_parser()=
     p#parser_add "action_intime" (fun()->new xml_action_intime_parser);
     p#parser_add "action_movement" (fun()->new xml_action_movement_parser);
     p#parser_add "action_translation" (fun()->new xml_action_translation_parser);
-    p#parser_add "action_2d_move" (fun()->new xml_action_2d_move_parser);
+    p#parser_add "action_2d_physics" (fun()->new xml_action_2d_physics_parser);
+    p#parser_add "action_collision" (fun()->new xml_action_collision);
     p;;
 
 Global.set xml_default_actions_parser xml_factory_actions_parser;;
@@ -855,6 +861,7 @@ object (self)
 	self#init_cursor();
 	new sprite_engine drawing_vault curs
       in
+	o#get_sprites#fun_init();
 	sprite_type_parser#init o#get_sprites#add_object_type;
 (*	let inter=(snd interaction_parser#get_val)() in
 	  o#set_interaction inter;

@@ -53,6 +53,10 @@ object(self)
     let spr=fnode#get_parent#get_parent#get_parent in
       sprite_of_fun spr#get_fun
 
+  method private get_sprite_vault=
+    let spr=fnode#get_parent#get_parent#get_parent#get_parent in
+      sprite_vault_of_fun spr#get_fun
+
   method virtual on_start : val_ext_handler -> unit
   method virtual on_loop : unit -> unit
   method virtual on_stop : unit -> unit
@@ -361,7 +365,7 @@ end;;
 
 
 
-class action_2d_move=
+class action_2d_physics=
 object(self)
   inherit action_lua as al
 
@@ -413,6 +417,8 @@ object(self)
 
     self#get_sprite#jump (cx+(int_of_float nx)) (cy+(int_of_float ny));    
 
+
+
 (*    print_int cx;print_string " - ";
     print_int cy;print_newline();
 *)
@@ -428,6 +434,44 @@ object(self)
 
 end;;
 
+
+class action_collision=
+object(self)
+  inherit action_lua as al
+
+  val mutable collide_fun=fun l->[OLuaVal.Nil]
+
+  method private on_collide id=
+    ignore(collide_fun [OLuaVal.String id])
+
+  method on_start ve=
+    al#on_start ve;
+
+  method on_loop()=
+
+    self#get_sprite_vault#foreach_sprite (
+      fun spr->
+	  if(self#get_sprite#get_id<>spr#get_id) then
+	    if(spr#get_prect#is_in_rect self#get_sprite#get_prect) then
+	      (
+		self#on_collide(spr#get_id);
+(*		print_string ("collision "^spr#get_id);print_newline() *)
+	      );
+
+    );
+
+    al#on_loop();
+
+  method lua_init()=
+
+    lua#set_val (OLuaVal.String "on_collide") (OLuaVal.efunc (OLuaVal.string **->> OLuaVal.unit) (fun id->()));
+
+    al#lua_init();
+    collide_fun<-lua#get_fun (OLuaVal.String "on_collide");
+
+
+
+end;;
 
 
 (** action repeat over specified time *)

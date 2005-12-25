@@ -223,6 +223,19 @@ object(self)
   inherit lua_object as lo
   method get_id="sprites"
 
+  val mutable fnode=new core_fun_node
+  method get_fnode=fnode
+
+  method fun_init()=
+    fnode#set_fun self#functionize
+
+  method foreach_sprite (f:sprite_fun->unit)=
+    self#foreach_object (fun id spr-> f (spr:> sprite_fun))
+
+  method functionize : functionizer=
+    `SpriteVaultFun
+      (self :> sprite_vault_fun)
+
   val mutable obj_type=new sprite_object_types
   method get_obj_type=obj_type
   method add_object_type nm (t:unit->'a)=
@@ -244,9 +257,12 @@ object(self)
        | None -> ());
 
   method add_sprite_at (id:string option) (o:sprite_object) (px:int) (py:int)=
+
     self#add_sprite_to_canvas o;
     let n=self#add_object id o in
       o#fun_init();
+      o#get_fnode#set_parent fnode;
+      fnode#get_children#add_object (Some n) (o#get_fnode :> core_fun_node);
       ignore(o#lua_init());
       self#lua_parent_of n (o:>lua_object);
       o#jump px py;
