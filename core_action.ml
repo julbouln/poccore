@@ -361,6 +361,75 @@ end;;
 
 
 
+class action_2d_move=
+object(self)
+  inherit action_lua as al
+
+  val mutable grav=9.8
+
+  val mutable mass=0.
+  val mutable angle=0.
+  val mutable velocity=0.
+
+  val mutable a=0.
+
+  val mutable time=0.
+
+  val mutable v=0.
+
+  val mutable cx=0
+  val mutable cy=0
+
+  val mutable nx=0.
+  val mutable ny=0.
+
+
+  method on_start ve=
+    time<-0.;
+    mass<-float_of_val (ve#get_val (`Int 0)); 
+    grav<-float_of_val (ve#get_val (`Int 1));
+    angle<-float_of_val (ve#get_val (`Int 2));
+    velocity<-float_of_val (ve#get_val (`Int 3));
+
+(*    print_string "mass: ";print_float mass;print_newline();
+    print_string "grav: ";print_float grav;print_newline();
+    print_string "angle: ";print_float angle;print_newline();
+    print_string "velocity: ";print_float velocity;print_newline();
+*)
+    al#on_start ve;
+
+
+  method on_loop()=
+
+    cx<-self#get_sprite#get_x();
+    cy<-self#get_sprite#get_y();
+
+    a<- grav /. mass;
+
+    v<-velocity +. a *. time; 
+
+    nx <- (cos(angle)*.velocity) +. v*.0.;
+    ny <- (sin(angle)*.velocity) +. v;
+
+    self#get_sprite#jump (cx+(int_of_float nx)) (cy+(int_of_float ny));    
+
+(*    print_int cx;print_string " - ";
+    print_int cy;print_newline();
+*)
+    time<-time+.1.;
+
+
+    al#on_loop();
+
+
+  method lua_init()=
+    al#lua_init();
+
+
+end;;
+
+
+
 (** action repeat over specified time *)
 class action_timed max_time=
 object

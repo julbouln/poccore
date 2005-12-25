@@ -572,6 +572,11 @@ object(self)
   inherit [action_lua] xml_object_parser (fun()->new action_translation)
 end;;
 
+class xml_action_2d_move_parser=
+object(self)
+  inherit [action_lua] xml_object_parser (fun()->new action_2d_move)
+end;;
+
 
 (** actions container parser *)
 class xml_actions_parser=
@@ -607,6 +612,7 @@ let xml_factory_actions_parser()=
     p#parser_add "action_intime" (fun()->new xml_action_intime_parser);
     p#parser_add "action_movement" (fun()->new xml_action_movement_parser);
     p#parser_add "action_translation" (fun()->new xml_action_translation_parser);
+    p#parser_add "action_2d_move" (fun()->new xml_action_2d_move_parser);
     p;;
 
 Global.set xml_default_actions_parser xml_factory_actions_parser;;
