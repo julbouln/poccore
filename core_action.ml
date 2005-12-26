@@ -171,7 +171,7 @@ object(self)
     al#on_loop(); 
 
   method on_stop()=
-   self#set_current 0;
+(*   self#set_current 0; *)
     al#on_stop();
 
   method lua_init()=
@@ -375,6 +375,8 @@ object(self)
   val mutable angle=0.
   val mutable velocity=0.
 
+  val mutable dangle=0.			 
+
   val mutable a=0.
 
   val mutable time=0.
@@ -415,6 +417,10 @@ object(self)
     nx <- (cos(angle)*.velocity) +. v*.0.;
     ny <- (sin(angle)*.velocity) +. v;
 
+(*    dangle<- acos(nx) *. 57.30 ; 
+
+    print_float (dangle);print_newline();
+*)    
     self#get_sprite#jump (cx+(int_of_float nx)) (cy+(int_of_float ny));    
 
 

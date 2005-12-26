@@ -551,6 +551,29 @@ object(self)
       );
 
 
+    self#add_drawing_fun_from_list "with_mirror"
+      (
+	fun vl->
+	  let par=string_of_val (List.nth vl 0) in
+	  let drl=self#exec_drawing_fun_from_list par (List.tl vl) in
+	  let column=(Array.length drl) in
+	  let ndrl=Array.make (column*2) drl.(0) in
+	    Array.iteri (
+	      fun i dr->
+		ndrl.(i)<-dr;
+	    ) drl;
+	    let copy_col v m mirror=
+	      let k=ref 0 in
+		for i=v*column to (v+1)*column - 1 do
+		  ndrl.(column*m + !k)<-(if mirror then ((drl.(i))#exec_op_copy_from_list "mirror" []).(0) else drl.(i));
+		  k:= !k+1;
+		done
+	in
+	      copy_col 0 1 true;
+	      
+	      ndrl
+
+  );
 
     self#add_drawing_fun_from_list "with_mirror3"
       (
