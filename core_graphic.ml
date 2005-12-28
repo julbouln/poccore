@@ -143,6 +143,15 @@ class graphic_object (drawing_vault : binding_drawing_vault)=
 
       lua#set_val (OLuaVal.String "creation_args") (OLuaVal.Table cargs#to_lua#to_table);
 
+      lua#set_val (OLuaVal.String "on_update") 
+	(OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.unit) 
+	   (fun()->(
+	      let spr=sprite_of_fun(self#get_fnode#get_parent#get_parent#get_fun) in
+	      let nx=spr#get_x() and
+		  ny=spr#get_y() in
+		self#move nx ny;
+	    )));
+
       go#lua_init();
       update_fun<-lua#get_fun (OLuaVal.String "on_update");
 
