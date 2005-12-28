@@ -224,6 +224,7 @@ class sprite_vault=
 object(self)
   inherit [sprite_object] generic_object_handler as super
   inherit lua_object as lo
+  inherit xml_object
   method get_id="sprites"
 
   val mutable fnode=new core_fun_node
@@ -288,28 +289,28 @@ object(self)
 
 
 (** <xml> *)
-  method to_xml()=
-    let xml=new xml_node in
-      xml#set_tag "sprites";
+  method xml_to_init()=
+    xml<-new xml_node;
+    xml#set_tag "sprites";
       
-      self#foreach_object (fun spr_id spr->
-			     let sxml=new xml_node in
-			       sxml#of_list [
-				 Tag "sprite";
-				 Attribute ("id",spr_id);
-				 Attribute ("type",spr#get_name);
-			       ];
-			       let vh=new val_ext_handler in
-				 vh#set_id "args";
-				 vh#set_val (`String "position") (`Position (spr#get_prect#get_x,spr#get_prect#get_y));
+    self#foreach_object (fun spr_id spr->
+			   let sxml=new xml_node in
+			     sxml#of_list [
+			       Tag "sprite";
+			       Attribute ("id",spr_id);
+			       Attribute ("type",spr#get_name);
+			     ];
+			     let vh=new val_ext_handler in
+			       vh#set_id "args";
+			       vh#set_val (`String "position") (`Position (spr#get_prect#get_x,spr#get_prect#get_y));
+			       
+			       sxml#add_child vh#to_xml;
+			       
+			       xml#add_child sxml;
+			);
 
-				 sxml#add_child vh#to_xml;
-				 
-				 xml#add_child sxml;
-			  );
-      xml
 
-  method from_xml (xml:xml_node)=
+  method xml_of_init()=
     List.iter (
       fun c->
 	let args=new val_ext_handler and
@@ -339,6 +340,17 @@ object(self)
 	      
     ) xml#children;
 
+
+  method save_to_file f=
+    let fo=open_out f in
+      self#xml_to_init();
+      output_string fo (xml#to_string); 
+      close_out fo;
+
+  method load_from_file f=
+    xml#of_file f;
+    self#xml_of_init();
+
 (** </xml> *)
 
   method update()=
@@ -355,6 +367,11 @@ object(self)
 	    self#set_sprite_state id (Some n) (val_ext_handler_of_format (ValLua lo))
 	 )
       );
+
+
+    lua#set_val (OLuaVal.String "load_from_file") (OLuaVal.efunc (OLuaVal.string **->> OLuaVal.unit) self#load_from_file);
+    lua#set_val (OLuaVal.String "save_to_file") (OLuaVal.efunc (OLuaVal.string **->> OLuaVal.unit) self#save_to_file);
+
 
    lua#set_val (OLuaVal.String "add_sprite_from_type") 
      (OLuaVal.efunc (OLuaVal.string **-> OLuaVal.int **-> OLuaVal.int **->> OLuaVal.string) 

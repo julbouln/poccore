@@ -115,7 +115,7 @@ object(self)
     mph#handler_add "set_state" (new set_state_message_handler self#get_sprites#set_sprite_state);
     mph#handler_add "add_sprite" (new add_sprite_message_handler (fun n t x y->ignore(self#get_sprites#add_sprite_from_type (Some n) t x y)));
     mph#handler_add "delete_sprite" (new delete_sprite_message_handler self#get_sprites#delete_sprite);
-    mph#handler_add "sync_sprites" (new sync_sprites_message_handler self#get_sprites#from_xml);
+    mph#handler_add "sync_sprites" (new sync_sprites_message_handler (fun x->self#get_sprites#set_xml x;self#get_sprites#xml_of_init()));
 
   method net_set_sprite_state (conn:network_object) dst n st_id st_v=
     st_v#set_id "args";
@@ -177,7 +177,8 @@ object(self)
 
 
   method net_sync_sprites (conn:network_object) dst=
-    let xsprs=sprites#to_xml() in
+    sprites#xml_to_init();
+    let xsprs=sprites#get_xml in
     conn#message_send 
       (xml_message_of_string (
 	 "<message type=\"sync_sprites\" dst=\""^dst^"\">
