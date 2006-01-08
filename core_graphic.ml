@@ -275,11 +275,11 @@ object(self)
   method set v=str<-v
   method get=str
 
-  method length=UTF8.length str
+  method length=Camomile.UTF8.length str
   method sub p l=
     String.sub str (self#byte_get p) ((self#byte_get (p+l))-(self#byte_get p))
 
-  method byte_get n=UTF8.nth str n
+  method byte_get n=Camomile.UTF8.nth str n
   method byte_length=String.length str
 
 end;;
@@ -435,13 +435,13 @@ object(self)
   method private cut_string s=
     (*    text<-split_delim (regexp "[\n]+") s; *)
     let a=DynArray.create() in
-    let ss=UTF8.length s/max_size in
+    let ss=Camomile.UTF8.length s/max_size in
       for i=0 to ss do
 
-	let md=UTF8.length s - (i*max_size) in
+	let md=Camomile.UTF8.length s - (i*max_size) in
 	let l=if md>=max_size then max_size else md in
-	let cs=UTF8.nth s (i*max_size) and
-	    ce=UTF8.nth s ((i*max_size) + l) in
+	let cs=Camomile.UTF8.nth s (i*max_size) and
+	    ce=Camomile.UTF8.nth s ((i*max_size) + l) in
 	    let ns=String.sub s cs (ce-cs) in
 	      if String.length ns>0 then
 		DynArray.add a ns

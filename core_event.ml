@@ -39,7 +39,7 @@ type key_type=
 | KeyNumLock
 | KeyCapsLock
 
-| KeyUnicode of UChar.t
+| KeyUnicode of Camomile.UChar.t
 | KeyChar of string
 | KeyUnknow;;
 

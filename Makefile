@@ -2,7 +2,7 @@ OCAMLMAKEFILE = OCamlMakefile
 
 BINDING=ocamlsdl_binding.ml
 
-PACKS=num pocvalue pocnet sdl sdl.sdlimage sdl.sdlttf sdl.sdlgfx mysql 
+PACKS=num camomile pocvalue pocnet sdl sdl.sdlimage sdl.sdlttf sdl.sdlgfx mysql 
 
 LIBINSTALL_FILES=*.cmi *.cmo *.cmx *.a poccore.cma poccore.cmxa
 

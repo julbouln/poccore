@@ -530,7 +530,7 @@ end
 open Sdlevent;;
 
 let parse_unicode k=
-  KeyUnicode (UChar.of_char k);;
+  KeyUnicode (Camomile.UChar.of_char k);;
 
 let parse_key k=
 (*  print_string "poclow_key : ";print_int k;print_newline(); *)
