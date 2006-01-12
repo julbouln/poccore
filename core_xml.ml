@@ -361,24 +361,34 @@ object(self)
   method get_val=
     let ofun()=
       let o=
-	let args=args_parser#get_val in
-	let ds=text_of_val(args#get_val (`String "drawing_script")) and
-	    did=(
-	  if args#is_val (`String "drawing_id") then
-	    (string_of_val(args#get_val (`String "drawing_id")))
-	  else
-	    (random_string "dscr" 15)) in    
+	new graphic_object drawing_vault in
+	
+      let args=args_parser#get_val in
+      let did=(
+	    if args#is_val (`String "drawing_id") then
+	      (string_of_val(args#get_val (`String "drawing_id")))
+	    else
+	      (random_string "dscr" 15)) in    
+	
+(*	ignore(drs#lua_init()); *)
 
-	ignore(drs#lua_init()); 
-
-	  new graphic_from_drawing drawing_vault did
+(*	  new graphic_from_drawing drawing_vault did
 	    (fun()->
 	       (drs#register ds)
 	    );
+*)
+	
+	  self#init_object o;
+	  drs#lua_init_external o#get_lua;
+(*	  o#lua_parent_of "drawing_script" (drs:>lua_object); *)
 
-      in
-	o#lua_parent_of "drawing_script" (drs:>lua_object);
-	self#init_object o;
+	  o#lua_init();
+
+	  o#set_drawing_id did;
+	  drawing_vault#add_cache did (fun()->drs#register_with_val (o#get_lua#exec_val_fun (OLuaVal.String "drawing_script") [OLuaVal.Nil]));
+
+	  let dra=drawing_vault#get_cache_simple did in
+	    o#get_rect#set_size (dra#get_w) (dra#get_h); 	      
 	o	  
     in      
       (id,ofun)

@@ -321,6 +321,17 @@ object(self)
     let dr=(self#get_dr did).(nd) in
       dr#exec_op_read_from_format name (ValLua args)
 
+
+  method register_with_val v=
+    (try 
+       let did=(List.nth v 0) in
+	 match did with
+	   | OLuaVal.String n->
+	       self#get_dr n
+		 
+	   | _ -> raise Drawing_script_error
+     with Not_found -> raise Drawing_script_error)
+
   method register ds=
     let did=List.nth (lua#parse ds) 0 in
       match did with
@@ -332,6 +343,82 @@ object(self)
   method register_with_args ds (args:OLuaVal.table)=
     lua#set_val (OLuaVal.String "args") (OLuaVal.Table args);
     self#register ds;
+
+
+  method lua_init_external (lua:lua_obj)=
+
+      lua#set_val (OLuaVal.String "drawing_script") 
+	(OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.string) 
+	   (fun()->""));
+
+    lua#set_val (OLuaVal.String "create_from_vault") 
+      (OLuaVal.efunc (OLuaVal.string **->> OLuaVal.string) 
+	 (self#create_from_vault));
+
+    lua#set_val (OLuaVal.String "create") 
+      (OLuaVal.efunc (OLuaVal.string **-> OLuaVal.table **->> OLuaVal.string) 
+	 (fun n a->
+	    self#op_create n 
+	      (let lo=new lua_obj in
+		 lo#from_table a;
+		 lo
+	      )
+	 )
+      );
+
+    lua#set_val (OLuaVal.String "copy") 
+      (OLuaVal.efunc (OLuaVal.string **->OLuaVal.int **-> OLuaVal.string **-> OLuaVal.table **->> OLuaVal.string) 
+	 (fun did nd n a->
+	    self#op_copy did nd n 
+	      (let lo=new lua_obj in
+		 lo#from_table a;
+		 lo
+	      )
+	 )
+      );
+
+    lua#set_val (OLuaVal.String "push") 
+      (OLuaVal.efunc (OLuaVal.string **-> OLuaVal.string **->OLuaVal.int **-> OLuaVal.string **-> OLuaVal.table **->> OLuaVal.unit) 
+	 (fun pid did nd n a->
+	    self#op_push pid did nd n 
+	      (let lo=new lua_obj in
+		 lo#from_table a;
+		 lo
+	      )
+	 )
+      );
+
+    lua#set_val (OLuaVal.String "write") 
+      (OLuaVal.efunc (OLuaVal.string **->OLuaVal.int **-> OLuaVal.string **-> OLuaVal.table **->> OLuaVal.unit) 
+	 (fun did nd n a->
+	    self#op_write did nd n 
+	      (let lo=new lua_obj in
+		 lo#from_table a;
+		 lo
+	      )
+	 )
+      );
+
+    lua#set_val (OLuaVal.String "read") 
+      (OLuaVal.efunc (OLuaVal.string **->OLuaVal.int **-> OLuaVal.string **-> OLuaVal.table **->> OLuaVal.value) 
+	 (fun did nd n a->
+	    let v=
+	    self#op_read did nd n 
+	      (let lo=new lua_obj in
+		 lo#from_table a;
+		 lo
+	      ) in
+	      lua_of_val_ext v
+	 )
+      );
+
+    lua#set_val (OLuaVal.String "size") 
+      (OLuaVal.efunc (OLuaVal.string **->> OLuaVal.int) (self#dr_size));
+
+    lua#set_val (OLuaVal.String "rename") 
+      (OLuaVal.efunc (OLuaVal.string **-> OLuaVal.string **->> OLuaVal.unit) (self#rename));
+
+
 
   method lua_init()=
     lua#set_val (OLuaVal.String "create_from_vault") 
