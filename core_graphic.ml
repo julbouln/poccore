@@ -77,12 +77,17 @@ class graphic_object (drawing_vault : binding_drawing_vault)=
 	
     val mutable cur_drawing=0
 
+    method get_drawings=
+      drawing_vault#get_cache self#get_drawing_id
+
     method get_drawing n=
       (drawing_vault#get_cache_entry self#get_drawing_id n)
 
     method set_cur_drawing c=cur_drawing<-c
     method get_cur_drawing=cur_drawing
     method get_drawings_size=(Array.length (drawing_vault#get_cache self#get_drawing_id))
+
+
 
     (** canvas *)
 

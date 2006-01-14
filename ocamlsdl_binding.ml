@@ -80,6 +80,8 @@ object(self)
 
   method new_font()=new sdl_font_object
 
+  method save f dl=()
+
   method cache_file_save f dl=()
   method cache_file_load f=[||]
 end;;
@@ -478,6 +480,17 @@ object(self)
 
   method new_drawing()=new sdl_drawing_object font_vault
   method new_drawing_screen()=new sdl_drawing_screen font_vault
+
+  method save f dl=
+    Array.iteri (
+      fun i d->
+	let fn=f^"."^(string_of_int i)^".bmp" in
+	if Sys.file_exists fn=false then (
+	  d#exec_op_write_from_list "unset_alpha" []; 
+	  save_BMP (d#get_t) (fn);
+	  d#exec_op_write_from_list "set_alpha" [`Color (255,255,255)]; 
+	)
+    ) dl;
 
   method cache_file_save f dl=
     (* if no cache dir, create it *)

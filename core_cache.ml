@@ -32,6 +32,8 @@ object(self)
   val mutable corres=Hashtbl.create 2    
   val mutable cache_time=Hashtbl.create 2
 
+  method virtual save: string -> 'ct array->unit
+
   method virtual cache_file_save: string -> 'ct array->unit
   method virtual cache_file_load: string ->'ct array
 

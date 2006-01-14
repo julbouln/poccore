@@ -495,6 +495,18 @@ let xml_factory_graphics_parser drawing_vault=
 Global.set xml_default_graphics_parser xml_factory_graphics_parser;;
 
 
+(*   let dv=new binding_drawing_vault 10 (1.) in  *)
+
+let graphic_from_xml dv x=
+  let parsers=(Global.get xml_default_graphics_parser) dv in
+    parsers#parse_child "graphic" x;
+    let gr=ref (new graphic_object dv) in
+      parsers#init_simple (fun i o->gr:=o);
+      !gr
+      
+let graphic2bmp dv gr f=
+  dv#save f (gr#get_drawings)
+
 
 (** {3 Action} *)
 
