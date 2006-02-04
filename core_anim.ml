@@ -20,6 +20,7 @@
 
 open Core_medias;;
 open Core_graphic;;
+open Core_timer;;
 
 (** Anim subsystem *)
 
@@ -59,6 +60,43 @@ object
 	current_refresh<-current_refresh+1
 
     method print_frame=print_int frames.(current_frame)
+  end;;
+
+
+class anim_object_with_time (timed_frames : (time * int) list)=
+object(self)
+  val mutable timer=new timer
+  val mutable current_frame=0
+  val mutable timed_frames=timed_frames
+
+  method get_frame_time f=(fst (List.nth timed_frames f))
+
+  method get_num_frames=List.length timed_frames
+  method get_current=current_frame
+  method set_current f=current_frame<-f
+
+  method get_frame=(snd (List.nth timed_frames current_frame))
+
+  method next_frame()=
+    timer#reset();
+    timer#del_task (self#get_frame_time current_frame);
+
+    if current_frame=self#get_num_frames-1 then (
+      current_frame=0;
+      timer#add_task (self#get_frame_time 0) self#next_frame;
+    )
+    else (
+      current_frame<-current_frame+1;
+      timer#add_task (self#get_frame_time current_frame) self#next_frame;
+    )
+
+  initializer
+    timer#start();
+    timer#add_task (self#get_frame_time 0) self#next_frame
+    
+  method anim()=
+    timer#step()
+      
   end;;
 
 

@@ -182,6 +182,31 @@ object(self)
 
 end;;
 
+(** action with anim capabilities and lua func definition *)
+class action_anim_with_time tfrs=
+object(self)
+  inherit action_lua as al
+  inherit anim_object_with_time tfrs
+
+
+  method on_loop()=
+    self#anim();
+    let gr=self#get_graphic "main" in
+      gr#set_cur_drawing self#get_frame;
+    al#on_loop(); 
+
+  method on_stop()=
+(*   self#set_current 0; *)
+    al#on_stop();
+
+  method lua_init()=
+    lua#set_val (OLuaVal.String "get_frame") (OLuaVal.efunc (OLuaVal.unit **->> OLuaVal.int) (fun()->self#get_frame));
+
+    al#lua_init();
+
+
+end;;
+
 
 
 

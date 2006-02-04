@@ -35,7 +35,7 @@ open Core_event;;
 open Core_interaction;;
 open Core_sprite;;
 open Core_cursor;;
-
+open Core_timer;;
 
 open Binding;;
 
@@ -583,6 +583,47 @@ object(self)
 
 end;;
 
+
+(** action with anim parser *)
+class xml_action_anim_with_time_parser=
+object(self)
+  inherit xml_action_object_parser
+
+  method get_val=
+    let ofun()=
+      let o=
+	let args=args_parser#get_val in
+	let timed_frames=(Array.map (
+	       fun v->
+		 let l=list_of_val v in 
+		 let tm=ref {h=0;m=0;s=0;f=0} and
+		     fr=ref 0 in
+		 
+		   List.iter (fun vv->
+				match vv with
+				  | `Int frm->fr:=frm
+				  | `Time tim->tm:=tim
+				  | _ ->()
+			     ) l;
+		   (!tm,!fr)
+
+	     )
+	       (Array.of_list 
+		  (list_of_val (args#get_val (`String "frames")))
+	       )
+	    ) in
+
+	  new action_anim_with_time (Array.to_list timed_frames)
+
+      in
+	self#init_object (o:>action_lua);
+	(o:>action_lua)	  
+    in      
+      (id,ofun)
+
+
+end;;
+
 (** action movement parser *)
 class xml_action_movement_parser=
 object(self)
@@ -635,6 +676,7 @@ let xml_factory_actions_parser()=
   let p=new xml_actions_parser in
     p#parser_add "action_lua" (fun()->new xml_action_object_parser);
     p#parser_add "action_anim" (fun()->new xml_action_anim_parser);
+    p#parser_add "action_anim_with_time" (fun()->new xml_action_anim_with_time_parser);
     p#parser_add "action_timed" (fun()->new xml_action_timed_parser);
     p#parser_add "action_intime" (fun()->new xml_action_intime_parser);
     p#parser_add "action_movement" (fun()->new xml_action_movement_parser);
