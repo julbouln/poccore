@@ -765,7 +765,7 @@ Global.set xml_default_interactions_parser  xml_generic_interactions_parser;;
 class xml_sprite_object_type_parser drawing_vault=
 object(self)
   inherit [sprite_object] xml_object_parser (fun()->new sprite_object) as super
-  val mutable props_parser=new xml_val_ext_list_parser "properties"
+  val mutable props_parser=new xml_val_ext_list_parser "variables"
 
   val mutable graphics_parser=(Global.get xml_default_graphics_parser) drawing_vault
   val mutable states_parser=new xml_state_actions_parser    
