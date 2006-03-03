@@ -705,11 +705,12 @@ object(self)
       self#set_on_loop ol;
       self#loop();
     done;
-    Sdl.quit()
+(*	raise Game_over *)
+(*    Sdl.quit() *)
 
 end;;
 
-at_exit (Sdl.quit);;
+at_exit (fun()->raise Game_over);;
 
 (* the event manager *)
 let eventm=new sdl_event_manager;;

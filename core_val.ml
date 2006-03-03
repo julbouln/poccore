@@ -24,6 +24,9 @@ open Value_val;;
 
 open Core_timer;;
 
+exception Game_over;;
+
+
 (** Extended val type *)
 
 (** {2 Types} *)
